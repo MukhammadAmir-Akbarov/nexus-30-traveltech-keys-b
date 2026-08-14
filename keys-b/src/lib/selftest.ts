@@ -132,6 +132,15 @@ assert.ok(
 const transfers = country.days.map((d) => d.transfer).filter((x) => x !== undefined);
 assert.ok(transfers.length >= 2, 'между городами должны появляться переезды');
 
+// порядок городов — по времени в пути, а не по прямой линии: до Самарканда
+// есть поезд, поэтому он идёт вторым, хотя Нурата ближе по карте
+assert.equal(
+  transfers[0].toRegion,
+  'samarkand',
+  'после Ташкента едем туда, куда быстрее добраться, а не туда, что ближе на карте',
+);
+assert.equal(transfers[0].options[0].mode, 'train', 'и едем поездом');
+
 // §4.2 ТЗ: у переезда есть варианты транспорта со временем и ценой
 for (const transfer of transfers) {
   assert.ok(transfer.options.length >= 2, 'должно быть минимум два способа переезда');
