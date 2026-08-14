@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTrip } from './TripProvider';
+import { t } from '@/lib/i18n';
 
 // Голосовой ввод — штатный Web Speech API браузера.
 // Библиотеку не ставим: нужен один вызов start/stop.
@@ -35,6 +37,7 @@ export function VoiceInput({
   lang?: string;
   onText: (text: string) => void;
 }) {
+  const { lang: uiLang } = useTrip();
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<Recognition | null>(null);
@@ -73,7 +76,7 @@ export function VoiceInput({
 
   return (
     <button type="button" className="btn" onClick={toggle} aria-pressed={listening}>
-      {listening ? '● Слушаю…' : '🎙 Записать речь гида'}
+      {listening ? t('voiceListening', uiLang) : t('voiceIdle', uiLang)}
     </button>
   );
 }

@@ -8,7 +8,38 @@ const STOPWORDS = new Set([
   'это', 'что', 'как', 'для', 'при', 'над', 'под', 'без', 'the', 'and',
   'был', 'была', 'было', 'были', 'его', 'её', 'их', 'там', 'тут', 'где',
   'или', 'если', 'чем', 'уже', 'ещё', 'все', 'всё', 'так', 'году', 'года',
+  'was', 'were', 'built', 'is', 'in', 'of', 'qurilgan', 'nechanchi', 'yilda',
 ]);
+
+/**
+ * Корпус хранится по-русски (язык источника), а спрашивать могут на узбекском
+ * или английском. Приводим латинские названия объектов к кириллическим токенам —
+ * этого хватает, потому что имена собственные и есть носители смысла запроса.
+ * ponytail: словарь на ~30 записей вместо мультиязычных эмбеддингов;
+ * расширять по мере роста корпуса.
+ */
+const ALIASES: Record<string, string> = {
+  registon: 'регистан', registan: 'регистан',
+  samarqand: 'самарканд', samarkand: 'самарканд',
+  buxoro: 'бухара', bukhara: 'бухара',
+  xiva: 'хива', khiva: 'хива',
+  toshkent: 'ташкент', tashkent: 'ташкент',
+  shahrisabz: 'шахрисабз', shakhrisabz: 'шахрисабз',
+  kalon: 'калян', kalyan: 'калян', kalta: 'кальта',
+  minor: 'минарет', minora: 'минарет', minaret: 'минарет',
+  ichan: 'ичан', itchan: 'ичан',
+  madrasa: 'медресе', madrasah: 'медресе', masjid: 'мечеть', mosque: 'мечеть',
+  maqbara: 'мавзолей', mausoleum: 'мавзолей',
+  ulugbek: 'улугбек', ulugh: 'улугбек',
+  rasadxona: 'обсерватория', observatory: 'обсерватория',
+  temur: 'темур', timur: 'темур',
+  unesco: 'юнеско', yunesko: 'юнеско',
+  balandligi: 'высота', height: 'высота', asr: 'век', century: 'век',
+  bozor: 'базар', bazaar: 'базар',
+  somoniylar: 'саманиды', samanid: 'саманиды',
+  oqsaroy: 'сарай', saray: 'сарай',
+  aydarkol: 'айдаркуль', aydarkul: 'айдаркуль',
+};
 
 export function normalize(text: string): string {
   return text
@@ -28,6 +59,7 @@ export function tokenize(text: string): string[] {
   return normalize(text)
     .split(/[\s-]+/)
     .filter((t) => t.length >= 2 && !STOPWORDS.has(t))
+    .map((t) => ALIASES[t] ?? t)
     .map(stem);
 }
 

@@ -1,6 +1,11 @@
 // Единые типы прототипа. Импортируются ТОЛЬКО как `import type`,
 // чтобы data/* и lib/* оставались без рантайм-зависимостей (нужно для npm run check).
 
+export type Lang = 'uz' | 'ru' | 'en';
+
+/** Строка на трёх языках интерфейса. */
+export type I18nText = Record<Lang, string>;
+
 export type Region =
   | 'samarkand'
   | 'bukhara'
@@ -25,19 +30,19 @@ export type TripContext = {
   interests: Interest[];
   travelType: TravelType;
   days: number;
+  lang: Lang;
 };
 
 export type Place = {
   id: string;
-  name: string;
-  localName: string;
+  name: I18nText;
   region: Region;
   lat: number;
   lng: number;
   interests: Interest[];
   visitMinutes: number;
   familyFriendly: boolean;
-  summary: string;
+  summary: I18nText;
 };
 
 export type Guide = {
@@ -53,11 +58,15 @@ export type Guide = {
   pricePerDay: number;
   /** ДЕМО-признак. В проде подтверждается реестром Комитета по туризму. */
   verified: boolean;
-  bio: string;
+  bio: I18nText;
 };
 
-export type Source = { title: string; url: string };
+export type Source = { title: I18nText; url: string };
 
+/**
+ * Корпус хранится на языке источника (русский) — это канон, его не переводим.
+ * Ответ пользователю формируется на языке интерфейса.
+ */
 export type CorpusItem = {
   id: string;
   placeId?: string;
@@ -90,7 +99,7 @@ export type CheckVerdict = {
   status: CheckStatus;
   explanation: string;
   correction?: string;
-  sources: Source[];
+  sources: { title: string; url: string }[];
 };
 
 /** ai — ответ модели, offline — предзаписанный/правило-основанный ответ (демо без сети). */

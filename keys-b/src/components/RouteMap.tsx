@@ -3,7 +3,8 @@
 import 'leaflet/dist/leaflet.css';
 import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
-import type { Place } from '@/lib/types';
+import { tr } from '@/lib/i18n';
+import type { Lang, Place } from '@/lib/types';
 
 // Маркеры — CircleMarker, а не Marker: не нужны PNG-иконки Leaflet,
 // которые ломаются при сборке бандлером.
@@ -17,7 +18,7 @@ function FitBounds({ points }: { points: [number, number][] }) {
   return null;
 }
 
-export default function RouteMap({ places }: { places: Place[] }) {
+export default function RouteMap({ places, lang }: { places: Place[]; lang: Lang }) {
   if (places.length === 0) return null;
   const points = places.map((p) => [p.lat, p.lng] as [number, number]);
 
@@ -36,7 +37,7 @@ export default function RouteMap({ places }: { places: Place[] }) {
           pathOptions={{ color: '#0d7a75', fillColor: '#2fb8ad', fillOpacity: 1, weight: 2 }}
         >
           <Tooltip permanent direction="top" offset={[0, -10]}>
-            {index + 1}. {place.name}
+            {index + 1}. {tr(place.name, lang)}
           </Tooltip>
         </CircleMarker>
       ))}

@@ -1,9 +1,35 @@
-import type { Itinerary, ItineraryDay, Place, TripContext } from './types.ts';
+import type { I18nText, Itinerary, ItineraryDay, Lang, Place, TripContext } from './types.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
 
 const MINUTES_PER_DAY = 330; // ~5.5 часов осмотра, остальное — дорога и еда
+
+const TEXT = {
+  family: {
+    uz: 'Bolalar bilan sayohatga mos.',
+    ru: 'Подходит для поездки с детьми.',
+    en: 'Works well for a trip with children.',
+  },
+  matches: {
+    uz: 'Qiziqishlaringizga mos keladi.',
+    ru: 'Совпадает с вашими интересами.',
+    en: 'Matches your interests.',
+  },
+  more: { uz: 'yana', ru: 'ещё', en: 'plus' },
+  empty: {
+    uz: 'Tanlangan filtrlarga mos obyekt topilmadi — qiziqishlar sonini kamaytiring.',
+    ru: 'Под выбранные фильтры объектов не нашлось — снимите часть интересов.',
+    en: 'No places match the selected filters — remove some interests.',
+  },
+  summary: {
+    uz: 'kunlik marshrut: {n} ta obyekt, «{type}» formatiga va qiziqishlaringizga moslangan.',
+    ru: 'дн.: {n} объектов, подобранных под формат «{type}» и ваши интересы.',
+    en: 'day itinerary: {n} places selected for the “{type}” format and your interests.',
+  },
+} satisfies Record<string, I18nText>;
+
+const SUMMARY_PREFIX: I18nText = { uz: 'Marshrut', ru: 'Маршрут на', en: 'A' };
 
 function haversineKm(a: Place, b: Place): number {
   const R = 6371;
@@ -41,16 +67,19 @@ function orderByProximity(places: Place[]): Place[] {
   return ordered;
 }
 
-function noteFor(place: Place, ctx: TripContext): string {
-  const shared = place.interests.filter((i) => ctx.interests.includes(i));
+function noteFor(place: Place, ctx: TripContext, lang: Lang): string {
+  const summary = place.summary[lang];
   if (ctx.travelType === 'family' && place.familyFriendly) {
-    return `${place.summary} Подходит для поездки с детьми.`;
+    return `${summary} ${TEXT.family[lang]}`;
   }
-  if (shared.length) return `${place.summary} Совпадает с вашими интересами.`;
-  return place.summary;
+  if (place.interests.some((i) => ctx.interests.includes(i))) {
+    return `${summary} ${TEXT.matches[lang]}`;
+  }
+  return summary;
 }
 
 export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
+  const lang = ctx.lang;
   const pool = places
     .filter((p) => ctx.region === 'all' || p.region === ctx.region)
     // формат «семья» — объекты без familyFriendly не предлагаем вовсе
@@ -87,18 +116,22 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
       day,
       title:
         ordered.length > 1
-          ? `${ordered[0].name} + ещё ${ordered.length - 1}`
-          : ordered[0].name,
-      items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx) })),
+          ? `${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
+          : ordered[0].name[lang],
+      items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx, lang) })),
     });
   }
 
   const total = days.reduce((sum, d) => sum + d.items.length, 0);
+  const summary = TEXT.summary[lang]
+    .replace('{n}', String(total))
+    .replace('{type}', ctx.travelType);
+
   return {
     summary:
       days.length === 0
-        ? 'Под выбранные фильтры объектов не нашлось — снимите часть интересов.'
-        : `Маршрут на ${days.length} дн.: ${total} объектов, подобранных под формат «${ctx.travelType}» и ваши интересы.`,
+        ? TEXT.empty[lang]
+        : `${SUMMARY_PREFIX[lang]} ${days.length} ${summary}`,
     days,
   };
 }

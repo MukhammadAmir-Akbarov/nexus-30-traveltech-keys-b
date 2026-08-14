@@ -1,8 +1,9 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { PLACES, PLACE_BY_ID, REGION_LABEL } from '@/data/places';
+import { PLACES, PLACE_BY_ID } from '@/data/places';
 import { buildItinerary } from '@/lib/planner';
 import { hasAI, MODEL } from '@/lib/model';
+import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
 import type { Itinerary, Mode, TripContext } from '@/lib/types';
 
 const itinerarySchema = z.object({
@@ -40,20 +41,24 @@ function sanitize(raw: Itinerary): Itinerary {
 
 export async function POST(req: Request) {
   const ctx = (await req.json()) as TripContext;
+  const lang = ctx.lang ?? 'ru';
   const offline = (): Response =>
-    Response.json({ itinerary: buildItinerary(PLACES, ctx), mode: 'offline' satisfies Mode });
+    Response.json({
+      itinerary: buildItinerary(PLACES, { ...ctx, lang }),
+      mode: 'offline' satisfies Mode,
+    });
 
   if (!hasAI()) return offline();
 
   const candidates = PLACES.filter((p) => ctx.region === 'all' || p.region === ctx.region).map(
     (p) => ({
       id: p.id,
-      name: p.name,
-      region: REGION_LABEL[p.region],
+      name: tr(p.name, lang),
+      region: tr(REGION_LABEL[p.region], lang),
       interests: p.interests.join(', '),
       minutes: p.visitMinutes,
       familyFriendly: p.familyFriendly,
-      summary: p.summary,
+      summary: tr(p.summary, lang),
     }),
   );
 
@@ -66,11 +71,12 @@ export async function POST(req: Request) {
         'Ты планировщик путешествий по Узбекистану. Составляй маршрут ТОЛЬКО из предложенных объектов, ' +
         'используй их id без изменений. Учитывай формат поездки, интересы и время осмотра: ' +
         'не более ~5,5 часов осмотра в день. Объекты одного дня должны быть в одном городе. ' +
-        'Для формата family не предлагай объекты с familyFriendly=false. Отвечай по-русски.',
+        'Для формата family не предлагай объекты с familyFriendly=false. ' +
+        `Весь текст ответа (summary, title, note) пиши на языке: ${LANG_LABEL[lang]}.`,
       prompt:
         `Формат поездки: ${ctx.travelType}. Дней: ${ctx.days}. ` +
         `Интересы: ${ctx.interests.join(', ') || 'не указаны'}. ` +
-        `Регион: ${ctx.region === 'all' ? 'любой' : REGION_LABEL[ctx.region]}.\n\n` +
+        `Регион: ${ctx.region === 'all' ? 'любой' : tr(REGION_LABEL[ctx.region], lang)}.\n\n` +
         `Доступные объекты:\n${JSON.stringify(candidates, null, 1)}`,
     });
 

@@ -1,23 +1,39 @@
 import type { CorpusItem } from '../lib/types.ts';
 
 const UNESCO_SAMARKAND = {
-  title: 'ЮНЕСКО: Самарканд — перекрёсток культур',
+  title: {
+    uz: 'YuNESKO: Samarqand — madaniyatlar chorrahasi',
+    ru: 'ЮНЕСКО: Самарканд — перекрёсток культур',
+    en: 'UNESCO: Samarkand — Crossroads of Cultures',
+  },
   url: 'https://whc.unesco.org/en/list/603',
 };
 const UNESCO_BUKHARA = {
-  title: 'ЮНЕСКО: Исторический центр Бухары',
+  title: {
+    uz: 'YuNESKO: Buxoro tarixiy markazi',
+    ru: 'ЮНЕСКО: Исторический центр Бухары',
+    en: 'UNESCO: Historic Centre of Bukhara',
+  },
   url: 'https://whc.unesco.org/en/list/602',
 };
 const UNESCO_KHIVA = {
-  title: 'ЮНЕСКО: Ичан-Кала',
+  title: { uz: 'YuNESKO: Ichan Qal’a', ru: 'ЮНЕСКО: Ичан-Кала', en: 'UNESCO: Itchan Kala' },
   url: 'https://whc.unesco.org/en/list/543',
 };
 const UNESCO_SHAKHRISABZ = {
-  title: 'ЮНЕСКО: Исторический центр Шахрисабза',
+  title: {
+    uz: 'YuNESKO: Shahrisabz tarixiy markazi',
+    ru: 'ЮНЕСКО: Исторический центр Шахрисабза',
+    en: 'UNESCO: Historic Centre of Shakhrisyabz',
+  },
   url: 'https://whc.unesco.org/en/list/885',
 };
 const UZ_TRAVEL = {
-  title: 'Официальный туристический портал Узбекистана',
+  title: {
+    uz: 'O‘zbekiston rasmiy turizm portali',
+    ru: 'Официальный туристический портал Узбекистана',
+    en: 'Official tourism portal of Uzbekistan',
+  },
   url: 'https://uzbekistan.travel/',
 };
 
