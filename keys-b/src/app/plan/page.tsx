@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
+import { TransferCard } from '@/components/TransferCard';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
@@ -93,14 +94,7 @@ export default function PlanPage() {
                   </span>
                   <span className="muted text-[13px]">{day.title}</span>
                 </div>
-                {day.transfer && (
-                  <div
-                    className="mb-3 rounded-lg px-3 py-2 text-[13px]"
-                    style={{ background: 'var(--bg)', color: 'var(--muted)' }}
-                  >
-                    🚌 {day.transfer}
-                  </div>
-                )}
+                {day.transfer && <TransferCard transfer={day.transfer} />}
                 <ol className="flex flex-col gap-3">
                   {day.items.map((item, index) => {
                     const place = PLACE_BY_ID[item.placeId];

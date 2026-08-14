@@ -269,6 +269,22 @@ const UI = {
     en: 'Camera access was denied.',
   },
 
+  transferTitle: { uz: 'Ko‘chish', ru: 'Переезд', en: 'Transfer' },
+  transferTrain: { uz: 'poyezd', ru: 'поезд', en: 'train' },
+  transferCar: { uz: 'mashina', ru: 'машина', en: 'car' },
+  transferMinibus: { uz: 'mikroavtobus', ru: 'микроавтобус', en: 'minibus' },
+  transferHours: { uz: 'soat', ru: 'ч', en: 'h' },
+  transferPriceNote: {
+    uz: 'Narxlar taxminiy demo-baho, tarif emas.',
+    ru: 'Цены — ориентировочная демо-оценка, не тариф.',
+    en: 'Prices are rough demo estimates, not tariffs.',
+  },
+  transferWithGuide: {
+    uz: 'Transporti bor gid bu ko‘chishni o‘zi bajarishi mumkin',
+    ru: 'Гид со своим транспортом может закрыть этот переезд',
+    en: 'A guide with own transport can cover this leg',
+  },
+
   planTitle: {
     uz: 'Sayohat formatingizga mos marshrut',
     ru: 'Маршрут под ваш формат поездки',
@@ -324,6 +340,47 @@ const UI = {
   guidesPerDay: { uz: 'kun', ru: 'день', en: 'day' },
   guidesYears: { uz: 'yillik tajriba', ru: 'лет опыта', en: 'years of experience' },
   guidesWhy: { uz: 'Nega u', ru: 'Почему он', en: 'Why this guide' },
+  verifyTitle: {
+    uz: 'Nima tekshirilgan',
+    ru: 'Что проверено',
+    en: 'What was verified',
+  },
+  verifyLicense: { uz: 'Litsenziya', ru: 'Лицензия', en: 'Licence' },
+  verifyRegistry: { uz: 'Qo‘mita reestrida', ru: 'В реестре Комитета', en: 'In the Committee registry' },
+  verifyIdentity: { uz: 'Shaxsi tasdiqlangan', ru: 'Личность подтверждена', en: 'Identity confirmed' },
+  verifyLanguages: { uz: 'Til darajasi tekshirilgan', ru: 'Уровень языков проверен', en: 'Language level checked' },
+  verifyDate: { uz: 'Tekshiruv sanasi', ru: 'Дата проверки', en: 'Checked on' },
+  verifyNone: {
+    uz: 'Tekshirilmagan: reestr ma’lumotlari yo‘q. Gid xizmatidan ehtiyot bo‘lib foydalaning.',
+    ru: 'Не проверен: данных реестра нет. Пользуйтесь услугами такого гида осмотрительно.',
+    en: 'Not verified: no registry data. Use such a guide with caution.',
+  },
+  verifyDemoNote: {
+    uz: 'Prototipda tekshiruv ma’lumotlari demo; ishchi versiyada Turizm qo‘mitasi reestriga ulanadi.',
+    ru: 'В прототипе данные проверки демонстрационные; в рабочей версии подключается реестр Комитета по туризму.',
+    en: 'Verification data is demo here; production connects the Tourism Committee registry.',
+  },
+  guidesAccuracy: {
+    uz: 'Faktlar aniqligi',
+    ru: 'Точность фактов',
+    en: 'Fact accuracy',
+  },
+  guidesAccuracyHint: {
+    uz: 'Ilova tekshirgan gaplari asosida',
+    ru: 'По утверждениям, проверенным в приложении',
+    en: 'Based on claims verified in the app',
+  },
+  checkWhoSaid: {
+    uz: 'Kimning gapi tekshirilyapti?',
+    ru: 'Чьё утверждение проверяем?',
+    en: 'Whose claim is this?',
+  },
+  checkNoGuide: { uz: 'ko‘rsatilmagan', ru: 'не указан', en: 'not specified' },
+  checkCounted: {
+    uz: 'Natija gid reytingiga qo‘shildi',
+    ru: 'Результат учтён в рейтинге гида',
+    en: 'The result was added to the guide’s rating',
+  },
 
   authLogin: { uz: 'Kirish', ru: 'Войти', en: 'Sign in' },
   authRegister: { uz: 'Ro‘yxatdan o‘tish', ru: 'Регистрация', en: 'Sign up' },

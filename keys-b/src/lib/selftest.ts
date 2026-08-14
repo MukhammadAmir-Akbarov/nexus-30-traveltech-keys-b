@@ -6,9 +6,10 @@ import { CORPUS } from '../data/corpus.ts';
 import { GUIDES } from '../data/guides.ts';
 import { PLACES } from '../data/places.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
-import { matchGuides } from './match.ts';
+import { accuracyRate, matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
+import { buildTransfer, trainLeg } from './transfer.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE } from './i18n.ts';
 import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
 import type { Lang, TripContext } from './types.ts';
@@ -127,9 +128,36 @@ assert.ok(
   new Set(country.days.flatMap((d) => d.items.map((i) => cityOf(i.placeId)))).size >= 3,
   'страновой маршрут должен охватывать несколько городов',
 );
+const transfers = country.days.map((d) => d.transfer).filter((x) => x !== undefined);
+assert.ok(transfers.length >= 2, 'между городами должны появляться переезды');
+
+// §4.2 ТЗ: у переезда есть варианты транспорта со временем и ценой
+for (const transfer of transfers) {
+  assert.ok(transfer.options.length >= 2, 'должно быть минимум два способа переезда');
+  assert.ok(
+    transfer.options.every((o) => o.hours > 0 && o.priceUsd > 0),
+    'у каждого варианта есть время и цена',
+  );
+  assert.ok(
+    transfer.options.every((o, i) => i === 0 || transfer.options[i - 1].hours <= o.hours),
+    'варианты отсортированы по времени в пути',
+  );
+}
+// поезд предлагается только там, где он ходит
 assert.ok(
-  country.days.filter((d) => d.transfer).length >= 2,
-  'между городами должны появляться переезды с временем в пути',
+  transfers.every((tr) =>
+    tr.options.some((o) => o.mode === 'train') ? trainLeg(tr.fromRegion, tr.toRegion) : true,
+  ),
+  'поезд не должен появляться на направлении без железной дороги',
+);
+assert.equal(
+  trainLeg('bukhara', 'nurata'),
+  null,
+  'на Нурату поезда нет — вариант не выдумываем',
+);
+assert.ok(
+  buildTransfer('tashkent', 'samarkand', 260).options[0].mode === 'train',
+  'Ташкент — Самарканд: самый быстрый вариант это поезд',
 );
 assert.ok(
   country.days.every((d) => new Set(d.items.map((i) => cityOf(i.placeId))).size === 1),
@@ -183,6 +211,35 @@ assert.ok(
   'мультиязычный фильтр поднимает гида с одним из выбранных языков',
 );
 
+// репутация по фактчеку: гид с подтверждёнными фактами обгоняет того,
+// кого система регулярно опровергает
+const accuracy = {
+  g2: { confirmed: 10, refuted: 0, unclear: 0 },
+  g8: { confirmed: 1, refuted: 9, unclear: 0 },
+};
+const byAccuracy = matchGuides(GUIDES, {
+  ...baseQuery,
+  region: 'bukhara',
+  interests: ['history', 'architecture'],
+  languages: ['ru'],
+  accuracy,
+});
+const positionOf = (id: string) => byAccuracy.findIndex((g) => g.guide.id === id);
+assert.ok(
+  positionOf('g2') < positionOf('g8'),
+  'гид с подтверждёнными фактами должен стоять выше опровергнутого',
+);
+assert.ok(
+  byAccuracy.find((g) => g.guide.id === 'g2')?.why.includes('100'),
+  'в объяснении показывается доля подтверждённых фактов',
+);
+assert.equal(
+  accuracyRate({ confirmed: 0, refuted: 0, unclear: 5 }),
+  null,
+  'без вынесенных вердиктов доля не считается — делить на ноль нечего',
+);
+assert.equal(accuracyRate({ confirmed: 3, refuted: 1, unclear: 9 }), 0.75, 'unclear не портит долю');
+
 // отзыв с записи 5: узбекский обязателен, и языков должно быть больше трёх
 assert.ok(
   GUIDE_LANGS.includes('uz') && GUIDE_LANGS.length >= 8,
@@ -192,6 +249,19 @@ assert.ok(
   GUIDES.some((g) => g.languages.includes('fr')) && GUIDES.some((g) => g.languages.includes('it')),
   'в базе есть гиды с французским и итальянским',
 );
+
+// §9 ТЗ: метка «подтверждён» должна опираться на конкретные проверки,
+// а непроверенный гид не должен иметь ни лицензии, ни записи в реестре
+for (const guide of GUIDES) {
+  if (guide.verified) {
+    assert.ok(guide.verification.license, `у подтверждённого гида ${guide.name} должна быть лицензия`);
+    assert.ok(guide.verification.registry, `подтверждённый гид ${guide.name} должен быть в реестре`);
+    assert.ok(guide.verification.checkedAt, `у подтверждения ${guide.name} должна быть дата`);
+  } else {
+    assert.equal(guide.verification.license, null, `непроверенный гид ${guide.name} без лицензии`);
+    assert.equal(guide.verification.registry, false, `непроверенный гид ${guide.name} вне реестра`);
+  }
+}
 
 // отзыв с записи 1: у каждого гида есть отзывы, и их текст переводится
 for (const guide of GUIDES) {

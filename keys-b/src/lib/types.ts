@@ -66,6 +66,14 @@ export type Guide = {
   pricePerDay: number;
   /** ДЕМО-признак. В проде подтверждается реестром Комитета по туризму. */
   verified: boolean;
+  /** §9 ТЗ: из чего складывается статус «подтверждён» — это должно быть видно туристу. */
+  verification: {
+    license: string | null;
+    registry: boolean;
+    identity: boolean;
+    languagesChecked: boolean;
+    checkedAt: string | null;
+  };
   bio: I18nText;
   reviewsList: GuideReview[];
 };
@@ -90,11 +98,27 @@ export type ItineraryItem = {
   note: string;
 };
 
+export type TransferMode = 'train' | 'car' | 'minibus';
+
+export type TransferOption = {
+  mode: TransferMode;
+  hours: number;
+  /** Ориентировочная цена в долларах на человека — демо-оценка, не тариф. */
+  priceUsd: number;
+};
+
+export type Transfer = {
+  fromRegion: Region;
+  toRegion: Region;
+  km: number;
+  options: TransferOption[];
+};
+
 export type ItineraryDay = {
   day: number;
   title: string;
   /** Заполняется, если день начинается с переезда между городами. */
-  transfer?: string;
+  transfer?: Transfer;
   items: ItineraryItem[];
 };
 
@@ -116,8 +140,19 @@ export type CheckVerdict = {
 /** ai — ответ модели, offline — предзаписанный/правило-основанный ответ (демо без сети). */
 export type Mode = 'ai' | 'offline';
 
+/**
+ * Накопленная статистика проверок фактов, произнесённых гидом.
+ * Это замыкает три модуля: проверка фактов → репутация гида → подбор гида.
+ */
+export type GuideAccuracy = {
+  confirmed: number;
+  refuted: number;
+  unclear: number;
+};
+
 export type ScoredGuide = {
   guide: Guide;
   score: number;
   why: string;
+  accuracy?: GuideAccuracy;
 };

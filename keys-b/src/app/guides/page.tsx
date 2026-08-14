@@ -112,7 +112,7 @@ export default function GuidesPage() {
           <div className="card muted text-sm">{t('guidesEmpty', lang)}</div>
         )}
 
-        {guides.map(({ guide, why }) => (
+        {guides.map(({ guide, why, accuracy }) => (
           <article key={guide.id} className="card flex flex-col gap-3">
             <div className="flex gap-3">
               <Avatar name={guide.name} />
@@ -146,9 +146,46 @@ export default function GuidesPage() {
               </div>
             </div>
 
+            {accuracy && accuracy.confirmed + accuracy.refuted > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="tag" style={{ color: 'var(--ok)' }}>
+                  {t('guidesAccuracy', lang)}:{' '}
+                  {Math.round(
+                    (accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100,
+                  )}
+                  %
+                </span>
+                <span className="muted text-[12px]">
+                  {t('guidesAccuracyHint', lang)} · {accuracy.confirmed + accuracy.refuted}
+                </span>
+              </div>
+            )}
+
             <div className="text-[13px]" style={{ color: 'var(--accent)' }}>
               {t('guidesWhy', lang)}: {why}
             </div>
+
+            <details className="text-[13px]">
+              <summary className="muted cursor-pointer">{t('verifyTitle', lang)}</summary>
+              {guide.verification.registry ? (
+                <ul className="mt-2 flex flex-col gap-1">
+                  <li>
+                    {t('verifyLicense', lang)}: <b>{guide.verification.license}</b>
+                  </li>
+                  <li>✓ {t('verifyRegistry', lang)}</li>
+                  <li>✓ {t('verifyIdentity', lang)}</li>
+                  <li>✓ {t('verifyLanguages', lang)}</li>
+                  <li className="muted">
+                    {t('verifyDate', lang)}: {guide.verification.checkedAt}
+                  </li>
+                  <li className="muted text-[12px]">{t('verifyDemoNote', lang)}</li>
+                </ul>
+              ) : (
+                <p className="mt-2" style={{ color: 'var(--danger)' }}>
+                  {t('verifyNone', lang)}
+                </p>
+              )}
+            </details>
 
             <details className="text-[13px]">
               <summary className="muted cursor-pointer">

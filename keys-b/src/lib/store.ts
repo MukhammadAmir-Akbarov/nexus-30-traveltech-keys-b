@@ -1,7 +1,7 @@
 import { CORPUS } from '@/data/corpus';
 import { GUIDES } from '@/data/guides';
 import { hashPassword, verifyPassword, type Role } from './auth';
-import type { CorpusItem, Guide } from './types';
+import type { CheckStatus, CorpusItem, Guide, GuideAccuracy } from './types';
 
 // Серверное хранилище прототипа.
 // ponytail: всё в памяти процесса — правки админа живут до перезапуска,
@@ -20,6 +20,8 @@ type Store = {
   users: Map<string, User>;
   guides: Guide[];
   corpus: CorpusItem[];
+  /** Итоги проверок фактов по гидам: guideId -> счётчики вердиктов. */
+  accuracy: Map<string, GuideAccuracy>;
 };
 
 const globalStore = globalThis as unknown as { __nexus30?: Store };
@@ -34,7 +36,13 @@ function seed(): Store {
     role: 'admin',
     createdAt: '—',
   });
-  return { users, corpus: [...CORPUS], guides: [...GUIDES] };
+  // немного истории проверок, чтобы репутация была видна сразу на демо
+  const accuracy = new Map<string, GuideAccuracy>([
+    ['g1', { confirmed: 12, refuted: 0, unclear: 1 }],
+    ['g5', { confirmed: 21, refuted: 1, unclear: 2 }],
+    ['g6', { confirmed: 4, refuted: 3, unclear: 1 }],
+  ]);
+  return { users, corpus: [...CORPUS], guides: [...GUIDES], accuracy };
 }
 
 function store(): Store {
@@ -100,6 +108,19 @@ export function removeGuide(id: string): boolean {
   const before = store().guides.length;
   store().guides = store().guides.filter((g) => g.id !== id);
   return store().guides.length < before;
+}
+
+// --- репутация гида по проверкам фактов ---
+
+export function recordFactCheck(guideId: string, status: CheckStatus): GuideAccuracy {
+  const current = store().accuracy.get(guideId) ?? { confirmed: 0, refuted: 0, unclear: 0 };
+  current[status] += 1;
+  store().accuracy.set(guideId, current);
+  return current;
+}
+
+export function getAccuracy(): Record<string, GuideAccuracy> {
+  return Object.fromEntries(store().accuracy);
 }
 
 export function addCorpusItem(item: CorpusItem): CorpusItem {

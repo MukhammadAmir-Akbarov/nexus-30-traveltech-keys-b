@@ -21,6 +21,13 @@ export const GUIDES: Guide[] = [
     reviews: 132,
     pricePerDay: 70,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1001',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-11',
+    },
     bio: {
       uz: 'Tarixchi, temuriylar davri bo‘yicha chuqurlashtirilgan turlar olib boradi.',
       ru: 'Историк по образованию, ведёт углублённые туры по эпохе Тимуридов.',
@@ -45,6 +52,13 @@ export const GUIDES: Guide[] = [
     reviews: 84,
     pricePerDay: 55,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1002',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-12',
+    },
     bio: {
       uz: 'Eski Buxoroning kandakorlik va gilamdo‘zlik ustaxonalarini ko‘rsatadi.',
       ru: 'Показывает мастерские чеканки и ковроткачества старой Бухары.',
@@ -69,6 +83,13 @@ export const GUIDES: Guide[] = [
     reviews: 57,
     pricePerDay: 60,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1003',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-13',
+    },
     bio: {
       uz: 'Ichan Qal’a bo‘ylab marshrutlar — tongdagi va shom paytidagi yorug‘likka urg‘u bilan.',
       ru: 'Маршруты по Ичан-Кале с акцентом на утренний и закатный свет.',
@@ -93,6 +114,13 @@ export const GUIDES: Guide[] = [
     reviews: 96,
     pricePerDay: 50,
     verified: false,
+    verification: {
+      license: null,
+      registry: false,
+      identity: false,
+      languagesChecked: false,
+      checkedAt: null,
+    },
     bio: {
       uz: 'Chorsu va eski shahar choyxonalari bo‘ylab gastronomik sayr.',
       ru: 'Гастрономические прогулки по Чорсу и чайханам старого города.',
@@ -117,6 +145,13 @@ export const GUIDES: Guide[] = [
     reviews: 210,
     pricePerDay: 95,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1005',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-15',
+    },
     bio: {
       uz: 'Klassik «Oltin halqa» marshruti, batafsil tarixiy blok bilan.',
       ru: 'Классический маршрут «Золотое кольцо» с подробным историческим блоком.',
@@ -141,6 +176,13 @@ export const GUIDES: Guide[] = [
     reviews: 41,
     pricePerDay: 65,
     verified: false,
+    verification: {
+      license: null,
+      registry: false,
+      identity: false,
+      languagesChecked: false,
+      checkedAt: null,
+    },
     bio: {
       uz: 'Yurt lagerlari, Aydarko‘l, Nurota tog‘larida trekking.',
       ru: 'Юртовые лагеря, Айдаркуль, треккинг в горах Нураты.',
@@ -165,6 +207,13 @@ export const GUIDES: Guide[] = [
     reviews: 118,
     pricePerDay: 75,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1007',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-17',
+    },
     bio: {
       uz: 'Oilalar bilan ishlaydi: qisqa bloklar, tanaffuslar, bolalar uchun topshiriqlar.',
       ru: 'Работает с семьями: короткие блоки, паузы, детские задания на маршруте.',
@@ -189,6 +238,13 @@ export const GUIDES: Guide[] = [
     reviews: 187,
     pricePerDay: 85,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1008',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-18',
+    },
     bio: {
       uz: 'Ixtisosligi — so‘fiylik merosi va mo‘g‘ullargacha bo‘lgan davr yodgorliklari.',
       ru: 'Специализация — суфийское наследие и памятники домонгольского периода.',
@@ -213,6 +269,13 @@ export const GUIDES: Guide[] = [
     reviews: 29,
     pricePerDay: 45,
     verified: false,
+    verification: {
+      license: null,
+      registry: false,
+      identity: false,
+      languagesChecked: false,
+      checkedAt: null,
+    },
     bio: {
       uz: 'Tejamkor format: bozorlar, ko‘cha taomlari, ixcham piyoda marshrutlar.',
       ru: 'Бюджетный формат: рынки, уличная еда, компактные пешие маршруты.',
@@ -237,6 +300,13 @@ export const GUIDES: Guide[] = [
     reviews: 143,
     pricePerDay: 80,
     verified: true,
+    verification: {
+      license: 'UZ-GD-1010',
+      registry: true,
+      identity: true,
+      languagesChecked: true,
+      checkedAt: '2026-07-20',
+    },
     bio: {
       uz: 'Katta guruhlar bilan ishlaydi, Samarqand — Shahrisabz yo‘nalishi, Taxtaqoracha dovoni.',
       ru: 'Ведёт большие группы, выезды Самарканд — Шахрисабз с перевалом Тахтакарача.',

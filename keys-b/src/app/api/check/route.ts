@@ -1,6 +1,6 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { getCorpus } from '@/lib/store';
+import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { hasAI, MODEL } from '@/lib/model';
 import { LANG_LABEL, tr } from '@/lib/i18n';
@@ -34,7 +34,11 @@ const OFFLINE_TEXT = {
 } satisfies Record<string, I18nText>;
 
 export async function POST(req: Request) {
-  const { claim, lang = 'ru' } = (await req.json()) as { claim: string; lang?: Lang };
+  const { claim, lang = 'ru', guideId } = (await req.json()) as {
+    claim: string;
+    lang?: Lang;
+    guideId?: string;
+  };
   if (!claim?.trim()) {
     return Response.json({ error: 'Пустое утверждение' }, { status: 400 });
   }
@@ -48,8 +52,11 @@ export async function POST(req: Request) {
   const passages = hits.map((h) => h.item.text);
 
   const cached = lookupDemoVerdict(claim, lang);
-  const respond = (verdict: CheckVerdict, mode: Mode) =>
-    Response.json({ verdict, passages, mode });
+  const respond = (verdict: CheckVerdict, mode: Mode) => {
+    // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида
+    if (guideId) recordFactCheck(guideId, verdict.status);
+    return Response.json({ verdict, passages, mode });
+  };
 
   if (!hasAI()) {
     if (cached) return respond(cached, 'offline');
