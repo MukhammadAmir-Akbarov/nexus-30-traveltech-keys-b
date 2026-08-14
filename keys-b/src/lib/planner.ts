@@ -87,7 +87,7 @@ function centroid(places: Place[]): Point {
 
 export function scorePlace(place: Place, ctx: TripContext): number {
   let score = place.interests.filter((i) => ctx.interests.includes(i)).length * 2;
-  if (ctx.region !== 'all' && place.region === ctx.region) score += 3;
+  if (selectedRegions(ctx).includes(place.region)) score += 3;
   if (ctx.travelType === 'family' && place.familyFriendly) score += 1;
   if (ctx.travelType === 'group' && place.visitMinutes <= 60) score += 0.5;
   if (ctx.travelType === 'solo' && place.interests.includes('photo')) score += 0.5;
@@ -123,9 +123,16 @@ function noteFor(place: Place, ctx: TripContext, lang: Lang): string {
   return summary;
 }
 
+/** Выбранные регионы: пустой список означает всю страну. */
+export function selectedRegions(ctx: TripContext): Region[] {
+  if (ctx.regions?.length) return ctx.regions;
+  return ctx.region && ctx.region !== 'all' ? [ctx.region] : [];
+}
+
 function eligible(places: Place[], ctx: TripContext): Place[] {
+  const regions = selectedRegions(ctx);
   return places
-    .filter((p) => ctx.region === 'all' || p.region === ctx.region)
+    .filter((p) => regions.length === 0 || regions.includes(p.region))
     // формат «семья» — объекты без familyFriendly не предлагаем вовсе
     .filter((p) => ctx.travelType !== 'family' || p.familyFriendly)
     .map((p) => ({ place: p, score: scorePlace(p, ctx) }))
@@ -240,7 +247,7 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
   // Возвращение в точку входа: только для маршрута по стране и если есть запас дня.
   const lastRegion = days.length ? previousRegion : null;
   if (
-    ctx.region === 'all' &&
+    selectedRegions(ctx).length === 0 &&
     lastRegion &&
     lastRegion !== ENTRY_REGION &&
     byRegion.has(ENTRY_REGION) &&

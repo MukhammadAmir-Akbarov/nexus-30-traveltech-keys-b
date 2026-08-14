@@ -67,7 +67,7 @@ export default function CheckPage() {
       const res = await fetch('/api/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim: value, lang, guideId: guideId || undefined }),
+        body: JSON.stringify({ claim: value, lang, guideId: guideId || undefined, placeId: placeId ?? undefined }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setResult(await res.json());

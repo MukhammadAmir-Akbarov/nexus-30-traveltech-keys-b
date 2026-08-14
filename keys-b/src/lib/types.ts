@@ -26,6 +26,11 @@ export type Interest =
 export type TravelType = 'solo' | 'family' | 'group';
 
 export type TripContext = {
+  /** Пустой список = вся страна. Регионов можно выбрать несколько. */
+  regions: Region[];
+  /** Даты поездки в формате YYYY-MM-DD; число дней считается из них. */
+  startDate?: string;
+  endDate?: string;
   region: Region | 'all';
   interests: Interest[];
   travelType: TravelType;
@@ -47,6 +52,22 @@ export type Place = {
   /** Осмотр под открытым небом — важно летом, когда днём выше +38. */
   outdoor: boolean;
   summary: I18nText;
+  /** Что посмотреть внутри: музей, рукопись, смотровая — турист хочет знать заранее. */
+  highlights?: I18nText[];
+};
+
+/** Инфраструктура по маршруту: заправки, туалеты, намазхона, медпункт, кафе. */
+export type PoiKind = 'gas' | 'toilet' | 'prayer' | 'clinic' | 'cafe';
+
+export type Poi = {
+  id: string;
+  kind: PoiKind;
+  /** Только для заправок: метан или бензин — для узбекистанца это разные вещи. */
+  fuel?: 'methane' | 'petrol';
+  name: I18nText;
+  lat: number;
+  lng: number;
+  region: Region;
 };
 
 export type Gender = 'female' | 'male';
@@ -102,7 +123,7 @@ export type ItineraryItem = {
   note: string;
 };
 
-export type TransferMode = 'train' | 'car' | 'minibus';
+export type TransferMode = 'plane' | 'train' | 'bus' | 'car' | 'minibus';
 
 export type TransferOption = {
   mode: TransferMode;
@@ -154,9 +175,14 @@ export type GuideAccuracy = {
   unclear: number;
 };
 
+/** Точность гида в разрезе объектов: ключ — placeId, значение — счётчики вердиктов. */
+export type GuideAccuracyByPlace = Record<string, GuideAccuracy>;
+
 export type ScoredGuide = {
   guide: Guide;
   score: number;
   why: string;
   accuracy?: GuideAccuracy;
+  /** Разбивка по объектам: где именно гид силён, а где нет. */
+  byPlace?: GuideAccuracyByPlace;
 };

@@ -8,10 +8,18 @@ import type { Region, Transfer, TransferOption } from './types.ts';
 // В рабочей версии сюда подключается расписание и прайс партнёра.
 
 const ROAD_SPEED_KMH = 65;
+const BUS_USD_PER_KM = 0.06;
 const CAR_USD_PER_KM = 0.3;
 const MINIBUS_USD_PER_KM = 0.12;
 
-type TrainLeg = { hours: number; priceUsd: number };
+type Leg = { hours: number; priceUsd: number };
+type TrainLeg = Leg;
+
+/** Направления с регулярными рейсами. Ургенч обслуживает Хиву. */
+const PLANE_LEGS: [Region, Region, Leg][] = [
+  ['tashkent', 'khiva', { hours: 1.5, priceUsd: 60 }],
+  ['tashkent', 'bukhara', { hours: 1, priceUsd: 55 }],
+];
 
 /** Направления, где есть пассажирский поезд. Направление роли не играет. */
 const TRAIN_LEGS: [Region, Region, TrainLeg][] = [
@@ -32,6 +40,14 @@ const TRAIN: Record<string, TrainLeg> = Object.fromEntries(
   TRAIN_LEGS.map(([from, to, leg]) => [key(from, to), leg]),
 );
 
+const PLANE: Record<string, Leg> = Object.fromEntries(
+  PLANE_LEGS.map(([from, to, leg]) => [key(from, to), leg]),
+);
+
+export function planeLeg(from: Region, to: Region): Leg | null {
+  return PLANE[key(from, to)] ?? null;
+}
+
 export function trainLeg(from: Region, to: Region): TrainLeg | null {
   return TRAIN[key(from, to)] ?? null;
 }
@@ -47,7 +63,12 @@ export function buildTransfer(
   const options: TransferOption[] = [
     { mode: 'car', hours: roadHours, priceUsd: Math.round(km * CAR_USD_PER_KM) },
     { mode: 'minibus', hours: roadHours + 1, priceUsd: Math.max(3, Math.round(km * MINIBUS_USD_PER_KM)) },
+    // междугородний автобус: дольше маршрутки, но самый дешёвый
+    { mode: 'bus', hours: roadHours + 2, priceUsd: Math.max(2, Math.round(km * BUS_USD_PER_KM)) },
   ];
+
+  const plane = planeLeg(fromRegion, toRegion);
+  if (plane) options.unshift({ mode: 'plane', hours: plane.hours, priceUsd: plane.priceUsd });
 
   const train = trainLeg(fromRegion, toRegion);
   if (train) options.unshift({ mode: 'train', hours: train.hours, priceUsd: train.priceUsd });

@@ -16,6 +16,7 @@ import {
   t,
   tr,
 } from '@/lib/i18n';
+import { PLACE_BY_ID } from '@/data/places';
 import type { Gender, ScoredGuide } from '@/lib/types';
 
 const GENDERS: (Gender | 'any')[] = ['any', 'female', 'male'];
@@ -117,7 +118,7 @@ export default function GuidesPage() {
           <div className="card muted text-sm">{t('guidesEmpty', lang)}</div>
         )}
 
-        {guides.map(({ guide, why, accuracy }) => (
+        {guides.map(({ guide, why, accuracy, byPlace }) => (
           <article key={guide.id} className="card flex flex-col gap-3">
             <div className="flex gap-3">
               <Avatar name={guide.name} />
@@ -163,6 +164,29 @@ export default function GuidesPage() {
                 <span className="muted text-[12px]">
                   {t('guidesAccuracyHint', lang)} · {accuracy.confirmed + accuracy.refuted}
                 </span>
+              </div>
+            )}
+
+            {byPlace && Object.keys(byPlace).length > 0 && (
+              <div className="flex flex-col gap-1 text-[13px]">
+                <span className="muted">{t('guidesByPlace', lang)}</span>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(byPlace).map(([placeId, stats]) => {
+                    const decided = stats.confirmed + stats.refuted;
+                    if (decided === 0) return null;
+                    const percent = Math.round((stats.confirmed / decided) * 100);
+                    const place = PLACE_BY_ID[placeId];
+                    return (
+                      <span
+                        key={placeId}
+                        className="tag"
+                        style={{ color: percent >= 70 ? 'var(--ok)' : 'var(--danger)' }}
+                      >
+                        {place ? tr(place.name, lang) : placeId}: {percent}%
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

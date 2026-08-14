@@ -1,7 +1,7 @@
 import { CORPUS } from '@/data/corpus';
 import { GUIDES } from '@/data/guides';
 import { hashPassword, verifyPassword, type Role } from './auth';
-import type { CheckStatus, CorpusItem, Guide, GuideAccuracy } from './types';
+import type { CheckStatus, CorpusItem, Guide, GuideAccuracy, GuideAccuracyByPlace } from './types';
 
 // Серверное хранилище прототипа.
 // ponytail: всё в памяти процесса — правки админа живут до перезапуска,
@@ -20,8 +20,14 @@ type Store = {
   users: Map<string, User>;
   guides: Guide[];
   corpus: CorpusItem[];
-  /** Итоги проверок фактов по гидам: guideId -> счётчики вердиктов. */
+  /** Итоги проверок по гидам: guideId -> счётчики вердиктов. */
   accuracy: Map<string, GuideAccuracy>;
+  /**
+   * То же самое в разрезе объектов: `guideId|placeId` -> счётчики.
+   * Из голосового отзыва: гид может отлично знать Музей исламской цивилизации
+   * и не знать Регистана — общая оценка это скрывает.
+   */
+  accuracyByPlace: Map<string, GuideAccuracy>;
 };
 
 const globalStore = globalThis as unknown as { __nexus30?: Store };
@@ -42,7 +48,16 @@ function seed(): Store {
     ['g5', { confirmed: 21, refuted: 1, unclear: 2 }],
     ['g6', { confirmed: 4, refuted: 3, unclear: 1 }],
   ]);
-  return { users, corpus: [...CORPUS], guides: [...GUIDES], accuracy };
+  // демо-история: один и тот же гид силён на одном объекте и слаб на другом
+  const accuracyByPlace = new Map<string, GuideAccuracy>([
+    ['g1|registan', { confirmed: 9, refuted: 0, unclear: 1 }],
+    ['g1|shahi-zinda', { confirmed: 3, refuted: 0, unclear: 0 }],
+    ['g5|khast-imam', { confirmed: 11, refuted: 0, unclear: 1 }],
+    ['g5|registan', { confirmed: 4, refuted: 3, unclear: 1 }],
+    ['g6|aydarkul', { confirmed: 4, refuted: 0, unclear: 1 }],
+    ['g6|registan', { confirmed: 0, refuted: 3, unclear: 0 }],
+  ]);
+  return { users, corpus: [...CORPUS], guides: [...GUIDES], accuracy, accuracyByPlace };
 }
 
 function store(): Store {
@@ -112,15 +127,38 @@ export function removeGuide(id: string): boolean {
 
 // --- репутация гида по проверкам фактов ---
 
-export function recordFactCheck(guideId: string, status: CheckStatus): GuideAccuracy {
+export function recordFactCheck(
+  guideId: string,
+  status: CheckStatus,
+  placeId?: string,
+): GuideAccuracy {
   const current = store().accuracy.get(guideId) ?? { confirmed: 0, refuted: 0, unclear: 0 };
   current[status] += 1;
   store().accuracy.set(guideId, current);
+
+  // и отдельно по объекту, если известно, где именно это прозвучало
+  if (placeId) {
+    const key = `${guideId}|${placeId}`;
+    const perPlace = store().accuracyByPlace.get(key) ?? { confirmed: 0, refuted: 0, unclear: 0 };
+    perPlace[status] += 1;
+    store().accuracyByPlace.set(key, perPlace);
+  }
   return current;
 }
 
 export function getAccuracy(): Record<string, GuideAccuracy> {
   return Object.fromEntries(store().accuracy);
+}
+
+/** guideId -> { placeId -> счётчики }. */
+export function getAccuracyByPlace(): Record<string, GuideAccuracyByPlace> {
+  const result: Record<string, GuideAccuracyByPlace> = {};
+  for (const [key, stats] of store().accuracyByPlace) {
+    const [guideId, placeId] = key.split('|');
+    result[guideId] ??= {};
+    result[guideId][placeId] = stats;
+  }
+  return result;
 }
 
 export function addCorpusItem(item: CorpusItem): CorpusItem {

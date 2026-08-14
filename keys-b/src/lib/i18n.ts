@@ -202,6 +202,14 @@ const UI = {
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },
+  fieldDates: { uz: 'Sayohat sanalari', ru: 'Даты поездки', en: 'Trip dates' },
+  fieldDateFrom: { uz: 'dan', ru: 'с', en: 'from' },
+  fieldDateTo: { uz: 'gacha', ru: 'по', en: 'to' },
+  fieldRegionsHint: {
+    uz: 'Bir nechta hududni tanlash mumkin',
+    ru: 'Можно выбрать несколько регионов',
+    en: 'You can select several regions',
+  },
   fieldSummer: {
     uz: 'Yozgi sayohat (+38 dan issiq)',
     ru: 'Летняя поездка (жара выше +38)',
@@ -276,6 +284,11 @@ const UI = {
 
   speakStart: { uz: '🔊 Ovoz bilan tinglash', ru: '🔊 Прослушать', en: '🔊 Listen' },
   speakStop: { uz: '■ To‘xtatish', ru: '■ Остановить', en: '■ Stop' },
+  placeHighlights: {
+    uz: 'Ichkarida nima bor',
+    ru: 'Что посмотреть внутри',
+    en: 'What to see inside',
+  },
   placeFacts: {
     uz: 'Rasmiy manbalardagi faktlar',
     ru: 'Факты из официальных источников',
@@ -301,6 +314,8 @@ const UI = {
   },
 
   transferTitle: { uz: 'Ko‘chish', ru: 'Переезд', en: 'Transfer' },
+  transferPlane: { uz: 'samolyot', ru: 'самолёт', en: 'plane' },
+  transferBus: { uz: 'avtobus', ru: 'автобус', en: 'bus' },
   transferTrain: { uz: 'poyezd', ru: 'поезд', en: 'train' },
   transferCar: { uz: 'mashina', ru: 'машина', en: 'car' },
   transferMinibus: { uz: 'mikroavtobus', ru: 'микроавтобус', en: 'minibus' },
@@ -400,6 +415,21 @@ const UI = {
   guidesReviews: { uz: 'sharh', ru: 'отзывов', en: 'reviews' },
   guidesPerDay: { uz: 'kun', ru: 'день', en: 'day' },
   guidesYears: { uz: 'yillik tajriba', ru: 'лет опыта', en: 'years of experience' },
+  guidesByPlace: {
+    uz: 'Obyektlar bo‘yicha aniqlik',
+    ru: 'Точность по объектам',
+    en: 'Accuracy by place',
+  },
+  nearbyTitle: {
+    uz: 'Yaqin atrofda',
+    ru: 'Рядом по маршруту',
+    en: 'Nearby on the route',
+  },
+  nearbyHint: {
+    uz: 'Zapravka, hojatxona, namozxona, tibbiy punkt va kafe',
+    ru: 'Заправки, туалеты, намазхона, медпункт и кафе',
+    en: 'Fuel, toilets, prayer room, clinic and cafe',
+  },
   guidesWhy: { uz: 'Nega u', ru: 'Почему он', en: 'Why this guide' },
   verifyTitle: {
     uz: 'Nima tekshirilgan',

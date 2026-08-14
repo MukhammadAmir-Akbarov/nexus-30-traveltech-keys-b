@@ -14,6 +14,14 @@ import {
 } from '@/lib/i18n';
 import type { Interest } from '@/lib/types';
 
+/** Число дней поездки из выбранных дат: обе даты включительно. */
+function daysBetween(from?: string, to?: string): number | null {
+  if (!from || !to) return null;
+  const ms = new Date(to).getTime() - new Date(from).getTime();
+  if (Number.isNaN(ms) || ms < 0) return null;
+  return Math.min(14, Math.round(ms / 86400000) + 1);
+}
+
 export default function Home() {
   const { trip, lang, update } = useTrip();
 
@@ -35,18 +43,63 @@ export default function Home() {
 
       <section className="card flex flex-col gap-5">
         <div>
-          <div className="mb-2 text-sm font-semibold">{t('fieldRegion', lang)}</div>
+          <div className="mb-2 text-sm font-semibold">
+            {t('fieldRegion', lang)}{' '}
+            <span className="muted font-normal">· {t('fieldRegionsHint', lang)}</span>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {REGIONS.map((region) => (
-              <button
-                key={region}
-                className="chip"
-                data-active={trip.region === region}
-                onClick={() => update({ region })}
-              >
-                {region === 'all' ? t('allUzbekistan', lang) : tr(REGION_LABEL[region], lang)}
-              </button>
-            ))}
+            {REGIONS.map((region) => {
+              const active =
+                region === 'all' ? trip.regions.length === 0 : trip.regions.includes(region);
+              return (
+                <button
+                  key={region}
+                  className="chip"
+                  data-active={active}
+                  onClick={() =>
+                    update(
+                      region === 'all'
+                        ? { regions: [], region: 'all' }
+                        : {
+                            regions: trip.regions.includes(region)
+                              ? trip.regions.filter((r) => r !== region)
+                              : [...trip.regions, region],
+                            region,
+                          },
+                    )
+                  }
+                >
+                  {region === 'all' ? t('allUzbekistan', lang) : tr(REGION_LABEL[region], lang)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold">{t('fieldDates', lang)}</div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="muted">{t('fieldDateFrom', lang)}</span>
+            <input
+              type="date"
+              className="field max-w-44"
+              value={trip.startDate ?? ''}
+              onChange={(e) => {
+                const startDate = e.target.value;
+                update({ startDate, days: daysBetween(startDate, trip.endDate) ?? trip.days });
+              }}
+            />
+            <span className="muted">{t('fieldDateTo', lang)}</span>
+            <input
+              type="date"
+              className="field max-w-44"
+              min={trip.startDate}
+              value={trip.endDate ?? ''}
+              onChange={(e) => {
+                const endDate = e.target.value;
+                update({ endDate, days: daysBetween(trip.startDate, endDate) ?? trip.days });
+              }}
+            />
           </div>
         </div>
 

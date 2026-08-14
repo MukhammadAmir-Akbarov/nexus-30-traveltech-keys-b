@@ -1,4 +1,12 @@
-import type { Gender, Guide, GuideAccuracy, I18nText, ScoredGuide, TripContext } from './types.ts';
+import type {
+  Gender,
+  Guide,
+  GuideAccuracy,
+  GuideAccuracyByPlace,
+  I18nText,
+  ScoredGuide,
+  TripContext,
+} from './types.ts';
 
 // Подбор гида: чистая функция, без LLM. Объяснение «почему этот гид»
 // собирается из совпавших признаков — модель здесь не нужна.
@@ -13,6 +21,10 @@ export type GuideQuery = TripContext & {
   needTransport: boolean;
   /** Репутация по проверкам фактов: guideId -> счётчики вердиктов. */
   accuracy?: Record<string, GuideAccuracy>;
+  /** Точность в разрезе объектов: guideId -> placeId -> счётчики. */
+  accuracyByPlace?: Record<string, GuideAccuracyByPlace>;
+  /** Объекты предстоящего маршрута: по ним и надо смотреть точность. */
+  placeIds?: string[];
 };
 
 /** Доля подтверждённых утверждений среди проверенных. */
@@ -69,6 +81,11 @@ const REASON = {
     ru: 'проверенный гид для поездки в одиночку',
     en: 'verified guide for solo travel',
   },
+  placeAccuracy: {
+    uz: 'marshrutdagi obyektlar bo‘yicha {percent}% aniqlik',
+    ru: 'по объектам вашего маршрута точность {percent}%',
+    en: '{percent}% accuracy on your route’s places',
+  },
   fallback: {
     uz: 'hudud bo‘yicha umumiy moslik',
     ru: 'общий профиль по региону',
@@ -88,7 +105,12 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
       const reasons: string[] = [];
       let score = 0;
 
-      if (q.region !== 'all' && guide.regions.includes(q.region)) {
+      const wantedRegions = q.regions?.length
+        ? q.regions
+        : q.region && q.region !== 'all'
+          ? [q.region]
+          : [];
+      if (wantedRegions.some((r) => guide.regions.includes(r))) {
         score += 4;
         reasons.push(REASON.region[lang]);
       }
@@ -136,11 +158,29 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
         );
       }
 
+      // Точность именно по объектам маршрута (из голосового отзыва):
+      // общий балл гида может быть высоким, а нужный объект он знает плохо.
+      const byPlace = q.accuracyByPlace?.[guide.id];
+      if (byPlace && q.placeIds?.length) {
+        const relevant = q.placeIds.map((id) => byPlace[id]).filter((x) => x !== undefined);
+        const confirmed = relevant.reduce((sum, s) => sum + s.confirmed, 0);
+        const refuted = relevant.reduce((sum, s) => sum + s.refuted, 0);
+        if (confirmed + refuted > 0) {
+          const placeRate = confirmed / (confirmed + refuted);
+          // вес больше, чем у общей точности: спрашивают именно про эти объекты
+          score += (placeRate - 0.5) * 8;
+          reasons.push(
+            REASON.placeAccuracy[lang].replace('{percent}', String(Math.round(placeRate * 100))),
+          );
+        }
+      }
+
       return {
         guide,
         score,
         why: reasons.length ? reasons.join(' · ') : REASON.fallback[lang],
         accuracy: stats,
+        byPlace,
       };
     })
     .filter((g) => g.score > 0)

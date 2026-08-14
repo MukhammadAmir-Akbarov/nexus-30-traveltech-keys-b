@@ -34,10 +34,11 @@ const OFFLINE_TEXT = {
 } satisfies Record<string, I18nText>;
 
 export async function POST(req: Request) {
-  const { claim, lang = 'ru', guideId } = (await req.json()) as {
+  const { claim, lang = 'ru', guideId, placeId } = (await req.json()) as {
     claim: string;
     lang?: Lang;
     guideId?: string;
+    placeId?: string;
   };
   if (!claim?.trim()) {
     return Response.json({ error: 'Пустое утверждение' }, { status: 400 });
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
   const cached = lookupDemoVerdict(claim, lang);
   const respond = (verdict: CheckVerdict, mode: Mode) => {
     // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида
-    if (guideId) recordFactCheck(guideId, verdict.status);
+    if (guideId) recordFactCheck(guideId, verdict.status, placeId);
     return Response.json({ verdict, passages, mode });
   };
 
