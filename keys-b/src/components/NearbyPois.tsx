@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import { useTrip } from './TripProvider';
 import { POIS } from '@/data/poi';
 import { FUEL_LABEL, POI_ICON, POI_KINDS, POI_LABEL, nearestPois } from '@/lib/poi';
@@ -32,7 +33,8 @@ export function NearbyPois({ place }: { place: Place }) {
             data-active={kinds.includes(kind)}
             onClick={() => toggle(kind)}
           >
-            {POI_ICON[kind]} {tr(POI_LABEL[kind], lang)}
+            <Icon name={POI_ICON[kind]} size={15} />
+            {tr(POI_LABEL[kind], lang)}
           </button>
         ))}
       </div>
@@ -40,7 +42,7 @@ export function NearbyPois({ place }: { place: Place }) {
       <ul className="mt-2 flex flex-col gap-1">
         {nearby.map(({ poi, km }) => (
           <li key={poi.id} className="flex flex-wrap items-center gap-2">
-            <span>{POI_ICON[poi.kind]}</span>
+            <Icon name={POI_ICON[poi.kind]} size={15} />
             <span>{tr(poi.name, lang)}</span>
             {poi.fuel && <span className="tag">{tr(FUEL_LABEL[poi.fuel], lang)}</span>}
             <span className="muted">

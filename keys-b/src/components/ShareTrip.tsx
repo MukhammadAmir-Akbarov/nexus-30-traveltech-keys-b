@@ -3,6 +3,7 @@
 import QRCode from 'qrcode';
 import { useState } from 'react';
 import { useTrip } from './TripProvider';
+import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 
 // Поделиться поездкой: контекст кодируется в ссылку, по ней маршрут
@@ -24,6 +25,7 @@ export function ShareTrip() {
   return (
     <section className="card flex flex-col items-start gap-3">
       <button className="btn" onClick={share}>
+        <Icon name='share' />
         {t('shareTrip', lang)}
       </button>
 

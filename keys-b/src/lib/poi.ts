@@ -11,12 +11,13 @@ export const POI_LABEL: Record<PoiKind, I18nText> = {
   cafe: { uz: 'Kafe', ru: 'Кафе', en: 'Cafe' },
 };
 
-export const POI_ICON: Record<PoiKind, string> = {
-  gas: '⛽',
-  toilet: '🚻',
-  prayer: '🕌',
-  clinic: '🏥',
-  cafe: '🍵',
+/** Имена иконок из общего набора — эмодзи в интерфейсе не используем. */
+export const POI_ICON: Record<PoiKind, 'fuel' | 'toilet' | 'mosque' | 'clinic' | 'cafe'> = {
+  gas: 'fuel',
+  toilet: 'toilet',
+  prayer: 'mosque',
+  clinic: 'clinic',
+  cafe: 'cafe',
 };
 
 export const FUEL_LABEL: Record<string, I18nText> = {

@@ -257,8 +257,8 @@ const UI = {
     ru: 'Не удалось проверить. Попробуйте ещё раз.',
     en: 'Check failed. Please try again.',
   },
-  voiceIdle: { uz: '🎙 Gid nutqini yozish', ru: '🎙 Записать речь гида', en: '🎙 Record the guide' },
-  voiceListening: { uz: '■ To‘xtatish', ru: '■ Остановить', en: '■ Stop' },
+  voiceIdle: { uz: 'Gid nutqini yozish', ru: 'Записать речь гида', en: 'Record the guide' },
+  voiceListening: { uz: 'To‘xtatish', ru: 'Остановить', en: 'Stop' },
   voiceHint: {
     uz: 'Gapiring — nutq to‘xtaguncha yozib boraman, tugatgach «To‘xtatish»ni bosing.',
     ru: 'Говорите — запись идёт непрерывно, по окончании нажмите «Остановить».',
@@ -281,8 +281,8 @@ const UI = {
   modeAi: { uz: 'model javobi', ru: 'ответ модели', en: 'model answer' },
   modeOffline: { uz: 'oflayn rejim', ru: 'офлайн-режим', en: 'offline mode' },
 
-  speakStart: { uz: '🔊 Ovoz bilan tinglash', ru: '🔊 Прослушать', en: '🔊 Listen' },
-  speakStop: { uz: '■ To‘xtatish', ru: '■ Остановить', en: '■ Stop' },
+  speakStart: { uz: 'Ovoz bilan tinglash', ru: 'Прослушать', en: 'Listen' },
+  speakStop: { uz: 'To‘xtatish', ru: 'Остановить', en: 'Stop' },
   placeHighlights: {
     uz: 'Ichkarida nima bor',
     ru: 'Что посмотреть внутри',
@@ -304,8 +304,8 @@ const UI = {
     en: 'Check a claim about this place',
   },
   placeContext: { uz: 'Obyekt', ru: 'Объект', en: 'Place' },
-  qrScan: { uz: '📷 QR-kodni skanerlash', ru: '📷 Сканировать QR', en: '📷 Scan QR' },
-  qrStop: { uz: '■ Skanerni yopish', ru: '■ Закрыть сканер', en: '■ Close scanner' },
+  qrScan: { uz: 'QR-kodni skanerlash', ru: 'Сканировать QR', en: 'Scan QR' },
+  qrStop: { uz: 'Skanerni yopish', ru: 'Закрыть сканер', en: 'Close scanner' },
   qrCameraError: {
     uz: 'Kameraga ruxsat berilmadi.',
     ru: 'Доступ к камере не получен.',
@@ -397,7 +397,7 @@ const UI = {
   guidesLanguage: { uz: 'Gid tillari', ru: 'Языки гида', en: 'Guide languages' },
   guidesGender: { uz: 'Gid jinsi', ru: 'Пол гида', en: 'Guide gender' },
   guidesTransport: { uz: 'O‘z transporti bilan', ru: 'Со своим транспортом', en: 'Has own transport' },
-  guidesHasTransport: { uz: '🚗 transporti bor', ru: '🚗 свой транспорт', en: '🚗 own transport' },
+  guidesHasTransport: { uz: 'transporti bor', ru: 'свой транспорт', en: 'own transport' },
   guidesReviewsTitle: { uz: 'Sharhlar', ru: 'Отзывы', en: 'Reviews' },
   guidesLanguageHint: {
     uz: 'Bir nechta tilni tanlash mumkin',
@@ -536,9 +536,9 @@ const UI = {
   adminStats: { uz: 'Ko‘rsatkichlar', ru: 'Показатели', en: 'Overview' },
 
   shareTrip: {
-    uz: '🔗 Sayohatni ulashish (QR)',
-    ru: '🔗 Поделиться поездкой (QR)',
-    en: '🔗 Share the trip (QR)',
+    uz: 'Sayohatni ulashish (QR)',
+    ru: 'Поделиться поездкой (QR)',
+    en: 'Share the trip (QR)',
   },
   shareCopy: { uz: 'Havolani nusxalash', ru: 'Скопировать ссылку', en: 'Copy link' },
   offlineBanner: {

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Icon, type IconName } from '@/components/Icon';
 import { QrScanner } from '@/components/QrScanner';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
@@ -13,7 +14,6 @@ import type { UiKey } from '@/lib/i18n';
 
 type Result = { verdict: CheckVerdict; passages: string[]; mode: Mode };
 
-// Примеры для демо — на языке интерфейса.
 const EXAMPLES: I18nText[] = [
   {
     uz: 'Registon XII asrda qurilgan',
@@ -32,11 +32,19 @@ const EXAMPLES: I18nText[] = [
   },
 ];
 
-const STATUS_UI: Record<CheckStatus, { key: UiKey; color: string }> = {
-  confirmed: { key: 'statusConfirmed', color: 'var(--ok)' },
-  refuted: { key: 'statusRefuted', color: 'var(--danger)' },
-  unclear: { key: 'statusUnclear', color: 'var(--muted)' },
-};
+// Вердикт читается за секунду: иконка + слово + цвет. Цвет не единственный
+// признак — иначе дальтоник видит просто серый текст.
+const STATUS_UI: Record<CheckStatus, { key: UiKey; color: string; weak: string; icon: IconName }> =
+  {
+    confirmed: { key: 'statusConfirmed', color: 'var(--ok)', weak: 'var(--ok-weak)', icon: 'check' },
+    refuted: {
+      key: 'statusRefuted',
+      color: 'var(--danger)',
+      weak: 'var(--danger-weak)',
+      icon: 'close',
+    },
+    unclear: { key: 'statusUnclear', color: 'var(--warn)', weak: 'var(--warn-weak)', icon: 'alert' },
+  };
 
 const SPEECH_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
 
@@ -67,7 +75,12 @@ export default function CheckPage() {
       const res = await fetch('/api/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim: value, lang, guideId: guideId || undefined, placeId: placeId ?? undefined }),
+        body: JSON.stringify({
+          claim: value,
+          lang,
+          guideId: guideId || undefined,
+          placeId: placeId ?? undefined,
+        }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setResult(await res.json());
@@ -81,43 +94,58 @@ export default function CheckPage() {
   const status = result ? STATUS_UI[result.verdict.status] : null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <section>
-        <h1 className="text-xl font-bold">{t('checkTitle', lang)}</h1>
-        <p className="muted mt-1 text-sm">{t('checkLead', lang)}</p>
+        <h1>{t('checkTitle', lang)}</h1>
+        <p className="muted prose-measure mt-2 text-[15px]">{t('checkLead', lang)}</p>
       </section>
 
       {place && (
-        <section className="card flex flex-wrap items-center gap-2 text-sm">
-          <span className="tag">{t('placeContext', lang)}</span>
+        <section className="card flex flex-wrap items-center gap-2 py-3 text-sm">
+          <Icon name="pin" />
           <b>{tr(place.name, lang)}</b>
           <Link
             href={`/place/${place.id}`}
-            className="underline"
+            className="ms-auto inline-flex items-center gap-1 text-[13px] underline"
             style={{ color: 'var(--accent)' }}
           >
             {t('placeFacts', lang)}
+            <Icon name="external" size={14} />
           </Link>
         </section>
       )}
 
-      <section className="card flex flex-col gap-3">
-        <textarea
-          className="field min-h-24"
-          placeholder={t('checkPlaceholder', lang)}
-          value={claim}
-          onChange={(e) => setClaim(e.target.value)}
-        />
+      <section className="card flex flex-col gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold">{t('checkButton', lang)}</span>
+          <textarea
+            className="field min-h-28 leading-relaxed"
+            placeholder={t('checkPlaceholder', lang)}
+            value={claim}
+            onChange={(e) => setClaim(e.target.value)}
+          />
+        </label>
+
         <div className="flex flex-wrap items-start gap-2">
-          <button className="btn btn-primary" disabled={loading} onClick={() => check(claim)}>
+          <button
+            className="btn btn-primary"
+            disabled={loading || !claim.trim()}
+            onClick={() => check(claim)}
+          >
+            <Icon name="search" />
             {loading ? t('checkLoading', lang) : t('checkButton', lang)}
           </button>
           <VoiceInput lang={SPEECH_LOCALE[lang]} onText={(text) => check(text)} />
           <QrScanner />
         </div>
+
         <label className="flex flex-wrap items-center gap-2 text-[13px]">
           <span className="muted">{t('checkWhoSaid', lang)}</span>
-          <select className="field max-w-56" value={guideId} onChange={(e) => setGuideId(e.target.value)}>
+          <select
+            className="field max-w-56"
+            value={guideId}
+            onChange={(e) => setGuideId(e.target.value)}
+          >
             <option value="">{t('checkNoGuide', lang)}</option>
             {GUIDES.map((guide) => (
               <option key={guide.id} value={guide.id}>
@@ -136,68 +164,98 @@ export default function CheckPage() {
         </div>
       </section>
 
-      {error && (
-        <div className="card text-sm" style={{ color: 'var(--danger)' }}>
-          {t('checkError', lang)}
-        </div>
-      )}
+      {/* Результат объявляется скринридеру, а место под него зарезервировано скелетоном */}
+      <div aria-live="polite">
+        {loading && (
+          <section className="card flex flex-col gap-3">
+            <div className="skeleton" style={{ width: 170, height: 26 }} />
+            <div className="skeleton" style={{ width: '100%', height: 16 }} />
+            <div className="skeleton" style={{ width: '86%', height: 16 }} />
+            <div className="skeleton" style={{ width: 220, height: 16 }} />
+          </section>
+        )}
 
-      {result && status && (
-        <section className="card flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold" style={{ color: status.color }}>
-              {t(status.key, lang)}
-            </span>
-            <span className="tag">
-              {result.mode === 'ai' ? t('modeAi', lang) : t('modeOffline', lang)}
-            </span>
-            {guideId && <span className="tag">{t('checkCounted', lang)}</span>}
+        {error && !loading && (
+          <div className="card flex items-center gap-2 text-sm" style={{ color: 'var(--danger)' }}>
+            <Icon name="alert" />
+            {t('checkError', lang)}
           </div>
+        )}
 
-          <blockquote className="muted text-sm italic">«{result.verdict.claim}»</blockquote>
-          <p className="text-sm leading-relaxed">{result.verdict.explanation}</p>
-
-          {result.verdict.correction && (
-            <p className="text-sm font-semibold">
-              {t('correctLabel', lang)} {result.verdict.correction}
-            </p>
-          )}
-
-          {result.verdict.sources.length > 0 && (
-            <div className="text-[13px]">
-              <div className="muted mb-1">{t('sourcesLabel', lang)}</div>
-              <ul className="flex flex-col gap-1">
-                {result.verdict.sources.map((source) => (
-                  <li key={source.url}>
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      {source.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+        {result && status && !loading && (
+          <section
+            className="card appear flex flex-col gap-4"
+            style={{ borderInlineStartWidth: 4, borderInlineStartColor: status.color }}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold"
+                style={{ background: status.weak, color: status.color }}
+              >
+                <Icon name={status.icon} size={16} />
+                {t(status.key, lang)}
+              </span>
+              <span className="tag">
+                {result.mode === 'ai' ? t('modeAi', lang) : t('modeOffline', lang)}
+              </span>
+              {guideId && <span className="tag tag-accent">{t('checkCounted', lang)}</span>}
             </div>
-          )}
 
-          {result.passages.length > 0 && (
-            <details className="text-[13px]">
-              <summary className="muted cursor-pointer">{t('passagesLabel', lang)}</summary>
-              <ul className="mt-2 flex flex-col gap-2">
-                {result.passages.map((passage) => (
-                  <li key={passage} className="muted">
-                    {passage}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </section>
-      )}
+            <blockquote
+              className="muted border-s-2 ps-3 text-sm italic"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              {result.verdict.claim}
+            </blockquote>
+
+            <p className="prose-measure text-[15px] leading-relaxed">{result.verdict.explanation}</p>
+
+            {result.verdict.correction && (
+              <p
+                className="rounded-xl p-3 text-[15px] font-semibold"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                {t('correctLabel', lang)} {result.verdict.correction}
+              </p>
+            )}
+
+            {result.verdict.sources.length > 0 && (
+              <div className="text-[13px]">
+                <div className="muted mb-2">{t('sourcesLabel', lang)}</div>
+                <ul className="flex flex-col gap-1">
+                  {result.verdict.sources.map((source) => (
+                    <li key={source.url}>
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {source.title}
+                        <Icon name="external" size={14} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {result.passages.length > 0 && (
+              <details className="text-[13px]">
+                <summary className="muted cursor-pointer">{t('passagesLabel', lang)}</summary>
+                <ul className="mt-2 flex flex-col gap-2">
+                  {result.passages.map((passage) => (
+                    <li key={passage} className="muted prose-measure">
+                      {passage}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
+import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
@@ -66,8 +67,8 @@ export default function PlanPage() {
     <div className="flex flex-col gap-4">
       <section className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">{t('planTitle', lang)}</h1>
-          <p className="muted mt-1 text-sm">
+          <h1>{t('planTitle', lang)}</h1>
+          <p className="muted prose-measure mt-2 text-[15px]">
             {t('planLead', lang)}{' '}
             <Link href="/" className="underline" style={{ color: 'var(--accent)' }}>
               {t('planChange', lang)}
@@ -75,6 +76,7 @@ export default function PlanPage() {
           </p>
         </div>
         <button className="btn btn-primary" disabled={loading} onClick={build}>
+          <Icon name="route" />
           {loading ? t('planLoading', lang) : t('planButton', lang)}
         </button>
       </section>
@@ -85,6 +87,14 @@ export default function PlanPage() {
       {error && (
         <div className="card text-sm" style={{ color: 'var(--danger)' }}>
           {t('planError', lang)}
+        </div>
+      )}
+
+      {loading && !itinerary && (
+        <div className="flex flex-col gap-3" aria-live="polite">
+          <div className="skeleton" style={{ height: 72 }} />
+          <div className="skeleton" style={{ height: 380 }} />
+          <div className="skeleton" style={{ height: 160 }} />
         </div>
       )}
 
@@ -104,35 +114,34 @@ export default function PlanPage() {
 
           <section className="flex flex-col gap-3">
             {itinerary.days.map((day) => (
-              <div key={day.day} className="card">
+              <div key={day.day} className="card appear">
                 <div className="mb-2 flex flex-wrap items-baseline gap-2">
-                  <span className="text-sm font-bold">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold"
+                    style={{ background: 'var(--accent-weak)', color: 'var(--accent)' }}
+                  >
+                    <Icon name="calendar" size={14} />
                     {t('planDay', lang)} {day.day}
                   </span>
                   <span className="muted text-[13px]">{day.title}</span>
                 </div>
                 {day.transfer && <TransferCard transfer={day.transfer} />}
-                <ol className="flex flex-col gap-3">
+                <ol className="timeline flex flex-col gap-4">
                   {day.items.map((item, index) => {
                     const place = PLACE_BY_ID[item.placeId];
                     if (!place) return null;
                     return (
                       <li key={item.placeId} className="flex gap-3">
-                        <span
-                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
-                          style={{ background: 'var(--accent)', color: '#04110f' }}
-                        >
-                          {index + 1}
-                        </span>
+                        <span className="step-dot mt-0.5">{index + 1}</span>
                         <div>
-                          <div className="text-sm font-semibold">
-                            {tr(place.name, lang)}{' '}
-                            <span className="muted font-normal">
-                              · {tr(REGION_LABEL[place.region], lang)} · {place.visitMinutes}{' '}
-                              {t('planMinutes', lang)}
+                          <div className="flex flex-wrap items-center gap-x-2 text-[15px] font-semibold">
+                            {tr(place.name, lang)}
+                            <span className="tag">
+                              <Icon name="clock" size={13} />
+                              {place.visitMinutes} {t('planMinutes', lang)}
                             </span>
                           </div>
-                          <div className="muted text-[13px]">{item.note}</div>
+                          <div className="muted prose-measure text-[13.5px]">{item.note}</div>
                         </div>
                       </li>
                     );

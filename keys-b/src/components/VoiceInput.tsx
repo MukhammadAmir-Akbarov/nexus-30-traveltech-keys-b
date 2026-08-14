@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTrip } from './TripProvider';
+import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 
 // Голосовой ввод — штатный Web Speech API браузера, библиотеку не ставим.
@@ -139,7 +140,8 @@ export function VoiceInput({
         onClick={() => (listening ? stop() : start())}
         aria-pressed={listening}
       >
-        {listening ? `${t('voiceListening', uiLang)} ${mmss}` : t('voiceIdle', uiLang)}
+        <Icon name={listening ? 'stop' : 'mic'} />
+      {listening ? `${t('voiceListening', uiLang)} ${mmss}` : t('voiceIdle', uiLang)}
       </button>
       {listening && (
         <div className="muted text-[13px]">

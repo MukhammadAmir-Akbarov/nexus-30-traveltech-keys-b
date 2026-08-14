@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import {
@@ -56,8 +57,8 @@ export default function GuidesPage() {
   return (
     <div className="flex flex-col gap-4">
       <section>
-        <h1 className="text-xl font-bold">{t('guidesTitle', lang)}</h1>
-        <p className="muted mt-1 text-sm">{t('guidesLead', lang)}</p>
+        <h1>{t('guidesTitle', lang)}</h1>
+        <p className="muted prose-measure mt-2 text-[15px]">{t('guidesLead', lang)}</p>
       </section>
 
       <SoloPanel />
@@ -121,26 +122,30 @@ export default function GuidesPage() {
         {guides.map(({ guide, why, accuracy, byPlace }) => (
           <article key={guide.id} className="card flex flex-col gap-3">
             <div className="flex gap-3">
-              <Avatar name={guide.name} />
-              <div className="flex flex-col gap-1">
+              <Avatar name={guide.name} size={52} />
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-bold">{guide.name}</span>
+                  <span className="text-[15px] font-bold">{guide.name}</span>
                   {guide.verified && (
-                    <span className="tag" style={{ color: 'var(--ok)' }}>
+                    <span className="tag tag-ok">
+                      <Icon name="shield" size={13} />
                       {t('guidesVerified', lang)}
                     </span>
                   )}
                   <span className="tag">
                     ★ {guide.rating.toFixed(1)} · {guide.reviews} {reviewsLabel(guide.reviews, lang)}
                   </span>
-                  <span className="tag">
+                  <span className="tag tag-accent">
                     ${guide.pricePerDay} / {t('guidesPerDay', lang)}
                   </span>
                   <span className="tag">
                     {guide.experienceYears} {yearsLabel(guide.experienceYears, lang)}
                   </span>
                   {guide.hasTransport && (
-                    <span className="tag">{t('guidesHasTransport', lang)}</span>
+                    <span className="tag">
+                      <Icon name="car" size={13} />
+                      {t('guidesTransport', lang)}
+                    </span>
                   )}
                 </div>
                 <p className="text-[13px]">{tr(guide.bio, lang)}</p>
@@ -153,14 +158,24 @@ export default function GuidesPage() {
             </div>
 
             {accuracy && accuracy.confirmed + accuracy.refuted > 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-[13px]">
-                <span className="tag" style={{ color: 'var(--ok)' }}>
-                  {t('guidesAccuracy', lang)}:{' '}
-                  {Math.round(
-                    (accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100,
-                  )}
-                  %
-                </span>
+              <div className="flex flex-col gap-1.5 text-[13px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="muted">{t('guidesAccuracy', lang)}</span>
+                  <b>
+                    {Math.round((accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100)}%
+                  </b>
+                </div>
+                <div
+                  className="meter"
+                  role="img"
+                  aria-label={t('guidesAccuracy', lang)}
+                >
+                  <span
+                    style={{
+                      width: `${(accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100}%`,
+                    }}
+                  />
+                </div>
                 <span className="muted text-[12px]">
                   {t('guidesAccuracyHint', lang)} · {accuracy.confirmed + accuracy.refuted}
                 </span>
@@ -179,8 +194,7 @@ export default function GuidesPage() {
                     return (
                       <span
                         key={placeId}
-                        className="tag"
-                        style={{ color: percent >= 70 ? 'var(--ok)' : 'var(--danger)' }}
+                        className={percent >= 70 ? 'tag tag-ok' : 'tag tag-danger'}
                       >
                         {place ? tr(place.name, lang) : placeId}: {percent}%
                       </span>
