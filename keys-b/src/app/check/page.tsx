@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { QrScanner } from '@/components/QrScanner';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
-import { t } from '@/lib/i18n';
+import { PLACE_BY_ID } from '@/data/places';
+import { t, tr } from '@/lib/i18n';
 import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
 import type { UiKey } from '@/lib/i18n';
 
@@ -42,6 +45,15 @@ export default function CheckPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
+  const [placeId, setPlaceId] = useState<string | null>(null);
+
+  // сюда приходят после сканирования QR у объекта: /check?place=registan
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('place');
+    if (id && PLACE_BY_ID[id]) setPlaceId(id);
+  }, []);
+
+  const place = placeId ? PLACE_BY_ID[placeId] : null;
 
   const check = async (text: string) => {
     const value = text.trim();
@@ -73,6 +85,20 @@ export default function CheckPage() {
         <p className="muted mt-1 text-sm">{t('checkLead', lang)}</p>
       </section>
 
+      {place && (
+        <section className="card flex flex-wrap items-center gap-2 text-sm">
+          <span className="tag">{t('placeContext', lang)}</span>
+          <b>{tr(place.name, lang)}</b>
+          <Link
+            href={`/place/${place.id}`}
+            className="underline"
+            style={{ color: 'var(--accent)' }}
+          >
+            {t('placeFacts', lang)}
+          </Link>
+        </section>
+      )}
+
       <section className="card flex flex-col gap-3">
         <textarea
           className="field min-h-24"
@@ -80,11 +106,12 @@ export default function CheckPage() {
           value={claim}
           onChange={(e) => setClaim(e.target.value)}
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-start gap-2">
           <button className="btn btn-primary" disabled={loading} onClick={() => check(claim)}>
             {loading ? t('checkLoading', lang) : t('checkButton', lang)}
           </button>
           <VoiceInput lang={SPEECH_LOCALE[lang]} onText={(text) => check(text)} />
+          <QrScanner />
         </div>
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((example) => (

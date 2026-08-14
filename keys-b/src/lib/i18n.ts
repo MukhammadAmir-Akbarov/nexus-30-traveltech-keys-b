@@ -38,14 +38,81 @@ export const TRAVEL_TYPE_LABEL: Record<TravelType, I18nText> = {
   group: { uz: 'guruh', ru: 'группа', en: 'group' },
 };
 
+// Отзыв с записи 5: трёх языков мало — гости из Франции, Италии и других стран
+// могут не знать ни английского, ни русского. Узбекский обязателен: своя аудитория.
 export const GUIDE_LANG_LABEL: Record<string, I18nText> = {
-  any: { uz: 'ixtiyoriy', ru: 'любой', en: 'any' },
+  uz: { uz: 'o‘zbek', ru: 'узбекский', en: 'Uzbek' },
   ru: { uz: 'rus', ru: 'русский', en: 'Russian' },
   en: { uz: 'ingliz', ru: 'английский', en: 'English' },
-  uz: { uz: 'o‘zbek', ru: 'узбекский', en: 'Uzbek' },
   fr: { uz: 'fransuz', ru: 'французский', en: 'French' },
+  it: { uz: 'italyan', ru: 'итальянский', en: 'Italian' },
   de: { uz: 'nemis', ru: 'немецкий', en: 'German' },
+  es: { uz: 'ispan', ru: 'испанский', en: 'Spanish' },
   tr: { uz: 'turk', ru: 'турецкий', en: 'Turkish' },
+  ar: { uz: 'arab', ru: 'арабский', en: 'Arabic' },
+  ja: { uz: 'yapon', ru: 'японский', en: 'Japanese' },
+};
+
+export const GUIDE_LANGS = Object.keys(GUIDE_LANG_LABEL);
+
+export const GENDER_LABEL: Record<string, I18nText> = {
+  any: { uz: 'farqi yo‘q', ru: 'неважно', en: 'any' },
+  female: { uz: 'ayol gid', ru: 'женщина', en: 'female' },
+  male: { uz: 'erkak gid', ru: 'мужчина', en: 'male' },
+};
+
+/** Тексты отзывов общие для всех гидов — в данных лежат только ссылки на шаблон. */
+export const REVIEW_TEMPLATE: Record<string, I18nText> = {
+  deep: {
+    uz: 'Juda chuqur bilim. Savollarimning barchasiga manba bilan javob berdi.',
+    ru: 'Очень глубокие знания. На все вопросы отвечал со ссылкой на источник.',
+    en: 'Deep knowledge. Answered every question with a source.',
+  },
+  warm: {
+    uz: 'Ochiq va samimiy, kun oxirigacha charchamadik.',
+    ru: 'Открытый и доброжелательный, к концу дня совсем не устали.',
+    en: 'Open and warm; we were not worn out by the end of the day.',
+  },
+  crafts: {
+    uz: 'Ustaxonalarga olib bordi, hech bir turistik joyda bunday ko‘rmagandim.',
+    ru: 'Отвёл в настоящие мастерские — такого в туристических местах не увидишь.',
+    en: 'Took us into real workshops — nothing like the tourist spots.',
+  },
+  pace: {
+    uz: 'Sur’at qulay, hech qayerga shoshilmadik.',
+    ru: 'Комфортный темп, никуда не спешили.',
+    en: 'Comfortable pace, never rushed.',
+  },
+  photo: {
+    uz: 'Eng yaxshi yorug‘likni bilardi — suratlar ajoyib chiqdi.',
+    ru: 'Знает, где какой свет — фотографии получились отличные.',
+    en: 'Knew exactly where the light works — the photos came out great.',
+  },
+  food: {
+    uz: 'Sayyohlar bormaydigan joylarda ovqatlandik.',
+    ru: 'Поели там, куда туристы не доходят.',
+    en: 'We ate where tourists never get to.',
+  },
+  family: {
+    uz: 'Bolalar zerikmadi, ular uchun alohida topshiriqlar berdi.',
+    ru: 'Дети не заскучали — придумывал для них отдельные задания.',
+    en: 'The kids were never bored — he had tasks just for them.',
+  },
+  language: {
+    uz: 'Til darajasi yuqori, tarjimonsiz hammasi tushunarli edi.',
+    ru: 'Отличный уровень языка, всё понятно без переводчика.',
+    en: 'Excellent language level, everything clear without an interpreter.',
+  },
+  nature: {
+    uz: 'Cho‘l va ko‘l bo‘yidagi kunni juda yaxshi tashkil qildi.',
+    ru: 'Отлично организовал день в степи и на озере.',
+    en: 'Organised the steppe and lake day very well.',
+  },
+  group: {
+    uz: 'Katta guruhni bemalol boshqardi, hech kim yo‘qolmadi.',
+    ru: 'Спокойно управлял большой группой, никто не потерялся.',
+    en: 'Handled a large group calmly; nobody got lost.',
+  },
 };
 
 export const INTERESTS = Object.keys(INTEREST_LABEL) as Interest[];
@@ -78,6 +145,25 @@ const UI = {
   themeLight: { uz: 'Yorug‘', ru: 'Светлая', en: 'Light' },
   themeDark: { uz: 'Qora', ru: 'Тёмная', en: 'Dark' },
   themeSystem: { uz: 'Tizim', ru: 'Система', en: 'System' },
+
+  onbInterests: {
+    uz: 'Nimalarga qiziqasiz?',
+    ru: 'Что вам интересно?',
+    en: 'What are you interested in?',
+  },
+  onbRegion: {
+    uz: 'Qayerga bormoqchisiz?',
+    ru: 'Куда собираетесь?',
+    en: 'Where are you heading?',
+  },
+  onbFormat: {
+    uz: 'Qanday sayohat qilasiz?',
+    ru: 'Как путешествуете?',
+    en: 'How are you travelling?',
+  },
+  onbNext: { uz: 'Keyingisi', ru: 'Дальше', en: 'Next' },
+  onbFinish: { uz: 'Tayyor', ru: 'Готово', en: 'Done' },
+  onbSkip: { uz: 'O‘tkazib yuborish', ru: 'Пропустить', en: 'Skip' },
 
   homeTitle: {
     uz: 'Ishonchli sayohat hamrohi',
@@ -136,7 +222,12 @@ const UI = {
     en: 'Check failed. Please try again.',
   },
   voiceIdle: { uz: '🎙 Gid nutqini yozish', ru: '🎙 Записать речь гида', en: '🎙 Record the guide' },
-  voiceListening: { uz: '● Tinglayapman…', ru: '● Слушаю…', en: '● Listening…' },
+  voiceListening: { uz: '■ To‘xtatish', ru: '■ Остановить', en: '■ Stop' },
+  voiceHint: {
+    uz: 'Gapiring — nutq to‘xtaguncha yozib boraman, tugatgach «To‘xtatish»ni bosing.',
+    ru: 'Говорите — запись идёт непрерывно, по окончании нажмите «Остановить».',
+    en: 'Speak — recording runs continuously; press “Stop” when the guide finishes.',
+  },
   statusConfirmed: { uz: 'Tasdiqlandi', ru: 'Подтверждено', en: 'Confirmed' },
   statusRefuted: { uz: 'Rad etildi', ru: 'Опровергнуто', en: 'Refuted' },
   statusUnclear: {
@@ -153,6 +244,30 @@ const UI = {
   },
   modeAi: { uz: 'model javobi', ru: 'ответ модели', en: 'model answer' },
   modeOffline: { uz: 'oflayn rejim', ru: 'офлайн-режим', en: 'offline mode' },
+
+  placeFacts: {
+    uz: 'Rasmiy manbalardagi faktlar',
+    ru: 'Факты из официальных источников',
+    en: 'Facts from official sources',
+  },
+  placeNoFacts: {
+    uz: 'Bu obyekt bo‘yicha manbalarda ma’lumot yo‘q.',
+    ru: 'По этому объекту в источниках данных нет.',
+    en: 'The sources hold no data on this place.',
+  },
+  placeCheckHere: {
+    uz: 'Shu obyekt bo‘yicha tekshirish',
+    ru: 'Проверить факт об объекте',
+    en: 'Check a claim about this place',
+  },
+  placeContext: { uz: 'Obyekt', ru: 'Объект', en: 'Place' },
+  qrScan: { uz: '📷 QR-kodni skanerlash', ru: '📷 Сканировать QR', en: '📷 Scan QR' },
+  qrStop: { uz: '■ Skanerni yopish', ru: '■ Закрыть сканер', en: '■ Close scanner' },
+  qrCameraError: {
+    uz: 'Kameraga ruxsat berilmadi.',
+    ru: 'Доступ к камере не получен.',
+    en: 'Camera access was denied.',
+  },
 
   planTitle: {
     uz: 'Sayohat formatingizga mos marshrut',
@@ -188,7 +303,16 @@ const UI = {
     ru: 'Учитываются регион, интересы и формат поездки из общего контекста. Метка «подтверждён» — демонстрационная.',
     en: 'Region, interests and travel type come from the shared context. The “verified” badge is a demo flag.',
   },
-  guidesLanguage: { uz: 'Gid tili', ru: 'Язык гида', en: 'Guide language' },
+  guidesLanguage: { uz: 'Gid tillari', ru: 'Языки гида', en: 'Guide languages' },
+  guidesGender: { uz: 'Gid jinsi', ru: 'Пол гида', en: 'Guide gender' },
+  guidesTransport: { uz: 'O‘z transporti bilan', ru: 'Со своим транспортом', en: 'Has own transport' },
+  guidesHasTransport: { uz: '🚗 transporti bor', ru: '🚗 свой транспорт', en: '🚗 own transport' },
+  guidesReviewsTitle: { uz: 'Sharhlar', ru: 'Отзывы', en: 'Reviews' },
+  guidesLanguageHint: {
+    uz: 'Bir nechta tilni tanlash mumkin',
+    ru: 'Можно выбрать несколько языков',
+    en: 'You can select several languages',
+  },
   guidesLoading: { uz: 'Tanlanmoqda…', ru: 'Подбираю…', en: 'Matching…' },
   guidesEmpty: {
     uz: 'Joriy filtrlar bo‘yicha gid yo‘q — tilni yoki sayohat kontekstini o‘zgartiring.',

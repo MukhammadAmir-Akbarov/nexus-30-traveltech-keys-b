@@ -1,15 +1,27 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Avatar } from '@/components/Avatar';
 import { useTrip } from '@/components/TripProvider';
-import { GUIDE_LANG_LABEL, INTEREST_LABEL, REGION_LABEL, t, tr } from '@/lib/i18n';
-import type { ScoredGuide } from '@/lib/types';
+import {
+  GENDER_LABEL,
+  GUIDE_LANGS,
+  GUIDE_LANG_LABEL,
+  INTEREST_LABEL,
+  REGION_LABEL,
+  REVIEW_TEMPLATE,
+  t,
+  tr,
+} from '@/lib/i18n';
+import type { Gender, ScoredGuide } from '@/lib/types';
 
-const LANGUAGES = ['any', 'ru', 'en', 'uz', 'fr', 'de', 'tr'];
+const GENDERS: (Gender | 'any')[] = ['any', 'female', 'male'];
 
 export default function GuidesPage() {
   const { trip, lang, ready } = useTrip();
-  const [guideLanguage, setGuideLanguage] = useState('ru');
+  const [languages, setLanguages] = useState<string[]>(['ru']);
+  const [gender, setGender] = useState<Gender | 'any'>('any');
+  const [needTransport, setNeedTransport] = useState(false);
   const [guides, setGuides] = useState<ScoredGuide[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -19,18 +31,23 @@ export default function GuidesPage() {
       const res = await fetch('/api/guides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...trip, language: guideLanguage }),
+        body: JSON.stringify({ ...trip, languages, gender, needTransport }),
       });
       const data = (await res.json()) as { guides: ScoredGuide[] };
       setGuides(data.guides);
     } finally {
       setLoading(false);
     }
-  }, [trip, guideLanguage]);
+  }, [trip, languages, gender, needTransport]);
 
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
+
+  const toggleLanguage = (code: string) =>
+    setLanguages((prev) =>
+      prev.includes(code) ? prev.filter((l) => l !== code) : [...prev, code],
+    );
 
   return (
     <div className="flex flex-col gap-4">
@@ -39,20 +56,55 @@ export default function GuidesPage() {
         <p className="muted mt-1 text-sm">{t('guidesLead', lang)}</p>
       </section>
 
-      <section className="card flex flex-wrap items-center gap-3">
-        <label className="text-sm font-semibold">{t('guidesLanguage', lang)}</label>
-        <select
-          className="field max-w-48"
-          value={guideLanguage}
-          onChange={(e) => setGuideLanguage(e.target.value)}
-        >
-          {LANGUAGES.map((code) => (
-            <option key={code} value={code}>
-              {tr(GUIDE_LANG_LABEL[code], lang)}
-            </option>
-          ))}
-        </select>
-        {loading && <span className="muted text-sm">{t('guidesLoading', lang)}</span>}
+      <section className="card flex flex-col gap-4">
+        <div>
+          <div className="mb-2 text-sm font-semibold">
+            {t('guidesLanguage', lang)}{' '}
+            <span className="muted font-normal">· {t('guidesLanguageHint', lang)}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {GUIDE_LANGS.map((code) => (
+              <button
+                key={code}
+                className="chip"
+                data-active={languages.includes(code)}
+                onClick={() => toggleLanguage(code)}
+              >
+                {tr(GUIDE_LANG_LABEL[code], lang)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-6">
+          <div>
+            <div className="mb-2 text-sm font-semibold">{t('guidesGender', lang)}</div>
+            <div className="flex flex-wrap gap-2">
+              {GENDERS.map((value) => (
+                <button
+                  key={value}
+                  className="chip"
+                  data-active={gender === value}
+                  onClick={() => setGender(value)}
+                >
+                  {tr(GENDER_LABEL[value], lang)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={needTransport}
+              onChange={(e) => setNeedTransport(e.target.checked)}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {t('guidesTransport', lang)}
+          </label>
+
+          {loading && <span className="muted text-sm">{t('guidesLoading', lang)}</span>}
+        </div>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -61,36 +113,58 @@ export default function GuidesPage() {
         )}
 
         {guides.map(({ guide, why }) => (
-          <article key={guide.id} className="card flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-bold">{guide.name}</span>
-              {guide.verified && (
-                <span className="tag" style={{ color: 'var(--ok)' }}>
-                  {t('guidesVerified', lang)}
-                </span>
-              )}
-              <span className="tag">
-                ★ {guide.rating.toFixed(1)} · {guide.reviews} {t('guidesReviews', lang)}
-              </span>
-              <span className="tag">
-                ${guide.pricePerDay} / {t('guidesPerDay', lang)}
-              </span>
-              <span className="tag">
-                {guide.experienceYears} {t('guidesYears', lang)}
-              </span>
-            </div>
-
-            <p className="text-[13px]">{tr(guide.bio, lang)}</p>
-
-            <div className="muted text-[13px]">
-              {guide.regions.map((r) => tr(REGION_LABEL[r], lang)).join(', ')} ·{' '}
-              {guide.specializations.map((s) => tr(INTEREST_LABEL[s], lang)).join(', ')} ·{' '}
-              {guide.languages.map((l) => tr(GUIDE_LANG_LABEL[l], lang)).join(', ')}
+          <article key={guide.id} className="card flex flex-col gap-3">
+            <div className="flex gap-3">
+              <Avatar name={guide.name} />
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold">{guide.name}</span>
+                  {guide.verified && (
+                    <span className="tag" style={{ color: 'var(--ok)' }}>
+                      {t('guidesVerified', lang)}
+                    </span>
+                  )}
+                  <span className="tag">
+                    ★ {guide.rating.toFixed(1)} · {guide.reviews} {t('guidesReviews', lang)}
+                  </span>
+                  <span className="tag">
+                    ${guide.pricePerDay} / {t('guidesPerDay', lang)}
+                  </span>
+                  <span className="tag">
+                    {guide.experienceYears} {t('guidesYears', lang)}
+                  </span>
+                  {guide.hasTransport && (
+                    <span className="tag">{t('guidesHasTransport', lang)}</span>
+                  )}
+                </div>
+                <p className="text-[13px]">{tr(guide.bio, lang)}</p>
+                <div className="muted text-[13px]">
+                  {guide.regions.map((r) => tr(REGION_LABEL[r], lang)).join(', ')} ·{' '}
+                  {guide.specializations.map((s) => tr(INTEREST_LABEL[s], lang)).join(', ')} ·{' '}
+                  {guide.languages.map((l) => tr(GUIDE_LANG_LABEL[l], lang)).join(', ')}
+                </div>
+              </div>
             </div>
 
             <div className="text-[13px]" style={{ color: 'var(--accent)' }}>
               {t('guidesWhy', lang)}: {why}
             </div>
+
+            <details className="text-[13px]">
+              <summary className="muted cursor-pointer">
+                {t('guidesReviewsTitle', lang)} ({guide.reviewsList.length})
+              </summary>
+              <ul className="mt-2 flex flex-col gap-2">
+                {guide.reviewsList.map((review) => (
+                  <li key={review.author} className="flex flex-col">
+                    <span className="font-semibold">
+                      {review.author} · {'★'.repeat(review.rating)}
+                    </span>
+                    <span className="muted">{tr(REVIEW_TEMPLATE[review.templateId], lang)}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </article>
         ))}
       </section>

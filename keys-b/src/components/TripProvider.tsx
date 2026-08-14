@@ -19,6 +19,7 @@ export type Theme = 'light' | 'dark' | 'system';
 
 const TRIP_KEY = 'nexus30.trip';
 const THEME_KEY = 'nexus30.theme';
+const ONBOARDED_KEY = 'nexus30.onboarded';
 
 type Store = {
   trip: TripContext;
@@ -27,6 +28,9 @@ type Store = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   ready: boolean;
+  /** Короткий опрос при первом входе уже пройден или пропущен. */
+  onboarded: boolean;
+  finishOnboarding: () => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -41,6 +45,8 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   const [trip, setTrip] = useState<TripContext>(DEFAULT_TRIP);
   const [theme, setThemeState] = useState<Theme>('system');
   const [ready, setReady] = useState(false);
+  // до загрузки localStorage считаем опрос пройденным, иначе он мигает на каждом заходе
+  const [onboarded, setOnboarded] = useState(true);
 
   useEffect(() => {
     try {
@@ -48,10 +54,21 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       if (raw) setTrip({ ...DEFAULT_TRIP, ...JSON.parse(raw) });
       const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
       if (savedTheme) setThemeState(savedTheme);
+      setOnboarded(localStorage.getItem(ONBOARDED_KEY) === '1');
     } catch {
       // повреждённый localStorage — просто стартуем с дефолта
     }
     setReady(true);
+  }, []);
+
+  const finishOnboarding = useCallback(() => {
+    localStorage.setItem(ONBOARDED_KEY, '1');
+    // фиксируем контекст, даже если в опросе ничего не меняли
+    setTrip((prev) => {
+      localStorage.setItem(TRIP_KEY, JSON.stringify(prev));
+      return prev;
+    });
+    setOnboarded(true);
   }, []);
 
   const update = useCallback((patch: Partial<TripContext>) => {
@@ -69,7 +86,9 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ trip, lang: trip.lang, update, theme, setTheme, ready }}>
+    <Ctx.Provider
+      value={{ trip, lang: trip.lang, update, theme, setTheme, ready, onboarded, finishOnboarding }}
+    >
       {children}
     </Ctx.Provider>
   );
