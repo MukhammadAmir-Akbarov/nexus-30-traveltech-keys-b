@@ -1,0 +1,18 @@
+{
+  "name": "TurizmHamroh",
+  "short_name": "Hamroh",
+  "description": "Ishonchli sayohat hamrohi: faktlarni tekshirish, marshrut, gidlar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0d7a75",
+  "lang": "uz",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -3,12 +3,15 @@ import { Geist } from 'next/font/google';
 import './globals.css';
 import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
+import { OfflineReady } from '@/components/OfflineReady';
 import { Onboarding } from '@/components/Onboarding';
 import { TripProvider } from '@/components/TripProvider';
 
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin', 'cyrillic'] });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icon.svg' },
   title: 'TurizmHamroh — ishonchli sayohat hamrohi',
   description:
     'NEXUS30 · TravelTech kеys B: faktlarni tekshirish, AI marshrut va gid tanlash bitta kontekstda.',
@@ -25,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={geist.variable}>
         <TripProvider>
+          <OfflineReady />
           <Onboarding />
           <Nav />
           <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>

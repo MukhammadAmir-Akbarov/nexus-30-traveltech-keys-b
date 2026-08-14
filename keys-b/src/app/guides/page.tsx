@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar } from '@/components/Avatar';
+import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import {
   GENDER_LABEL,
@@ -55,6 +56,8 @@ export default function GuidesPage() {
         <h1 className="text-xl font-bold">{t('guidesTitle', lang)}</h1>
         <p className="muted mt-1 text-sm">{t('guidesLead', lang)}</p>
       </section>
+
+      <SoloPanel />
 
       <section className="card flex flex-col gap-4">
         <div>

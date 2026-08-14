@@ -309,6 +309,36 @@ const UI = {
   planMinutes: { uz: 'daq', ru: 'мин', en: 'min' },
   mapLoading: { uz: 'Xarita yuklanmoqda…', ru: 'Карта загружается…', en: 'Loading the map…' },
 
+  soloTitle: {
+    uz: 'Yakka sayohatchi uchun',
+    ru: 'Для одиночного путешественника',
+    en: 'For the solo traveller',
+  },
+  soloLead: {
+    uz: 'Yakka sayohatda tizim tasdiqlangan gidlarni oldinga chiqaradi va quyidagilarni eslatadi.',
+    ru: 'В одиночной поездке система поднимает проверенных гидов и напоминает о нескольких вещах.',
+    en: 'On a solo trip the system promotes verified guides and reminds you of a few things.',
+  },
+  soloTip1: {
+    uz: 'Marshrutingizni yaqinlaringizga yuboring — pastdagi QR orqali ulashish mumkin.',
+    ru: 'Отправьте маршрут близким — им можно поделиться по QR ниже.',
+    en: 'Share your itinerary with someone close — the QR below does it.',
+  },
+  soloTip2: {
+    uz: 'Kechki sayrlar uchun yoritilgan va gavjum joylarni tanlang.',
+    ru: 'Для вечерних прогулок выбирайте освещённые и людные места.',
+    en: 'For evening walks pick well-lit, busy places.',
+  },
+  soloTip3: {
+    uz: 'Gidni faqat tasdiqlangan holati bilan oling: litsenziya va reestr yozuvi kartada ko‘rinadi.',
+    ru: 'Берите гида только с подтверждённым статусом: лицензия и запись в реестре видны в карточке.',
+    en: 'Take a guide with confirmed status only: licence and registry entry are shown on the card.',
+  },
+  soloTip4: {
+    uz: 'Gid aytgan faktni shubha tug‘ilsa darhol tekshiring — bu uning reytingiga ham ta’sir qiladi.',
+    ru: 'Сомневаетесь в словах гида — проверьте сразу, это влияет и на его рейтинг.',
+    en: 'If a guide’s claim feels off, check it right away — it also feeds their rating.',
+  },
   guidesTitle: {
     uz: 'Marshrutingizga mos gid tanlash',
     ru: 'Подбор гида под ваш маршрут',
@@ -445,6 +475,17 @@ const UI = {
   adminCreated: { uz: 'Qo‘shilgan', ru: 'Создан', en: 'Created' },
   adminStats: { uz: 'Ko‘rsatkichlar', ru: 'Показатели', en: 'Overview' },
 
+  shareTrip: {
+    uz: '🔗 Sayohatni ulashish (QR)',
+    ru: '🔗 Поделиться поездкой (QR)',
+    en: '🔗 Share the trip (QR)',
+  },
+  shareCopy: { uz: 'Havolani nusxalash', ru: 'Скопировать ссылку', en: 'Copy link' },
+  offlineBanner: {
+    uz: 'Internet yo‘q — saqlangan marshrut va tekshiruvlar ko‘rsatilyapti.',
+    ru: 'Нет сети — показываю сохранённый маршрут и проверки.',
+    en: 'You are offline — showing the saved itinerary and checks.',
+  },
   footer: {
     uz: 'NEXUS30 hakatoni uchun prototip. Obyektlar va gidlar ma’lumotlari — demo; ishchi versiyada Turizm qo‘mitasi bazasi ulanadi.',
     ru: 'Прототип для хакатона NEXUS30. Данные об объектах и гидах — демонстрационные; в рабочей версии подключается база Комитета по туризму.',
