@@ -74,6 +74,7 @@ const family: TripContext = {
   travelType: 'family',
   days: 2,
   lang: 'ru',
+  summer: false,
 };
 const plan = buildItinerary(PLACES, family);
 assert.ok(plan.days.length > 0 && plan.days.length <= family.days, 'дней не больше запрошенного');
@@ -269,6 +270,28 @@ assert.ok(
 assert.ok(
   !groupPick.find((g) => g.guide.verified)?.why.includes('в одиночку'),
   'для группы этой причины быть не должно',
+);
+
+// летнее правило: объекты под открытым небом получают пометку и идут первыми в дне
+const summerPlan = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  region: 'bukhara',
+  summer: true,
+});
+const firstDayItems = summerPlan.days[0].items;
+assert.ok(
+  PLACES.find((p) => p.id === firstDayItems[0].placeId)?.outdoor,
+  'летом день начинается с объекта под открытым небом — по утренней прохладе',
+);
+assert.ok(
+  firstDayItems.some((i) => i.note.includes('+38')),
+  'у открытого объекта летом должна быть пометка про жару',
+);
+assert.ok(
+  !buildItinerary(PLACES, { ...family, travelType: 'solo', region: 'bukhara' })
+    .days[0].items.some((i) => i.note.includes('+38')),
+  'вне летнего режима пометки про жару быть не должно',
 );
 
 // §9 ТЗ: метка «подтверждён» должна опираться на конкретные проверки,

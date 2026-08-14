@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
 import type { CorpusItem, Place } from '@/lib/types';
@@ -16,6 +17,11 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
         </div>
         <h1 className="text-xl font-bold">{tr(place.name, lang)}</h1>
         <p className="muted mt-1 text-sm">{tr(place.summary, lang)}</p>
+        <div className="mt-2">
+          <SpeakButton
+            text={[tr(place.name, lang), tr(place.summary, lang), ...facts.map((f) => f.text)].join('. ')}
+          />
+        </div>
       </section>
 
       <section className="card flex flex-col gap-3">

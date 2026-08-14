@@ -13,6 +13,7 @@ const DEFAULT_TRIP: TripContext = {
   travelType: 'solo',
   days: 3,
   lang: 'uz',
+  summer: false,
 };
 
 export type Theme = 'light' | 'dark' | 'system';
