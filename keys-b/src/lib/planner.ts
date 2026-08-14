@@ -189,11 +189,18 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
     route.push(current);
     remaining.delete(current);
     if (!remaining.size) break;
-    current = [...remaining].sort(
-      (a, b) =>
-        haversineKm(centroid(byRegion.get(current)!), centroid(byRegion.get(a)!)) -
-        haversineKm(centroid(byRegion.get(current)!), centroid(byRegion.get(b)!)),
-    )[0];
+    // Следующий город выбираем по времени в пути, а не по прямой линии на карте:
+    // до Самарканда есть поезд (2 ч), до Нураты только машина (4 ч), хотя по
+    // карте Нурата ближе. Турист едет по расписанию, а не по циркулю.
+    const hoursTo = (region: Region) =>
+      transferHours(
+        buildTransfer(
+          current,
+          region,
+          haversineKm(centroid(byRegion.get(current)!), centroid(byRegion.get(region)!)),
+        ),
+      );
+    current = [...remaining].sort((a, b) => hoursTo(a) - hoursTo(b))[0];
   }
 
   const days: ItineraryDay[] = [];

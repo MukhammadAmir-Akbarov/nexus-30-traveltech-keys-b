@@ -104,7 +104,11 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="muted text-[12px]">{t('authDemoHint', lang)}</p>
+      {/* подсказку с демо-паролем показываем только там, где он и правда демо:
+          при публичной ссылке ставим NEXT_PUBLIC_DEMO_LOGIN=0 */}
+      {process.env.NEXT_PUBLIC_DEMO_LOGIN !== '0' && (
+        <p className="muted text-[12px]">{t('authDemoHint', lang)}</p>
+      )}
     </div>
   );
 }
