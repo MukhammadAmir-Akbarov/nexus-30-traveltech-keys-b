@@ -168,7 +168,6 @@ const UI = {
 
   themeLight: { uz: 'Yorug‘', ru: 'Светлая', en: 'Light' },
   themeDark: { uz: 'Qora', ru: 'Тёмная', en: 'Dark' },
-  themeSystem: { uz: 'Tizim', ru: 'Система', en: 'System' },
 
   onbInterests: {
     uz: 'Nimalarga qiziqasiz?',
