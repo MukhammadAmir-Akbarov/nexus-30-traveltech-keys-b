@@ -54,6 +54,9 @@ export function Nav() {
         </nav>
 
         <div className="ms-auto flex items-center gap-2">
+          <Link href="/login" className="chip" data-active={pathname === '/login'}>
+            {t('authLogin', lang)}
+          </Link>
           {LANGS.map((code) => (
             <button
               key={code}

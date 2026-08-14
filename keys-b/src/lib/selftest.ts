@@ -10,6 +10,7 @@ import { matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE } from './i18n.ts';
+import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
 import type { Lang, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
@@ -206,4 +207,29 @@ for (const guide of GUIDES) {
   }
 }
 
-console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, полнота переводов');
+// --- авторизация ---
+const stored = hashPassword('nexus30');
+assert.ok(verifyPassword('nexus30', stored), 'верный пароль принимается');
+assert.ok(!verifyPassword('nexus31', stored), 'неверный пароль отклоняется');
+assert.notEqual(hashPassword('nexus30'), stored, 'у одинаковых паролей разная соль');
+
+const token = signSession({ email: 'admin@nexus30.uz', role: 'admin' });
+const session = verifySession(token);
+assert.equal(session?.role, 'admin', 'своя подпись читается обратно');
+
+const [body, signature] = token.split('.');
+assert.equal(verifySession(`${body}x.${signature}`), null, 'подменённый payload отвергается');
+assert.equal(verifySession(`${body}.${signature}x`), null, 'подменённая подпись отвергается');
+assert.equal(verifySession(undefined), null, 'без cookie сессии нет');
+assert.equal(
+  verifySession(token, Date.now() + 8 * 24 * 60 * 60 * 1000),
+  null,
+  'просроченная сессия отвергается',
+);
+// подделка ролью: пользователь не может дописать себе admin, не зная секрета
+const forged = Buffer.from(
+  JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
+).toString('base64url');
+assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, переводы, авторизация');

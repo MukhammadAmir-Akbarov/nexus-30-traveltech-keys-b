@@ -1,6 +1,6 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { CORPUS } from '@/data/corpus';
+import { getCorpus } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { hasAI, MODEL } from '@/lib/model';
 import { LANG_LABEL, tr } from '@/lib/i18n';
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Пустое утверждение' }, { status: 400 });
   }
 
-  const hits = retrieve(CORPUS, claim, 3);
+  const hits = retrieve(getCorpus(), claim, 3);
   const sources = [
     ...new Map(
       hits.map((h) => [h.item.source.url, { title: tr(h.item.source.title, lang), url: h.item.source.url }]),
