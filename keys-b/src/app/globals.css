@@ -14,20 +14,9 @@
   --map-filter: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #000000;
-    --surface: #0c0d10;
-    --border: #23252c;
-    --text: #ededf0;
-    --muted: #9298a3;
-    --accent: #2fd4c4;
-    --danger: #ff6b60;
-    --ok: #4ade80;
-    --map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-  }
-}
-
+/* Тема всегда задана явно атрибутом data-theme: при первом заходе скрипт в
+   layout берёт системную настройку и фиксирует её. Медиазапрос поэтому не нужен —
+   пользователь переключает тему сам, и его выбор не переопределяется системой. */
 :root[data-theme='dark'] {
   --bg: #000000;
   --surface: #0c0d10;

@@ -17,7 +17,7 @@ const DEFAULT_TRIP: TripContext = {
   summer: false,
 };
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
 
 const TRIP_KEY = 'nexus30.trip';
 const THEME_KEY = 'nexus30.theme';
@@ -38,14 +38,17 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  if (theme === 'system') root.removeAttribute('data-theme');
-  else root.dataset.theme = theme;
+  document.documentElement.dataset.theme = theme;
+}
+
+/** Первый заход: подхватываем системную настройку и дальше держим её явно. */
+function systemTheme(): Theme {
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function TripProvider({ children }: { children: React.ReactNode }) {
   const [trip, setTrip] = useState<TripContext>(DEFAULT_TRIP);
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [ready, setReady] = useState(false);
   // до загрузки localStorage считаем опрос пройденным, иначе он мигает на каждом заходе
   const [onboarded, setOnboarded] = useState(true);
@@ -54,8 +57,13 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = localStorage.getItem(TRIP_KEY);
       if (raw) setTrip({ ...DEFAULT_TRIP, ...JSON.parse(raw) });
-      const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
-      if (savedTheme) setThemeState(savedTheme);
+      // в старых версиях в localStorage мог лежать 'system' — такой темы больше нет,
+      // поэтому значение всегда проверяем и чиним, иначе интерфейс падает
+      const saved = localStorage.getItem(THEME_KEY);
+      const theme: Theme = saved === 'light' || saved === 'dark' ? saved : systemTheme();
+      if (saved !== theme) localStorage.setItem(THEME_KEY, theme);
+      setThemeState(theme);
+      applyTheme(theme);
       setOnboarded(localStorage.getItem(ONBOARDED_KEY) === '1');
     } catch {
       // повреждённый localStorage — просто стартуем с дефолта

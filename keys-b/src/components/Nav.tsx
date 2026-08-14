@@ -21,13 +21,9 @@ const TABS: { href: string; key: UiKey }[] = [
   { href: '/guides', key: 'tabGuides' },
 ];
 
-const THEME_ICON: Record<Theme, string> = { light: '☀', dark: '☾', system: '◐' };
-const THEME_NEXT: Record<Theme, Theme> = { system: 'dark', dark: 'light', light: 'system' };
-const THEME_KEY: Record<Theme, UiKey> = {
-  light: 'themeLight',
-  dark: 'themeDark',
-  system: 'themeSystem',
-};
+const THEME_ICON: Record<Theme, string> = { light: '☀', dark: '☾' };
+const THEME_NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'light' };
+const THEME_KEY: Record<Theme, UiKey> = { light: 'themeLight', dark: 'themeDark' };
 
 export function Nav() {
   const pathname = usePathname();
@@ -71,8 +67,8 @@ export function Nav() {
           <button
             className="chip"
             onClick={() => setTheme(THEME_NEXT[theme])}
-            title={t(THEME_KEY[theme], lang)}
-            aria-label={t(THEME_KEY[theme], lang)}
+            title={t(THEME_KEY[THEME_NEXT[theme]], lang)}
+            aria-label={t(THEME_KEY[THEME_NEXT[theme]], lang)}
           >
             {THEME_ICON[theme]}
           </button>
