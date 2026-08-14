@@ -15,6 +15,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture', 'photo'],
     visitMinutes: 120,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Uchta madrasadan iborat ansambl — Samarqandning asosiy ramzi.',
       ru: 'Ансамбль из трёх медресе — главный символ Самарканда.',
@@ -30,6 +31,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: false,
     summary: {
       uz: 'Amir Temur va temuriylar dahmasi.',
       ru: 'Усыпальница Амира Темура и Тимуридов.',
@@ -45,6 +47,7 @@ export const PLACES: Place[] = [
     interests: ['architecture', 'religion', 'history'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'O‘z davrining eng yirik masjidlaridan biri.',
       ru: 'Одна из крупнейших мечетей своего времени.',
@@ -60,6 +63,7 @@ export const PLACES: Place[] = [
     interests: ['religion', 'architecture', 'photo'],
     visitMinutes: 75,
     familyFriendly: false,
+    outdoor: true,
     summary: {
       uz: 'XI–XIX asrlarga oid maqbaralar ko‘chasi, koshin bezaklari bilan.',
       ru: 'Улица мавзолеев XI–XIX веков с изразцовыми фасадами.',
@@ -75,6 +79,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'photo'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: false,
     summary: {
       uz: 'O‘rta asr astronomiya rasadxonasi va muzey.',
       ru: 'Средневековая астрономическая обсерватория и музей.',
@@ -90,6 +95,7 @@ export const PLACES: Place[] = [
     interests: ['food', 'crafts'],
     visitMinutes: 45,
     familyFriendly: true,
+    outdoor: false,
     summary: {
       uz: 'Shaharning asosiy bozori: non, quruq mevalar, ziravorlar.',
       ru: 'Главный рынок города: лепёшки, сухофрукты, специи.',
@@ -105,6 +111,7 @@ export const PLACES: Place[] = [
     interests: ['architecture', 'religion', 'history'],
     visitMinutes: 90,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Kalon minorasi, Kalon masjidi va Mir Arab madrasasi.',
       ru: 'Минарет Калян, мечеть Калян и медресе Мири-Араб.',
@@ -120,6 +127,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture'],
     visitMinutes: 75,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Buxoroning eng qadimgi inshooti, hukmdorlar qarorgohi.',
       ru: 'Древнейшая постройка Бухары, резиденция правителей.',
@@ -135,6 +143,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture'],
     visitMinutes: 40,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'IX–X asrlar chegarasida qurilgan g‘ishtin maqbara.',
       ru: 'Кирпичный мавзолей рубежа IX–X веков.',
@@ -150,6 +159,7 @@ export const PLACES: Place[] = [
     interests: ['architecture', 'photo'],
     visitMinutes: 30,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'To‘rt xil minorali kichik bino.',
       ru: 'Небольшое здание с четырьмя разными башнями.',
@@ -165,6 +175,7 @@ export const PLACES: Place[] = [
     interests: ['food', 'photo', 'architecture'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Hovuz atrofidagi ansambl, choyxonalar va shaharning kechki hayoti.',
       ru: 'Ансамбль вокруг водоёма, чайханы и вечерняя жизнь города.',
@@ -180,6 +191,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture', 'photo'],
     visitMinutes: 180,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Xivaning ichki shahri, to‘liq holda YuNESKO obyekti.',
       ru: 'Внутренний город Хивы, объект ЮНЕСКО целиком.',
@@ -195,6 +207,7 @@ export const PLACES: Place[] = [
     interests: ['architecture', 'photo'],
     visitMinutes: 30,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Feruza koshinlardagi tugallanmagan minora.',
       ru: 'Незавершённый минарет в бирюзовых изразцах.',
@@ -210,6 +223,7 @@ export const PLACES: Place[] = [
     interests: ['architecture', 'photo'],
     visitMinutes: 40,
     familyFriendly: false,
+    outdoor: true,
     summary: {
       uz: 'Xivadagi eng baland minora, tepasiga chiqish mumkin.',
       ru: 'Самый высокий минарет Хивы, подъём на смотровую площадку.',
@@ -225,6 +239,7 @@ export const PLACES: Place[] = [
     interests: ['religion', 'history'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: false,
     summary: {
       uz: 'Toshkentning ma’naviy markazi, qo‘lyozmalar kutubxonasi.',
       ru: 'Духовный центр Ташкента, библиотека рукописей.',
@@ -240,6 +255,7 @@ export const PLACES: Place[] = [
     interests: ['food', 'crafts'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: false,
     summary: {
       uz: 'Toshkent eski shahridagi katta gumbaz ostidagi bozor.',
       ru: 'Старый рынок Ташкента под большим куполом.',
@@ -255,6 +271,7 @@ export const PLACES: Place[] = [
     interests: ['history', 'architecture'],
     visitMinutes: 60,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Amir Temur saroyining ulkan peshtoq qoldiqlari.',
       ru: 'Фрагменты гигантского портала дворца Амира Темура.',
@@ -274,6 +291,7 @@ export const PLACES: Place[] = [
     interests: ['nature', 'photo', 'food'],
     visitMinutes: 240,
     familyFriendly: true,
+    outdoor: true,
     summary: {
       uz: 'Yurtdagi tunash, tuya sayri, dasht va ko‘l.',
       ru: 'Ночёвка в юрте, прогулки на верблюдах, степь и озеро.',

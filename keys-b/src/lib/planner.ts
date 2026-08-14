@@ -34,6 +34,11 @@ const TEXT = {
     ru: 'Совпадает с вашими интересами.',
     en: 'Matches your interests.',
   },
+  summerOutdoor: {
+    uz: 'Yozda kunduzi +38 dan oshadi — bu obyektni tongda yoki kechqurun ko‘ring.',
+    ru: 'Летом днём выше +38 — этот объект лучше смотреть утром или вечером.',
+    en: 'Summer days exceed +38 °C — visit this open-air site in the morning or evening.',
+  },
   more: { uz: 'yana', ru: 'ещё', en: 'plus' },
   empty: {
     uz: 'Tanlangan filtrlarga mos obyekt topilmadi — qiziqishlar sonini kamaytiring.',
@@ -107,6 +112,8 @@ function orderByProximity(places: Place[]): Place[] {
 
 function noteFor(place: Place, ctx: TripContext, lang: Lang): string {
   const summary = place.summary[lang];
+  // летом жара делает дневной осмотр под открытым небом тяжёлым (см. корпус, c34)
+  if (ctx.summer && place.outdoor) return `${summary} ${TEXT.summerOutdoor[lang]}`;
   if (ctx.travelType === 'family' && place.familyFriendly) {
     return `${summary} ${TEXT.family[lang]}`;
   }
@@ -211,7 +218,11 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
       }
       firstDayInCity = false;
 
-      const picked = fillDay(cityPool, budget);
+      let picked = fillDay(cityPool, budget);
+      // летом открытые объекты ставим в начало дня — на утреннюю прохладу
+      if (ctx.summer) {
+        picked = [...picked].sort((a, b) => Number(b.outdoor) - Number(a.outdoor));
+      }
       cityPool = cityPool.filter((p) => !picked.includes(p));
       days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
       previousRegion = region;

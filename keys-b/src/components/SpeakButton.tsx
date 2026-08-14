@@ -1,0 +1,46 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useTrip } from './TripProvider';
+import { t } from '@/lib/i18n';
+import type { Lang } from '@/lib/types';
+
+// Озвучка карточки объекта штатным синтезом речи браузера.
+// Нужна у самого объекта: телефон в кармане, слушаешь и смотришь на памятник,
+// а не в экран. Библиотеки не нужны — это один вызов speechSynthesis.
+
+const VOICE_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
+
+export function SpeakButton({ text }: { text: string }) {
+  const { lang } = useTrip();
+  const [supported, setSupported] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+
+  useEffect(() => {
+    setSupported(typeof window !== 'undefined' && 'speechSynthesis' in window);
+    return () => window.speechSynthesis?.cancel();
+  }, []);
+
+  if (!supported) return null;
+
+  const toggle = () => {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = VOICE_LOCALE[lang];
+    utterance.rate = 0.95;
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    setSpeaking(true);
+  };
+
+  return (
+    <button type="button" className="chip" onClick={toggle} aria-pressed={speaking}>
+      {speaking ? t('speakStop', lang) : t('speakStart', lang)}
+    </button>
+  );
+}

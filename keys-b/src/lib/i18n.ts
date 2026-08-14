@@ -178,6 +178,11 @@ const UI = {
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },
+  fieldSummer: {
+    uz: 'Yozgi sayohat (+38 dan issiq)',
+    ru: 'Летняя поездка (жара выше +38)',
+    en: 'Summer trip (over +38 °C)',
+  },
   fieldDays: { uz: 'Kunlar', ru: 'Дней', en: 'Days' },
 
   cardCheckTitle: { uz: '1 · Faktlarni tekshirish', ru: '1 · Проверка фактов', en: '1 · Fact check' },
@@ -245,6 +250,8 @@ const UI = {
   modeAi: { uz: 'model javobi', ru: 'ответ модели', en: 'model answer' },
   modeOffline: { uz: 'oflayn rejim', ru: 'офлайн-режим', en: 'offline mode' },
 
+  speakStart: { uz: '🔊 Ovoz bilan tinglash', ru: '🔊 Прослушать', en: '🔊 Listen' },
+  speakStop: { uz: '■ To‘xtatish', ru: '■ Остановить', en: '■ Stop' },
   placeFacts: {
     uz: 'Rasmiy manbalardagi faktlar',
     ru: 'Факты из официальных источников',

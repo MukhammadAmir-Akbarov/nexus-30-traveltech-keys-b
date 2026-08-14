@@ -83,6 +83,16 @@ export default function Home() {
             </div>
           </div>
 
+          <label className="flex cursor-pointer items-center gap-2 self-end text-sm">
+            <input
+              type="checkbox"
+              checked={trip.summer}
+              onChange={(e) => update({ summer: e.target.checked })}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {t('fieldSummer', lang)}
+          </label>
+
           <div>
             <div className="mb-2 text-sm font-semibold">
               {t('fieldDays', lang)}: {trip.days}

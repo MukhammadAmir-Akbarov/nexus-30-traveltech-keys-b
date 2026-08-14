@@ -31,6 +31,8 @@ export type TripContext = {
   travelType: TravelType;
   days: number;
   lang: Lang;
+  /** Летняя поездка: объекты под открытым небом уходят на утро и вечер. */
+  summer: boolean;
 };
 
 export type Place = {
@@ -42,6 +44,8 @@ export type Place = {
   interests: Interest[];
   visitMinutes: number;
   familyFriendly: boolean;
+  /** Осмотр под открытым небом — важно летом, когда днём выше +38. */
+  outdoor: boolean;
   summary: I18nText;
 };
 
