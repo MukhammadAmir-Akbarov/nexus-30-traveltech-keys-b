@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Светлая тема — база. Тёмная переопределяет только токены:
+   ниже по системной настройке и по явному выбору пользователя (data-theme). */
 :root {
   --bg: #f6f5f1;
   --surface: #ffffff;
@@ -9,19 +11,33 @@
   --accent: #0d7a75;
   --danger: #b3261e;
   --ok: #1a7f37;
+  --map-filter: none;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1116;
-    --surface: #161a21;
-    --border: #262c36;
-    --text: #e8eaed;
-    --muted: #9aa1ab;
-    --accent: #2fb8ad;
+  :root:not([data-theme='light']) {
+    --bg: #000000;
+    --surface: #0c0d10;
+    --border: #23252c;
+    --text: #ededf0;
+    --muted: #9298a3;
+    --accent: #2fd4c4;
     --danger: #ff6b60;
     --ok: #4ade80;
+    --map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #0c0d10;
+  --border: #23252c;
+  --text: #ededf0;
+  --muted: #9298a3;
+  --accent: #2fd4c4;
+  --danger: #ff6b60;
+  --ok: #4ade80;
+  --map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
 }
 
 @theme inline {
@@ -68,7 +84,7 @@ body {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: #04110f;
 }
 
 .chip {
@@ -84,7 +100,7 @@ body {
 .chip[data-active='true'] {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: #04110f;
 }
 
 .field {
@@ -98,6 +114,7 @@ body {
 }
 
 .muted { color: var(--muted); }
+
 .tag {
   font-size: 12px;
   padding: 2px 8px;
@@ -113,4 +130,13 @@ body {
   border-radius: 14px;
   background: var(--surface);
   z-index: 0;
+}
+
+/* Тайлы OSM светлые — в тёмной теме инвертируем их, чтобы карта не слепила */
+.leaflet-tile-pane { filter: var(--map-filter); }
+
+.leaflet-container .leaflet-tooltip {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
 }

@@ -1,31 +1,32 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import './globals.css';
+import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
 import { TripProvider } from '@/components/TripProvider';
 
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin', 'cyrillic'] });
 
 export const metadata: Metadata = {
-  title: 'TurizmHamroh — надёжный спутник туриста',
+  title: 'TurizmHamroh — ishonchli sayohat hamrohi',
   description:
-    'NEXUS30 · TravelTech кейс B: проверка фактов, AI-маршрут по Узбекистану и подбор гида в одном контексте.',
+    'NEXUS30 · TravelTech kеys B: faktlarni tekshirish, AI marshrut va gid tanlash bitta kontekstda.',
 };
+
+// Тему выставляем до первой отрисовки, иначе при тёмной теме мигает белым.
+const THEME_SCRIPT = `try{var t=localStorage.getItem('nexus30.theme');if(t&&t!=='system')document.documentElement.dataset.theme=t;}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    <html lang="uz" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className={geist.variable}>
         <TripProvider>
           <Nav />
           <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <footer
-            className="mx-auto max-w-5xl px-4 pb-10 pt-4 text-[12px]"
-            style={{ color: 'var(--muted)' }}
-          >
-            Прототип для хакатона NEXUS30. Данные об объектах и гидах — демонстрационные;
-            в рабочей версии подключается база Комитета по туризму.
-          </footer>
+          <Footer />
         </TripProvider>
       </body>
     </html>

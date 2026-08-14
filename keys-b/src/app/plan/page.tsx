@@ -4,25 +4,26 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTrip } from '@/components/TripProvider';
-import { PLACE_BY_ID, REGION_LABEL } from '@/data/places';
+import { PLACE_BY_ID } from '@/data/places';
+import { REGION_LABEL, t, tr } from '@/lib/i18n';
 import type { Itinerary, Mode, Place } from '@/lib/types';
 
 // Leaflet трогает window — грузим только на клиенте.
 const RouteMap = dynamic(() => import('@/components/RouteMap'), {
   ssr: false,
-  loading: () => <div className="card muted text-sm">Карта загружается…</div>,
+  loading: () => <div className="card muted text-sm">…</div>,
 });
 
 export default function PlanPage() {
-  const { trip } = useTrip();
+  const { trip, lang } = useTrip();
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [mode, setMode] = useState<Mode>('offline');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
 
   const build = async () => {
     setLoading(true);
-    setError('');
+    setError(false);
     try {
       const res = await fetch('/api/plan', {
         method: 'POST',
@@ -34,7 +35,7 @@ export default function PlanPage() {
       setItinerary(data.itinerary);
       setMode(data.mode);
     } catch {
-      setError('Не удалось построить маршрут. Попробуйте ещё раз.');
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -50,38 +51,46 @@ export default function PlanPage() {
     <div className="flex flex-col gap-4">
       <section className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">Маршрут под ваш формат поездки</h1>
+          <h1 className="text-xl font-bold">{t('planTitle', lang)}</h1>
           <p className="muted mt-1 text-sm">
-            Собирается из контекста сверху: регион, интересы, формат и число дней.{' '}
+            {t('planLead', lang)}{' '}
             <Link href="/" className="underline" style={{ color: 'var(--accent)' }}>
-              изменить
+              {t('planChange', lang)}
             </Link>
           </p>
         </div>
         <button className="btn btn-primary" disabled={loading} onClick={build}>
-          {loading ? 'Собираю маршрут…' : 'Построить маршрут'}
+          {loading ? t('planLoading', lang) : t('planButton', lang)}
         </button>
       </section>
 
-      {error && <div className="card text-sm" style={{ color: 'var(--danger)' }}>{error}</div>}
+      {error && (
+        <div className="card text-sm" style={{ color: 'var(--danger)' }}>
+          {t('planError', lang)}
+        </div>
+      )}
 
       {itinerary && (
         <>
           <section className="card flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold">Итого</span>
-              <span className="tag">{mode === 'ai' ? 'составлено моделью' : 'офлайн-режим'}</span>
+              <span className="text-sm font-semibold">{t('planTotal', lang)}</span>
+              <span className="tag">
+                {mode === 'ai' ? t('planModeAi', lang) : t('modeOffline', lang)}
+              </span>
             </div>
             <p className="text-sm">{itinerary.summary}</p>
           </section>
 
-          {orderedPlaces.length > 0 && <RouteMap places={orderedPlaces} />}
+          {orderedPlaces.length > 0 && <RouteMap places={orderedPlaces} lang={lang} />}
 
           <section className="flex flex-col gap-3">
             {itinerary.days.map((day) => (
               <div key={day.day} className="card">
                 <div className="mb-2 flex flex-wrap items-baseline gap-2">
-                  <span className="text-sm font-bold">День {day.day}</span>
+                  <span className="text-sm font-bold">
+                    {t('planDay', lang)} {day.day}
+                  </span>
                   <span className="muted text-[13px]">{day.title}</span>
                 </div>
                 <ol className="flex flex-col gap-3">
@@ -91,16 +100,17 @@ export default function PlanPage() {
                     return (
                       <li key={item.placeId} className="flex gap-3">
                         <span
-                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
-                          style={{ background: 'var(--accent)' }}
+                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
+                          style={{ background: 'var(--accent)', color: '#04110f' }}
                         >
                           {index + 1}
                         </span>
                         <div>
                           <div className="text-sm font-semibold">
-                            {place.name}{' '}
+                            {tr(place.name, lang)}{' '}
                             <span className="muted font-normal">
-                              · {REGION_LABEL[place.region]} · {place.visitMinutes} мин
+                              · {tr(REGION_LABEL[place.region], lang)} · {place.visitMinutes}{' '}
+                              {t('planMinutes', lang)}
                             </span>
                           </div>
                           <div className="muted text-[13px]">{item.note}</div>
