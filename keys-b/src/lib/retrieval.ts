@@ -1,0 +1,68 @@
+import type { CorpusItem } from './types.ts';
+
+// Поиск по корпусу без эмбеддингов и без БД.
+// ponytail: 40 абзацев -> хватает IDF по префиксам слов; при корпусе >500 абзацев
+// менять на Postgres + pgvector (интерфейс retrieve() останется тем же).
+
+const STOPWORDS = new Set([
+  'это', 'что', 'как', 'для', 'при', 'над', 'под', 'без', 'the', 'and',
+  'был', 'была', 'было', 'были', 'его', 'её', 'их', 'там', 'тут', 'где',
+  'или', 'если', 'чем', 'уже', 'ещё', 'все', 'всё', 'так', 'году', 'года',
+]);
+
+export function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[’'`]/g, '')
+    .replace(/[^a-zа-я0-9-]+/gi, ' ')
+    .trim();
+}
+
+/** Грубый стеммер: обрезаем слово до 6 символов. «регистане» и «регистан» -> «регист». */
+function stem(token: string): string {
+  return token.length > 6 ? token.slice(0, 6) : token;
+}
+
+export function tokenize(text: string): string[] {
+  return normalize(text)
+    .split(/[\s-]+/)
+    .filter((t) => t.length >= 2 && !STOPWORDS.has(t))
+    .map(stem);
+}
+
+export type Hit = { item: CorpusItem; score: number };
+
+export function retrieve(corpus: CorpusItem[], query: string, k = 3): Hit[] {
+  const queryTokens = [...new Set(tokenize(query))];
+  if (queryTokens.length === 0) return [];
+
+  const docs = corpus.map((item) => ({
+    item,
+    text: new Set(tokenize(item.text)),
+    keywords: new Set(item.keywords.flatMap(tokenize)),
+  }));
+
+  const df = new Map<string, number>();
+  for (const token of queryTokens) {
+    const count = docs.filter((d) => d.text.has(token) || d.keywords.has(token)).length;
+    df.set(token, count);
+  }
+
+  const hits: Hit[] = docs.map((doc) => {
+    let score = 0;
+    for (const token of queryTokens) {
+      const hitsInDoc = df.get(token) ?? 0;
+      if (hitsInDoc === 0) continue;
+      const idf = Math.log(1 + corpus.length / hitsInDoc);
+      if (doc.keywords.has(token)) score += idf * 1.6;
+      else if (doc.text.has(token)) score += idf;
+    }
+    return { item: doc.item, score: score / Math.sqrt(queryTokens.length) };
+  });
+
+  return hits
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k);
+}
