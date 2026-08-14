@@ -21,6 +21,11 @@ export const PLACES: Place[] = [
       ru: 'Ансамбль из трёх медресе — главный символ Самарканда.',
       en: 'An ensemble of three madrasahs — the main symbol of Samarkand.',
     },
+    highlights: [
+      { uz: 'Ulug‘bek madrasasi', ru: 'Медресе Улугбека', en: 'Ulugh Beg Madrasah' },
+      { uz: 'Sherdor madrasasi', ru: 'Медресе Шердор', en: 'Sher-Dor Madrasah' },
+      { uz: 'Tillakori: oltin gumbaz', ru: 'Тилля-Кари: золотой купол', en: 'Tilya-Kori: the golden dome' },
+    ],
   },
   {
     id: 'gur-emir',
@@ -117,6 +122,11 @@ export const PLACES: Place[] = [
       ru: 'Минарет Калян, мечеть Калян и медресе Мири-Араб.',
       en: 'The Kalyan minaret, the Kalyan mosque and the Mir-i-Arab madrasah.',
     },
+    highlights: [
+      { uz: 'Kalon minorasi', ru: 'Минарет Калян', en: 'Kalyan minaret' },
+      { uz: 'Kalon masjidi hovlisi', ru: 'Двор мечети Калян', en: 'Kalyan mosque courtyard' },
+      { uz: 'Mir Arab madrasasi', ru: 'Медресе Мири-Араб', en: 'Mir-i-Arab madrasah' },
+    ],
   },
   {
     id: 'ark',
@@ -197,6 +207,11 @@ export const PLACES: Place[] = [
       ru: 'Внутренний город Хивы, объект ЮНЕСКО целиком.',
       en: 'Khiva’s inner city, a UNESCO site in its entirety.',
     },
+    highlights: [
+      { uz: 'Ko‘hna Ark', ru: 'Куня-Арк', en: 'Kuhna Ark' },
+      { uz: 'Juma masjidi ustunlari', ru: 'Колонны Джума-мечети', en: 'Juma mosque columns' },
+      { uz: 'Tosh-Hovli saroyi', ru: 'Дворец Таш-Хаули', en: 'Tash-Hauli Palace' },
+    ],
   },
   {
     id: 'kalta-minor',
@@ -245,6 +260,11 @@ export const PLACES: Place[] = [
       ru: 'Духовный центр Ташкента, библиотека рукописей.',
       en: 'Tashkent’s spiritual centre with a library of manuscripts.',
     },
+    highlights: [
+      { uz: 'Usmon Qur’oni', ru: 'Коран Османа', en: 'The Uthman Quran' },
+      { uz: 'Baroqxon madrasasi', ru: 'Медресе Барак-хан', en: 'Barak-Khan madrasah' },
+      { uz: 'Kutubxona', ru: 'Библиотека рукописей', en: 'Manuscript library' },
+    ],
   },
   {
     id: 'chorsu',
@@ -297,6 +317,56 @@ export const PLACES: Place[] = [
       ru: 'Ночёвка в юрте, прогулки на верблюдах, степь и озеро.',
       en: 'A night in a yurt, camel rides, steppe and lake.',
     },
+  },
+  {
+    id: 'imam-bukhari',
+    name: {
+      uz: 'Imom Buxoriy majmuasi',
+      ru: 'Комплекс Имама Бухари',
+      en: 'Imam Bukhari Complex',
+    },
+    region: 'samarkand',
+    lat: 39.7783,
+    lng: 66.8047,
+    interests: ['religion', 'history', 'architecture'],
+    visitMinutes: 90,
+    familyFriendly: true,
+    outdoor: true,
+    summary: {
+      uz: 'Hadis ilmi allomasi Imom Buxoriy qadamjosi — ziyoratgoh va majmua.',
+      ru: 'Мемориальный комплекс имама аль-Бухари — место паломничества.',
+      en: 'The memorial complex of Imam al-Bukhari, a major pilgrimage site.',
+    },
+    highlights: [
+      { uz: 'Maqbara va ziyoratxona', ru: 'Мавзолей и зиярат-хона', en: 'Mausoleum and prayer hall' },
+      { uz: 'Muzey: qadimiy qo‘lyozmalar', ru: 'Музей: старинные рукописи', en: 'Museum: ancient manuscripts' },
+      { uz: 'Masjid va hovli', ru: 'Мечеть и внутренний двор', en: 'Mosque and courtyard' },
+    ],
+  },
+  {
+    id: 'islamic-civilization',
+    name: {
+      uz: 'Islom sivilizatsiyasi markazi',
+      ru: 'Центр исламской цивилизации',
+      en: 'Centre of Islamic Civilisation',
+    },
+    region: 'tashkent',
+    lat: 41.3268,
+    lng: 69.2371,
+    interests: ['history', 'religion', 'architecture'],
+    visitMinutes: 120,
+    familyFriendly: true,
+    outdoor: false,
+    summary: {
+      uz: 'Hazrati Imom yonidagi zamonaviy muzey-markaz.',
+      ru: 'Современный музейный центр рядом с комплексом Хазрати Имам.',
+      en: 'A modern museum centre next to the Khast Imam complex.',
+    },
+    highlights: [
+      { uz: 'Usmon Qur’oni nusxasi ekspozitsiyasi', ru: 'Экспозиция вокруг Корана Османа', en: 'Exhibit around the Uthman Quran' },
+      { uz: 'Qo‘lyozmalar zali', ru: 'Зал рукописей', en: 'Manuscript hall' },
+      { uz: 'Interaktiv ekspozitsiya', ru: 'Интерактивная экспозиция', en: 'Interactive exhibition' },
+    ],
   },
 ];
 

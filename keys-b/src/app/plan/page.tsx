@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
+import { NearbyPois } from '@/components/NearbyPois';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
@@ -137,6 +138,14 @@ export default function PlanPage() {
                     );
                   })}
                 </ol>
+                {(() => {
+                  const anchor = PLACE_BY_ID[day.items[0]?.placeId];
+                  return anchor ? (
+                    <div className="mt-3">
+                      <NearbyPois place={anchor} />
+                    </div>
+                  ) : null;
+                })()}
               </div>
             ))}
           </section>

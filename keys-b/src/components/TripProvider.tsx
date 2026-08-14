@@ -9,6 +9,7 @@ import type { Lang, TripContext } from '@/lib/types';
 
 const DEFAULT_TRIP: TripContext = {
   region: 'samarkand',
+  regions: ['samarkand'],
   interests: ['history', 'architecture'],
   travelType: 'solo',
   days: 3,

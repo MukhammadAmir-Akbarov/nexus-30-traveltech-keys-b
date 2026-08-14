@@ -9,10 +9,10 @@ import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { accuracyRate, matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
-import { buildTransfer, trainLeg } from './transfer.ts';
+import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, reviewsLabel, yearsLabel } from './i18n.ts';
 import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
-import type { Lang, TripContext } from './types.ts';
+import type { Lang, ScoredGuide, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
 
@@ -70,6 +70,7 @@ for (const lang of LANGS) {
 // --- планировщик ---
 const family: TripContext = {
   region: 'samarkand',
+  regions: ['samarkand'],
   interests: ['history', 'architecture'],
   travelType: 'family',
   days: 2,
@@ -117,6 +118,7 @@ const country = buildItinerary(PLACES, {
   ...family,
   travelType: 'solo',
   region: 'all',
+  regions: [],
   days: 7,
 });
 const cityOf = (placeId: string) => PLACES.find((p) => p.id === placeId)!.region;
@@ -132,14 +134,21 @@ assert.ok(
 const transfers = country.days.map((d) => d.transfer).filter((x) => x !== undefined);
 assert.ok(transfers.length >= 2, 'между городами должны появляться переезды');
 
-// порядок городов — по времени в пути, а не по прямой линии: до Самарканда
-// есть поезд, поэтому он идёт вторым, хотя Нурата ближе по карте
-assert.equal(
-  transfers[0].toRegion,
-  'samarkand',
-  'после Ташкента едем туда, куда быстрее добраться, а не туда, что ближе на карте',
+// Порядок городов — по времени в пути, а не по прямой линии на карте.
+// Проверяем само правило, а не конкретный город: появится новый рейс —
+// маршрут имеет право перестроиться, но выезжать из Ташкента он должен
+// быстрым транспортом, а не четырёхчасовой машиной до ближайшей точки.
+const firstLeg = transfers[0].options[0];
+assert.ok(
+  ['plane', 'train'].includes(firstLeg.mode),
+  `из Ташкента выезжаем быстрым транспортом, а получили ${firstLeg.mode}`,
 );
-assert.equal(transfers[0].options[0].mode, 'train', 'и едем поездом');
+assert.ok(firstLeg.hours <= 2, 'первый переезд не должен съедать полдня');
+assert.notEqual(
+  transfers[0].toRegion,
+  'nurata',
+  'Нурата ближе по карте, но туда только машиной — она не должна быть первой',
+);
 
 // §4.2 ТЗ: у переезда есть варианты транспорта со временем и ценой
 for (const transfer of transfers) {
@@ -175,7 +184,7 @@ assert.ok(
 );
 
 // интересы не совпали, но регион выбран -> показываем объекты региона, а не пустоту
-const fallback = buildItinerary(PLACES, { ...family, region: 'khiva', interests: ['food'] });
+const fallback = buildItinerary(PLACES, { ...family, region: 'khiva', regions: ['khiva'], interests: ['food'] });
 assert.ok(fallback.days.length > 0, 'выбранный регион сам по себе даёт маршрут');
 assert.ok(
   fallback.days.flatMap((d) => d.items).every((i) => i.placeId !== 'islam-khoja'),
@@ -230,6 +239,7 @@ const accuracy = {
 const byAccuracy = matchGuides(GUIDES, {
   ...baseQuery,
   region: 'bukhara',
+  regions: ['bukhara' as const],
   interests: ['history', 'architecture'],
   languages: ['ru'],
   accuracy,
@@ -261,7 +271,12 @@ assert.ok(
 );
 
 // требование №3 ТЗ: у одиночки подтверждённый статус гида весит больше
-const soloQuery = { ...baseQuery, travelType: 'solo' as const, region: 'tashkent' as const };
+const soloQuery = {
+  ...baseQuery,
+  travelType: 'solo' as const,
+  region: 'tashkent' as const,
+  regions: ['tashkent' as const],
+};
 const soloPick = matchGuides(GUIDES, soloQuery);
 const groupPick = matchGuides(GUIDES, { ...soloQuery, travelType: 'group' as const });
 const scoreOf = (list: typeof soloPick, id: string) =>
@@ -286,6 +301,7 @@ const summerPlan = buildItinerary(PLACES, {
   ...family,
   travelType: 'solo',
   region: 'bukhara',
+  regions: ['bukhara'],
   summer: true,
 });
 const firstDayItems = summerPlan.days[0].items;
@@ -298,9 +314,63 @@ assert.ok(
   'у открытого объекта летом должна быть пометка про жару',
 );
 assert.ok(
-  !buildItinerary(PLACES, { ...family, travelType: 'solo', region: 'bukhara' })
+  !buildItinerary(PLACES, { ...family, travelType: 'solo', region: 'bukhara', regions: ['bukhara'] })
     .days[0].items.some((i) => i.note.includes('+38')),
   'вне летнего режима пометки про жару быть не должно',
+);
+
+// новые голосовые: несколько регионов сразу
+const twoRegions = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  regions: ['samarkand', 'bukhara'],
+  days: 5,
+});
+const twoRegionCities = new Set(
+  twoRegions.days.flatMap((d) => d.items.map((i) => cityOf(i.placeId))),
+);
+assert.deepEqual(
+  [...twoRegionCities].sort(),
+  ['bukhara', 'samarkand'],
+  'выбраны два региона — в маршруте должны быть оба и только они',
+);
+
+// самолёт появляется там, где летают, и обгоняет поезд по времени
+const toKhiva = buildTransfer('tashkent', 'khiva', 740);
+assert.equal(toKhiva.options[0].mode, 'plane', 'до Хивы быстрее лететь, чем ехать 14 часов поездом');
+assert.ok(
+  toKhiva.options.some((o) => o.mode === 'bus'),
+  'автобус должен быть в вариантах как самый дешёвый',
+);
+assert.equal(planeLeg('samarkand', 'shakhrisabz'), null, 'между соседними городами рейсов нет');
+
+// рейтинг гида по объектам: общий балл высокий, а нужный объект знает плохо
+const byPlaceStats = {
+  g5: {
+    'khast-imam': { confirmed: 11, refuted: 0, unclear: 0 },
+    registan: { confirmed: 1, refuted: 9, unclear: 0 },
+  },
+};
+const onRegistan = matchGuides(GUIDES, {
+  ...baseQuery,
+  regions: ['samarkand'],
+  accuracyByPlace: byPlaceStats,
+  placeIds: ['registan'],
+}, 10);
+const onKhastImam = matchGuides(GUIDES, {
+  ...baseQuery,
+  regions: ['tashkent'],
+  accuracyByPlace: byPlaceStats,
+  placeIds: ['khast-imam'],
+}, 10);
+const g5on = (list: ScoredGuide[]) => list.find((g) => g.guide.id === 'g5')?.score ?? 0;
+assert.ok(
+  g5on(onKhastImam) > g5on(onRegistan),
+  'один и тот же гид должен цениться выше там, где его факты подтверждаются',
+);
+assert.ok(
+  onRegistan.find((g) => g.guide.id === 'g5')?.why.includes('10%'),
+  'в объяснении видна точность именно по объектам маршрута',
 );
 
 // §9 ТЗ: метка «подтверждён» должна опираться на конкретные проверки,

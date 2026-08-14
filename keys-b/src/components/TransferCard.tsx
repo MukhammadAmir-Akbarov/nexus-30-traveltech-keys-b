@@ -11,7 +11,9 @@ import type { UiKey } from '@/lib/i18n';
 // («Shaxsiylashtirilgan transfer va AI trip-planner»).
 
 const MODE: Record<TransferMode, { icon: string; key: UiKey }> = {
+  plane: { icon: '✈️', key: 'transferPlane' },
   train: { icon: '🚄', key: 'transferTrain' },
+  bus: { icon: '🚌', key: 'transferBus' },
   car: { icon: '🚗', key: 'transferCar' },
   minibus: { icon: '🚐', key: 'transferMinibus' },
 };

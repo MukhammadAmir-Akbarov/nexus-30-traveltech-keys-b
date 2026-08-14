@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { NearbyPois } from '@/components/NearbyPois';
 import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
@@ -24,6 +25,20 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
         </div>
       </section>
 
+      {place.highlights && place.highlights.length > 0 && (
+        <section className="card flex flex-col gap-2">
+          <div className="text-sm font-semibold">{t('placeHighlights', lang)}</div>
+          <ul className="flex flex-col gap-1 text-[13px]">
+            {place.highlights.map((item) => (
+              <li key={item.en} className="flex gap-2">
+                <span style={{ color: 'var(--accent)' }}>•</span>
+                <span>{tr(item, lang)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="card flex flex-col gap-3">
         <div className="text-sm font-semibold">{t('placeFacts', lang)}</div>
         {facts.length === 0 && <div className="muted text-[13px]">{t('placeNoFacts', lang)}</div>}
@@ -43,6 +58,10 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="card">
+        <NearbyPois place={place} />
       </section>
 
       <section className="flex flex-wrap gap-2">
