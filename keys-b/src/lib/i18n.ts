@@ -127,6 +127,30 @@ export const REGIONS: (Region | 'all')[] = [
   'nurata',
 ];
 
+/**
+ * Склонение числительных. Русский требует три формы, английский две,
+ * узбекскому согласование не нужно вовсе.
+ */
+function ruPlural(n: number, forms: [string, string, string]): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return forms[1];
+  return forms[2];
+}
+
+export function reviewsLabel(n: number, lang: Lang): string {
+  if (lang === 'uz') return 'sharh';
+  if (lang === 'en') return n === 1 ? 'review' : 'reviews';
+  return ruPlural(n, ['отзыв', 'отзыва', 'отзывов']);
+}
+
+export function yearsLabel(n: number, lang: Lang): string {
+  if (lang === 'uz') return 'yillik tajriba';
+  if (lang === 'en') return n === 1 ? 'year of experience' : 'years of experience';
+  return `${ruPlural(n, ['год', 'года', 'лет'])} опыта`;
+}
+
 /** Словарь интерфейса. Ключ -> три языка. */
 const UI = {
   brandSuffix: { uz: 'Hamroh', ru: 'Hamroh', en: 'Hamroh' },

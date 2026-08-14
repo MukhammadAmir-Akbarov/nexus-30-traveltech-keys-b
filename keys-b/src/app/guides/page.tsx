@@ -11,6 +11,8 @@ import {
   INTEREST_LABEL,
   REGION_LABEL,
   REVIEW_TEMPLATE,
+  reviewsLabel,
+  yearsLabel,
   t,
   tr,
 } from '@/lib/i18n';
@@ -128,13 +130,13 @@ export default function GuidesPage() {
                     </span>
                   )}
                   <span className="tag">
-                    ★ {guide.rating.toFixed(1)} · {guide.reviews} {t('guidesReviews', lang)}
+                    ★ {guide.rating.toFixed(1)} · {guide.reviews} {reviewsLabel(guide.reviews, lang)}
                   </span>
                   <span className="tag">
                     ${guide.pricePerDay} / {t('guidesPerDay', lang)}
                   </span>
                   <span className="tag">
-                    {guide.experienceYears} {t('guidesYears', lang)}
+                    {guide.experienceYears} {yearsLabel(guide.experienceYears, lang)}
                   </span>
                   {guide.hasTransport && (
                     <span className="tag">{t('guidesHasTransport', lang)}</span>

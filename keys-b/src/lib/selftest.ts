@@ -10,7 +10,7 @@ import { accuracyRate, matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, trainLeg } from './transfer.ts';
-import { GUIDE_LANGS, REVIEW_TEMPLATE } from './i18n.ts';
+import { GUIDE_LANGS, REVIEW_TEMPLATE, reviewsLabel, yearsLabel } from './i18n.ts';
 import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
 import type { Lang, TripContext } from './types.ts';
 
@@ -354,5 +354,17 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- склонение числительных ---
+assert.equal(reviewsLabel(1, 'ru'), 'отзыв');
+assert.equal(reviewsLabel(3, 'ru'), 'отзыва');
+assert.equal(reviewsLabel(5, 'ru'), 'отзывов');
+assert.equal(reviewsLabel(11, 'ru'), 'отзывов', '11 — исключение, не «отзыв»');
+assert.equal(reviewsLabel(132, 'ru'), 'отзыва', '132 оканчивается на 2 — «отзыва»');
+assert.equal(reviewsLabel(1, 'en'), 'review');
+assert.equal(reviewsLabel(2, 'en'), 'reviews');
+assert.equal(yearsLabel(3, 'ru'), 'года опыта');
+assert.equal(yearsLabel(5, 'ru'), 'лет опыта');
+assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а не «года»');
 
 console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, переводы, авторизация');

@@ -58,9 +58,11 @@ const REASON = {
     en: 'status verified (demo)',
   },
   accuracy: {
-    uz: 'faktlarining {percent}% tasdiqlangan ({n} ta tekshiruv)',
-    ru: 'фактов подтвердилось {percent}% ({n} проверок)',
-    en: '{percent}% of claims confirmed ({n} checks)',
+    // «1 проверок» звучит криво, а склонять число ради одной строки не стоит:
+    // формулировка без согласования верна при любом количестве
+    uz: 'faktlarining {percent}% tasdiqlangan (tekshiruv: {n})',
+    ru: 'фактов подтвердилось {percent}% (проверок: {n})',
+    en: '{percent}% of claims confirmed (checks: {n})',
   },
   soloSafety: {
     uz: 'yakka sayohat uchun tasdiqlangan gid',
