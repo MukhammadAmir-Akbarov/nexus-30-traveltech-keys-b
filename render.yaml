@@ -1,0 +1,21 @@
+# Render Blueprint. Dashboard: New → Blueprint → выбрать этот репозиторий.
+# Код лежит в подпапке keys-b, поэтому задан rootDir.
+services:
+  - type: web
+    name: turizm-hamroh
+    runtime: node
+    plan: free
+    region: frankfurt # ближайший к Узбекистану регион Render
+    branch: cyber
+    rootDir: keys-b
+    buildCommand: npm ci && npm run build
+    # Render передаёт порт в $PORT — next start по умолчанию слушает 3000, поэтому порт задаём явно
+    startCommand: npx next start -p $PORT
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Ключ модели задаётся в дашборде. Без него приложение работает в offline-режиме.
+      - key: AI_GATEWAY_API_KEY
+        sync: false
