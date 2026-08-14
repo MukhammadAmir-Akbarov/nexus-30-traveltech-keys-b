@@ -45,6 +45,11 @@ export type Place = {
   summary: I18nText;
 };
 
+export type Gender = 'female' | 'male';
+
+/** Отзыв ссылается на локализованный шаблон, чтобы не дублировать текст на трёх языках. */
+export type GuideReview = { author: string; rating: number; templateId: string };
+
 export type Guide = {
   id: string;
   name: string;
@@ -52,6 +57,9 @@ export type Guide = {
   regions: Region[];
   specializations: Interest[];
   travelTypes: TravelType[];
+  gender: Gender;
+  /** Есть свой транспорт для переездов. */
+  hasTransport: boolean;
   experienceYears: number;
   rating: number;
   reviews: number;
@@ -59,6 +67,7 @@ export type Guide = {
   /** ДЕМО-признак. В проде подтверждается реестром Комитета по туризму. */
   verified: boolean;
   bio: I18nText;
+  reviewsList: GuideReview[];
 };
 
 export type Source = { title: I18nText; url: string };
@@ -84,6 +93,8 @@ export type ItineraryItem = {
 export type ItineraryDay = {
   day: number;
   title: string;
+  /** Заполняется, если день начинается с переезда между городами. */
+  transfer?: string;
   items: ItineraryItem[];
 };
 

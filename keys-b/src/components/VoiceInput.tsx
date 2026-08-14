@@ -4,12 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useTrip } from './TripProvider';
 import { t } from '@/lib/i18n';
 
-// Голосовой ввод — штатный Web Speech API браузера.
-// Библиотеку не ставим: нужен один вызов start/stop.
-// ponytail: в Safari/Firefox API нет — кнопка просто скрывается, ввод остаётся текстовым.
+// Голосовой ввод — штатный Web Speech API браузера, библиотеку не ставим.
+//
+// Отзыв (запись 4): «gid uzoq gapiradi, ikki minut gapirgani» — гид говорит
+// минуту-две, поэтому запись непрерывная: браузер обрывает распознавание на
+// паузе, мы его молча перезапускаем и копим текст до нажатия «Стоп».
+//
+// ponytail: в Safari/Firefox API нет — кнопка скрывается, остаётся текстовый ввод.
 
-type SpeechResult = { transcript: string };
-type SpeechEvent = { results: ArrayLike<ArrayLike<SpeechResult>> };
+const MAX_SECONDS = 180; // страховка, чтобы забытая запись не шла вечно
+
+type SpeechAlternative = { transcript: string };
+type SpeechResult = ArrayLike<SpeechAlternative> & { isFinal: boolean };
+type SpeechEvent = { resultIndex: number; results: ArrayLike<SpeechResult> };
 type Recognition = {
   lang: string;
   interimResults: boolean;
@@ -40,43 +47,105 @@ export function VoiceInput({
   const { lang: uiLang } = useTrip();
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [partial, setPartial] = useState('');
+
   const recognitionRef = useRef<Recognition | null>(null);
+  const finalTextRef = useRef('');
+  const stoppingRef = useRef(false);
 
   useEffect(() => {
     setSupported(Boolean(createRecognition()));
-    return () => recognitionRef.current?.stop();
+    return () => {
+      stoppingRef.current = true;
+      recognitionRef.current?.stop();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!listening) return;
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [listening]);
+
+  useEffect(() => {
+    if (listening && seconds >= MAX_SECONDS) stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seconds, listening]);
 
   if (!supported) return null;
 
-  const toggle = () => {
-    if (listening) {
-      recognitionRef.current?.stop();
-      return;
-    }
+  function start() {
     const recognition = createRecognition();
     if (!recognition) return;
 
+    finalTextRef.current = '';
+    stoppingRef.current = false;
+    setPartial('');
+    setSeconds(0);
+
     recognition.lang = lang;
-    recognition.interimResults = false;
-    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
     recognition.onresult = (event) => {
-      const text = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(' ');
-      onText(text.trim());
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const text = result[0].transcript;
+        if (result.isFinal) finalTextRef.current += `${text} `;
+        else interim += text;
+      }
+      setPartial(interim);
     };
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
+
+    // браузер обрывает распознавание на паузе — продолжаем, пока не нажали «Стоп»
+    recognition.onend = () => {
+      if (stoppingRef.current) {
+        setListening(false);
+        const full = `${finalTextRef.current} ${partial}`.trim();
+        if (full) onText(full);
+        setPartial('');
+        return;
+      }
+      try {
+        recognition.start();
+      } catch {
+        setListening(false);
+      }
+    };
+    recognition.onerror = () => {
+      if (!stoppingRef.current) return; // временная ошибка — onend перезапустит
+      setListening(false);
+    };
 
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  };
+  }
+
+  function stop() {
+    stoppingRef.current = true;
+    recognitionRef.current?.stop();
+  }
+
+  const mmss = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
   return (
-    <button type="button" className="btn" onClick={toggle} aria-pressed={listening}>
-      {listening ? t('voiceListening', uiLang) : t('voiceIdle', uiLang)}
-    </button>
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        className="btn"
+        onClick={() => (listening ? stop() : start())}
+        aria-pressed={listening}
+      >
+        {listening ? `${t('voiceListening', uiLang)} ${mmss}` : t('voiceIdle', uiLang)}
+      </button>
+      {listening && (
+        <div className="muted text-[13px]">
+          {(finalTextRef.current + partial).trim() || t('voiceHint', uiLang)}
+        </div>
+      )}
+    </div>
   );
 }

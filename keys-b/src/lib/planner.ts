@@ -1,9 +1,27 @@
-import type { I18nText, Itinerary, ItineraryDay, Lang, Place, TripContext } from './types.ts';
+import type {
+  I18nText,
+  Itinerary,
+  ItineraryDay,
+  Lang,
+  Place,
+  Region,
+  TripContext,
+} from './types.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
+//
+// Два правила, взятые из отзыва на прототип:
+// 1) объекты одного города группируются в день по бюджету времени, а не размазываются
+//    по одному на день;
+// 2) при выборе «весь Узбекистан» маршрут идёт Ташкент → города → Ташкент,
+//    переезд между городами занимает часть дня.
 
 const MINUTES_PER_DAY = 330; // ~5.5 часов осмотра, остальное — дорога и еда
+const ROAD_SPEED_KMH = 65; // средняя по трассе с остановками
+const ROAD_FACTOR = 1.25; // дорога длиннее прямой линии
+/** Точка входа в страну: сюда прилетают и отсюда улетают. */
+const ENTRY_REGION: Region = 'tashkent';
 
 const TEXT = {
   family: {
@@ -22,16 +40,40 @@ const TEXT = {
     ru: 'Под выбранные фильтры объектов не нашлось — снимите часть интересов.',
     en: 'No places match the selected filters — remove some interests.',
   },
-  summary: {
-    uz: 'kunlik marshrut: {n} ta obyekt, «{type}» formatiga va qiziqishlaringizga moslangan.',
-    ru: 'дн.: {n} объектов, подобранных под формат «{type}» и ваши интересы.',
-    en: 'day itinerary: {n} places selected for the “{type}” format and your interests.',
+  summaryOneCity: {
+    uz: '{days} kunlik marshrut: {n} ta obyekt, «{type}» formatiga moslangan.',
+    ru: 'Маршрут на {days} дн.: {n} объектов, подобранных под формат «{type}».',
+    en: 'A {days}-day itinerary: {n} places selected for the “{type}” format.',
+  },
+  summaryMultiCity: {
+    uz: 'Mamlakat bo‘ylab {days} kunlik marshrut — shaharlar: {cities}, obyektlar: {n}. Boshlanish: Toshkent.',
+    ru: 'Маршрут по стране на {days} дн. — городов: {cities}, объектов: {n}. Старт: Ташкент.',
+    en: 'A {days}-day countrywide itinerary — cities: {cities}, places: {n}. Starts in Tashkent.',
+  },
+  transfer: {
+    uz: 'Ko‘chish: {from} → {to}, yo‘lda ~{hours} soat.',
+    ru: 'Переезд: {from} → {to}, в пути ~{hours} ч.',
+    en: 'Transfer: {from} → {to}, about {hours} h on the road.',
+  },
+  returnHome: {
+    uz: 'Toshkentga qaytish: {from} → {to}, yo‘lda ~{hours} soat.',
+    ru: 'Возвращение в Ташкент: {from} → {to}, в пути ~{hours} ч.',
+    en: 'Return to Tashkent: {from} → {to}, about {hours} h on the road.',
   },
 } satisfies Record<string, I18nText>;
 
-const SUMMARY_PREFIX: I18nText = { uz: 'Marshrut', ru: 'Маршрут на', en: 'A' };
+const REGION_NAME: Record<Region, I18nText> = {
+  samarkand: { uz: 'Samarqand', ru: 'Самарканд', en: 'Samarkand' },
+  bukhara: { uz: 'Buxoro', ru: 'Бухара', en: 'Bukhara' },
+  khiva: { uz: 'Xiva', ru: 'Хива', en: 'Khiva' },
+  tashkent: { uz: 'Toshkent', ru: 'Ташкент', en: 'Tashkent' },
+  shakhrisabz: { uz: 'Shahrisabz', ru: 'Шахрисабз', en: 'Shakhrisabz' },
+  nurata: { uz: 'Nurota', ru: 'Нурата', en: 'Nurata' },
+};
 
-function haversineKm(a: Place, b: Place): number {
+type Point = { lat: number; lng: number };
+
+function haversineKm(a: Point, b: Point): number {
   const R = 6371;
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
@@ -40,6 +82,18 @@ function haversineKm(a: Place, b: Place): number {
   const h =
     Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function centroid(places: Place[]): Point {
+  const lat = places.reduce((s, p) => s + p.lat, 0) / places.length;
+  const lng = places.reduce((s, p) => s + p.lng, 0) / places.length;
+  return { lat, lng };
+}
+
+/** Время переезда между городами по прямой с поправкой на дорогу. */
+export function transferHours(from: Place[], to: Place[]): number {
+  const km = haversineKm(centroid(from), centroid(to)) * ROAD_FACTOR;
+  return Math.max(1, Math.round(km / ROAD_SPEED_KMH));
 }
 
 export function scorePlace(place: Place, ctx: TripContext): number {
@@ -78,9 +132,8 @@ function noteFor(place: Place, ctx: TripContext, lang: Lang): string {
   return summary;
 }
 
-export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
-  const lang = ctx.lang;
-  const pool = places
+function eligible(places: Place[], ctx: TripContext): Place[] {
+  return places
     .filter((p) => ctx.region === 'all' || p.region === ctx.region)
     // формат «семья» — объекты без familyFriendly не предлагаем вовсе
     .filter((p) => ctx.travelType !== 'family' || p.familyFriendly)
@@ -88,50 +141,140 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
     .filter((p) => p.score > 0)
     .sort((a, b) => b.score - a.score || a.place.visitMinutes - b.place.visitMinutes)
     .map((p) => p.place);
+}
+
+/**
+ * Набивает один день объектами одного города по бюджету времени.
+ * Именно здесь чинится жалоба «объекты рядом, а система дала им по отдельному дню».
+ */
+function fillDay(pool: Place[], budgetMinutes: number): Place[] {
+  const picked: Place[] = [];
+  let minutes = 0;
+  for (const place of pool) {
+    if (minutes + place.visitMinutes > budgetMinutes) continue;
+    picked.push(place);
+    minutes += place.visitMinutes;
+  }
+  if (picked.length === 0 && pool.length) picked.push(pool[0]);
+  return picked;
+}
+
+function makeDay(
+  dayNumber: number,
+  picked: Place[],
+  ctx: TripContext,
+  lang: Lang,
+  transferNote?: string,
+): ItineraryDay {
+  const ordered = orderByProximity(picked);
+  const cityTitle = REGION_NAME[ordered[0].region][lang];
+  return {
+    day: dayNumber,
+    title:
+      ordered.length > 1
+        ? `${cityTitle}: ${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
+        : `${cityTitle}: ${ordered[0].name[lang]}`,
+    transfer: transferNote,
+    items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx, lang) })),
+  };
+}
+
+function transferNote(
+  from: Region,
+  to: Region,
+  hours: number,
+  lang: Lang,
+  isReturn: boolean,
+): string {
+  return (isReturn ? TEXT.returnHome : TEXT.transfer)[lang]
+    .replace('{from}', REGION_NAME[from][lang])
+    .replace('{to}', REGION_NAME[to][lang])
+    .replace('{hours}', String(hours));
+}
+
+export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
+  const lang = ctx.lang;
+  const pool = eligible(places, ctx);
+  if (pool.length === 0) return { summary: TEXT.empty[lang], days: [] };
+
+  const byRegion = new Map<Region, Place[]>();
+  for (const place of pool) {
+    byRegion.set(place.region, [...(byRegion.get(place.region) ?? []), place]);
+  }
+
+  // Порядок городов: точка входа (Ташкент) первой, дальше — ближайший к предыдущему.
+  const regions = [...byRegion.keys()];
+  const route: Region[] = [];
+  let current = regions.includes(ENTRY_REGION) ? ENTRY_REGION : regions[0];
+  const remaining = new Set(regions);
+  while (remaining.size) {
+    route.push(current);
+    remaining.delete(current);
+    if (!remaining.size) break;
+    current = [...remaining].sort(
+      (a, b) =>
+        haversineKm(centroid(byRegion.get(current)!), centroid(byRegion.get(a)!)) -
+        haversineKm(centroid(byRegion.get(current)!), centroid(byRegion.get(b)!)),
+    )[0];
+  }
 
   const days: ItineraryDay[] = [];
-  let queue = [...pool];
+  let previousRegion: Region | null = null;
 
-  for (let day = 1; day <= ctx.days && queue.length; day++) {
-    const region = queue[0].region;
-    const sameRegion = queue.filter((p) => p.region === region);
-    const picked: Place[] = [];
-    let minutes = 0;
-    // равномерно размазываем объекты по оставшимся дням, иначе первый день забит,
-    // а последний пустой
-    const cap = Math.max(1, Math.ceil(queue.length / (ctx.days - day + 1)));
+  for (const region of route) {
+    let cityPool = [...byRegion.get(region)!];
+    let firstDayInCity = true;
 
-    for (const place of sameRegion) {
-      if (picked.length >= cap) break;
-      if (minutes + place.visitMinutes > MINUTES_PER_DAY) continue;
-      picked.push(place);
-      minutes += place.visitMinutes;
+    while (cityPool.length && days.length < ctx.days) {
+      let budget = MINUTES_PER_DAY;
+      let note: string | undefined;
+
+      // первый день в новом городе укорачивается на дорогу
+      if (firstDayInCity && previousRegion && previousRegion !== region) {
+        const hours = transferHours(byRegion.get(previousRegion)!, byRegion.get(region)!);
+        note = transferNote(previousRegion, region, hours, lang, false);
+        budget = Math.max(120, MINUTES_PER_DAY - hours * 60);
+      }
+      firstDayInCity = false;
+
+      const picked = fillDay(cityPool, budget);
+      cityPool = cityPool.filter((p) => !picked.includes(p));
+      days.push(makeDay(days.length + 1, picked, ctx, lang, note));
+      previousRegion = region;
     }
-    if (picked.length === 0) picked.push(sameRegion[0] ?? queue[0]);
+    if (days.length >= ctx.days) break;
+  }
 
-    queue = queue.filter((p) => !picked.includes(p));
-    const ordered = orderByProximity(picked);
-
-    days.push({
-      day,
-      title:
-        ordered.length > 1
-          ? `${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
-          : ordered[0].name[lang],
-      items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx, lang) })),
-    });
+  // Возвращение в точку входа: только для маршрута по стране и если есть запас дня.
+  const lastRegion = days.length ? previousRegion : null;
+  if (
+    ctx.region === 'all' &&
+    lastRegion &&
+    lastRegion !== ENTRY_REGION &&
+    byRegion.has(ENTRY_REGION) &&
+    days.length < ctx.days
+  ) {
+    const hours = transferHours(byRegion.get(lastRegion)!, byRegion.get(ENTRY_REGION)!);
+    const used = new Set(days.flatMap((d) => d.items.map((i) => i.placeId)));
+    const leftovers = byRegion.get(ENTRY_REGION)!.filter((p) => !used.has(p.id));
+    if (leftovers.length) {
+      const picked = fillDay(leftovers, Math.max(120, MINUTES_PER_DAY - hours * 60));
+      days.push(
+        makeDay(days.length + 1, picked, ctx, lang, transferNote(lastRegion, ENTRY_REGION, hours, lang, true)),
+      );
+    }
   }
 
   const total = days.reduce((sum, d) => sum + d.items.length, 0);
-  const summary = TEXT.summary[lang]
-    .replace('{n}', String(total))
-    .replace('{type}', ctx.travelType);
+  const cities = new Set(days.flatMap((d) => d.items.map((i) => pool.find((p) => p.id === i.placeId)!.region)));
+  const template = cities.size > 1 ? TEXT.summaryMultiCity : TEXT.summaryOneCity;
 
   return {
-    summary:
-      days.length === 0
-        ? TEXT.empty[lang]
-        : `${SUMMARY_PREFIX[lang]} ${days.length} ${summary}`,
+    summary: template[lang]
+      .replace('{days}', String(days.length))
+      .replace('{n}', String(total))
+      .replace('{cities}', String(cities.size))
+      .replace('{type}', ctx.travelType),
     days,
   };
 }

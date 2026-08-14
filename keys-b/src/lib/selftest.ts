@@ -9,6 +9,7 @@ import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
+import { GUIDE_LANGS, REVIEW_TEMPLATE } from './i18n.ts';
 import type { Lang, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
@@ -96,6 +97,44 @@ for (const lang of LANGS) {
   );
 }
 
+// отзыв с записи 1: при большом числе дней объекты одного города должны
+// группироваться по дням, а не выдаваться по одному на день
+const week = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 7 });
+assert.ok(
+  week.days[0].items.length >= 3,
+  'в первом дне города должно быть несколько близких объектов',
+);
+assert.ok(
+  week.days.length <= 3,
+  'шесть объектов одного города не должны растягиваться на семь дней',
+);
+
+// отзыв с записи 3: маршрут по стране идёт из Ташкента и содержит переезды
+const country = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  region: 'all',
+  days: 7,
+});
+const cityOf = (placeId: string) => PLACES.find((p) => p.id === placeId)!.region;
+assert.equal(
+  cityOf(country.days[0].items[0].placeId),
+  'tashkent',
+  'страновой маршрут начинается в точке входа — Ташкенте',
+);
+assert.ok(
+  new Set(country.days.flatMap((d) => d.items.map((i) => cityOf(i.placeId)))).size >= 3,
+  'страновой маршрут должен охватывать несколько городов',
+);
+assert.ok(
+  country.days.filter((d) => d.transfer).length >= 2,
+  'между городами должны появляться переезды с временем в пути',
+);
+assert.ok(
+  country.days.every((d) => new Set(d.items.map((i) => cityOf(i.placeId))).size === 1),
+  'в одном дне объекты только одного города',
+);
+
 // интересы не совпали, но регион выбран -> показываем объекты региона, а не пустоту
 const fallback = buildItinerary(PLACES, { ...family, region: 'khiva', interests: ['food'] });
 assert.ok(fallback.days.length > 0, 'выбранный регион сам по себе даёт маршрут');
@@ -108,7 +147,8 @@ assert.ok(
 assert.equal(buildItinerary([], family).days.length, 0, 'пустой список -> пустой маршрут');
 
 // --- подбор гида ---
-const guides = matchGuides(GUIDES, { ...family, language: 'en' });
+const baseQuery = { ...family, languages: ['en'], gender: 'any' as const, needTransport: false };
+const guides = matchGuides(GUIDES, baseQuery);
 assert.ok(guides.length > 0, 'гиды должны находиться');
 assert.ok(
   guides[0].guide.regions.includes('samarkand') && guides[0].guide.languages.includes('en'),
@@ -120,8 +160,50 @@ assert.ok(
   'результаты отсортированы по убыванию',
 );
 for (const lang of LANGS) {
-  const localized = matchGuides(GUIDES, { ...family, lang, language: 'en' });
+  const localized = matchGuides(GUIDES, { ...baseQuery, lang });
   assert.ok(localized[0].why.length > 0, `объяснение подбора не пустое на ${lang}`);
+}
+
+// отзыв с записи 2: пол и транспорт — жёсткие фильтры, а языков можно выбрать несколько
+assert.ok(
+  matchGuides(GUIDES, { ...baseQuery, gender: 'female' }).every(
+    (g) => g.guide.gender === 'female',
+  ),
+  'при запросе гида-женщины мужчины в выдачу не попадают',
+);
+assert.ok(
+  matchGuides(GUIDES, { ...baseQuery, needTransport: true }).every((g) => g.guide.hasTransport),
+  'при требовании транспорта остаются только гиды с транспортом',
+);
+const multiLang = matchGuides(GUIDES, { ...baseQuery, languages: ['fr', 'it'] });
+assert.ok(
+  multiLang.length > 0 &&
+    multiLang[0].guide.languages.some((l) => ['fr', 'it'].includes(l)),
+  'мультиязычный фильтр поднимает гида с одним из выбранных языков',
+);
+
+// отзыв с записи 5: узбекский обязателен, и языков должно быть больше трёх
+assert.ok(
+  GUIDE_LANGS.includes('uz') && GUIDE_LANGS.length >= 8,
+  'список языков гидов включает узбекский и не ограничен тремя',
+);
+assert.ok(
+  GUIDES.some((g) => g.languages.includes('fr')) && GUIDES.some((g) => g.languages.includes('it')),
+  'в базе есть гиды с французским и итальянским',
+);
+
+// отзыв с записи 1: у каждого гида есть отзывы, и их текст переводится
+for (const guide of GUIDES) {
+  assert.ok(guide.reviewsList.length >= 2, `у гида ${guide.name} должно быть минимум два отзыва`);
+  for (const review of guide.reviewsList) {
+    assert.ok(
+      REVIEW_TEMPLATE[review.templateId],
+      `отзыв ссылается на несуществующий шаблон: ${review.templateId}`,
+    );
+    for (const lang of LANGS) {
+      assert.ok(REVIEW_TEMPLATE[review.templateId][lang]?.length, `отзыв без перевода на ${lang}`);
+    }
+  }
 }
 
 console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, полнота переводов');

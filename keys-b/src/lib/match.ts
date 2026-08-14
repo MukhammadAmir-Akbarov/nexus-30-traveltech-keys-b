@@ -1,9 +1,17 @@
-import type { Guide, I18nText, ScoredGuide, TripContext } from './types.ts';
+import type { Gender, Guide, I18nText, ScoredGuide, TripContext } from './types.ts';
 
 // Подбор гида: чистая функция, без LLM. Объяснение «почему этот гид»
 // собирается из совпавших признаков — модель здесь не нужна.
+//
+// Фильтры взяты из отзыва (запись 2): несколько языков сразу, пол гида и
+// наличие своего транспорта. Пол и транспорт — жёсткие фильтры: если турист
+// просит гида-женщину, мужчина в выдаче не нужен вовсе.
 
-export type GuideQuery = TripContext & { language: string | 'any' };
+export type GuideQuery = TripContext & {
+  languages: string[];
+  gender: Gender | 'any';
+  needTransport: boolean;
+};
 
 const REASON = {
   region: {
@@ -22,9 +30,19 @@ const REASON = {
     en: 'runs the “{type}” format',
   },
   language: {
-    uz: 'kerakli tilda gapiradi',
-    ru: 'говорит на нужном языке',
-    en: 'speaks the language you need',
+    uz: 'kerakli tilda gapiradi ({n})',
+    ru: 'говорит на нужном языке ({n})',
+    en: 'speaks the language you need ({n})',
+  },
+  gender: {
+    uz: 'so‘ralgan jinsdagi gid',
+    ru: 'пол соответствует запросу',
+    en: 'matches the requested gender',
+  },
+  transport: {
+    uz: 'o‘z transporti bor',
+    ru: 'есть свой транспорт',
+    en: 'has own transport',
   },
   verified: {
     uz: 'holati tasdiqlangan (demo)',
@@ -40,8 +58,12 @@ const REASON = {
 
 export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGuide[] {
   const lang = q.lang;
+  const wanted = q.languages ?? [];
 
   return guides
+    // жёсткие фильтры: то, что турист прямо запросил
+    .filter((g) => q.gender === 'any' || g.gender === q.gender)
+    .filter((g) => !q.needTransport || g.hasTransport)
     .map((guide) => {
       const reasons: string[] = [];
       let score = 0;
@@ -59,9 +81,15 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
         score += 2;
         reasons.push(REASON.travelType[lang].replace('{type}', q.travelType));
       }
-      if (q.language !== 'any' && guide.languages.includes(q.language)) {
-        score += 3;
-        reasons.push(REASON.language[lang]);
+      const sharedLangs = guide.languages.filter((l) => wanted.includes(l));
+      if (sharedLangs.length) {
+        score += sharedLangs.length * 3;
+        reasons.push(REASON.language[lang].replace('{n}', String(sharedLangs.length)));
+      }
+      if (q.gender !== 'any') reasons.push(REASON.gender[lang]);
+      if (q.needTransport) {
+        score += 1;
+        reasons.push(REASON.transport[lang]);
       }
       if (guide.verified) {
         score += 1.5;

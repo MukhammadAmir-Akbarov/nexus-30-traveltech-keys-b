@@ -93,6 +93,14 @@ export default function PlanPage() {
                   </span>
                   <span className="muted text-[13px]">{day.title}</span>
                 </div>
+                {day.transfer && (
+                  <div
+                    className="mb-3 rounded-lg px-3 py-2 text-[13px]"
+                    style={{ background: 'var(--bg)', color: 'var(--muted)' }}
+                  >
+                    🚌 {day.transfer}
+                  </div>
+                )}
                 <ol className="flex flex-col gap-3">
                   {day.items.map((item, index) => {
                     const place = PLACE_BY_ID[item.placeId];

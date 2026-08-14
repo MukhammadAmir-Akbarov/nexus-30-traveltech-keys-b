@@ -1,8 +1,10 @@
 import type { Guide } from '../lib/types.ts';
 
 /**
- * ДЕМО-профили гидов (10 шт.). Имена и рейтинги синтетические.
- * Признак `verified` — демо-метка; в проде подтверждается реестром Комитета по туризму.
+ * ДЕМО-профили гидов (10 шт.). Имена, рейтинги и отзывы синтетические.
+ * `verified` — демо-метка; в проде подтверждается реестром Комитета по туризму.
+ * Тексты отзывов лежат в i18n (REVIEW_TEMPLATE), здесь только ссылки на них,
+ * чтобы не дублировать один и тот же текст на трёх языках.
  */
 export const GUIDES: Guide[] = [
   {
@@ -12,6 +14,8 @@ export const GUIDES: Guide[] = [
     regions: ['samarkand', 'shakhrisabz'],
     specializations: ['history', 'architecture'],
     travelTypes: ['solo', 'family', 'group'],
+    gender: 'female',
+    hasTransport: true,
     experienceYears: 9,
     rating: 4.9,
     reviews: 132,
@@ -22,6 +26,10 @@ export const GUIDES: Guide[] = [
       ru: 'Историк по образованию, ведёт углублённые туры по эпохе Тимуридов.',
       en: 'A trained historian running in-depth tours of the Timurid era.',
     },
+    reviewsList: [
+      { author: 'Aleksandr K.', rating: 5, templateId: 'deep' },
+      { author: 'Marta S.', rating: 5, templateId: 'warm' },
+    ],
   },
   {
     id: 'g2',
@@ -30,6 +38,8 @@ export const GUIDES: Guide[] = [
     regions: ['bukhara'],
     specializations: ['architecture', 'crafts'],
     travelTypes: ['solo', 'group'],
+    gender: 'male',
+    hasTransport: false,
     experienceYears: 6,
     rating: 4.7,
     reviews: 84,
@@ -40,14 +50,20 @@ export const GUIDES: Guide[] = [
       ru: 'Показывает мастерские чеканки и ковроткачества старой Бухары.',
       en: 'Shows the metal-chasing and carpet-weaving workshops of old Bukhara.',
     },
+    reviewsList: [
+      { author: 'Dilnoza T.', rating: 5, templateId: 'crafts' },
+      { author: 'Peter M.', rating: 4, templateId: 'pace' },
+    ],
   },
   {
     id: 'g3',
     name: 'Madina Yusupova',
-    languages: ['en', 'uz'],
+    languages: ['en', 'uz', 'it'],
     regions: ['khiva', 'bukhara'],
     specializations: ['history', 'photo'],
     travelTypes: ['solo', 'family'],
+    gender: 'female',
+    hasTransport: false,
     experienceYears: 4,
     rating: 4.8,
     reviews: 57,
@@ -58,6 +74,10 @@ export const GUIDES: Guide[] = [
       ru: 'Маршруты по Ичан-Кале с акцентом на утренний и закатный свет.',
       en: 'Itchan Kala routes built around the morning and sunset light.',
     },
+    reviewsList: [
+      { author: 'Emma L.', rating: 5, templateId: 'photo' },
+      { author: 'Nodira A.', rating: 5, templateId: 'warm' },
+    ],
   },
   {
     id: 'g4',
@@ -66,6 +86,8 @@ export const GUIDES: Guide[] = [
     regions: ['tashkent'],
     specializations: ['food', 'crafts'],
     travelTypes: ['family', 'group'],
+    gender: 'male',
+    hasTransport: true,
     experienceYears: 7,
     rating: 4.6,
     reviews: 96,
@@ -76,6 +98,10 @@ export const GUIDES: Guide[] = [
       ru: 'Гастрономические прогулки по Чорсу и чайханам старого города.',
       en: 'Food walks through Chorsu and the teahouses of the old town.',
     },
+    reviewsList: [
+      { author: 'Sergey V.', rating: 5, templateId: 'food' },
+      { author: 'Anna B.', rating: 4, templateId: 'family' },
+    ],
   },
   {
     id: 'g5',
@@ -84,6 +110,8 @@ export const GUIDES: Guide[] = [
     regions: ['samarkand', 'bukhara', 'khiva'],
     specializations: ['history', 'religion'],
     travelTypes: ['solo', 'group'],
+    gender: 'female',
+    hasTransport: true,
     experienceYears: 12,
     rating: 5,
     reviews: 210,
@@ -94,6 +122,10 @@ export const GUIDES: Guide[] = [
       ru: 'Классический маршрут «Золотое кольцо» с подробным историческим блоком.',
       en: 'The classic “Golden Ring” route with a detailed historical narrative.',
     },
+    reviewsList: [
+      { author: 'Jean-Luc P.', rating: 5, templateId: 'deep' },
+      { author: 'Olga R.', rating: 5, templateId: 'language' },
+    ],
   },
   {
     id: 'g6',
@@ -102,6 +134,8 @@ export const GUIDES: Guide[] = [
     regions: ['nurata', 'samarkand'],
     specializations: ['nature', 'photo'],
     travelTypes: ['solo', 'group'],
+    gender: 'male',
+    hasTransport: true,
     experienceYears: 5,
     rating: 4.5,
     reviews: 41,
@@ -112,14 +146,20 @@ export const GUIDES: Guide[] = [
       ru: 'Юртовые лагеря, Айдаркуль, треккинг в горах Нураты.',
       en: 'Yurt camps, Lake Aydarkul and trekking in the Nurata mountains.',
     },
+    reviewsList: [
+      { author: 'Bekzod U.', rating: 4, templateId: 'nature' },
+      { author: 'Lena K.', rating: 5, templateId: 'photo' },
+    ],
   },
   {
     id: 'g7',
     name: 'Nilufar Bekova',
-    languages: ['en', 'de'],
+    languages: ['en', 'de', 'it'],
     regions: ['samarkand'],
     specializations: ['architecture', 'crafts'],
     travelTypes: ['family'],
+    gender: 'female',
+    hasTransport: false,
     experienceYears: 8,
     rating: 4.8,
     reviews: 118,
@@ -130,14 +170,20 @@ export const GUIDES: Guide[] = [
       ru: 'Работает с семьями: короткие блоки, паузы, детские задания на маршруте.',
       en: 'Works with families: short segments, breaks and tasks for children en route.',
     },
+    reviewsList: [
+      { author: 'Familie Braun', rating: 5, templateId: 'family' },
+      { author: 'Julia W.', rating: 5, templateId: 'pace' },
+    ],
   },
   {
     id: 'g8',
     name: 'Shuhrat Ergashev',
-    languages: ['ru', 'uz', 'en'],
+    languages: ['ru', 'uz', 'en', 'ar'],
     regions: ['bukhara', 'khiva'],
     specializations: ['history', 'religion'],
     travelTypes: ['solo', 'family', 'group'],
+    gender: 'male',
+    hasTransport: true,
     experienceYears: 15,
     rating: 4.9,
     reviews: 187,
@@ -148,14 +194,20 @@ export const GUIDES: Guide[] = [
       ru: 'Специализация — суфийское наследие и памятники домонгольского периода.',
       en: 'Specialises in Sufi heritage and pre-Mongol monuments.',
     },
+    reviewsList: [
+      { author: 'Ahmad S.', rating: 5, templateId: 'deep' },
+      { author: 'Marina Y.', rating: 5, templateId: 'language' },
+    ],
   },
   {
     id: 'g9',
     name: 'Kamola Saidova',
-    languages: ['ru', 'en'],
+    languages: ['ru', 'en', 'ja'],
     regions: ['tashkent', 'samarkand'],
     specializations: ['food', 'photo'],
     travelTypes: ['solo', 'family'],
+    gender: 'female',
+    hasTransport: false,
     experienceYears: 3,
     rating: 4.4,
     reviews: 29,
@@ -166,14 +218,20 @@ export const GUIDES: Guide[] = [
       ru: 'Бюджетный формат: рынки, уличная еда, компактные пешие маршруты.',
       en: 'Budget format: markets, street food and compact walking routes.',
     },
+    reviewsList: [
+      { author: 'Zafar N.', rating: 4, templateId: 'food' },
+      { author: 'Kate D.', rating: 4, templateId: 'pace' },
+    ],
   },
   {
     id: 'g10',
     name: 'Farrux Yuldashev',
-    languages: ['en', 'uz', 'tr'],
+    languages: ['en', 'uz', 'tr', 'es'],
     regions: ['shakhrisabz', 'samarkand'],
     specializations: ['history', 'nature'],
     travelTypes: ['group'],
+    gender: 'male',
+    hasTransport: true,
     experienceYears: 10,
     rating: 4.7,
     reviews: 143,
@@ -184,5 +242,9 @@ export const GUIDES: Guide[] = [
       ru: 'Ведёт большие группы, выезды Самарканд — Шахрисабз с перевалом Тахтакарача.',
       en: 'Leads large groups on the Samarkand — Shakhrisabz route over the Takhtakaracha pass.',
     },
+    reviewsList: [
+      { author: 'Grup rehberi', rating: 5, templateId: 'group' },
+      { author: 'Tom H.', rating: 4, templateId: 'nature' },
+    ],
   },
 ];
