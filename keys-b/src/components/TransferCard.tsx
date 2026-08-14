@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Icon, type IconName } from './Icon';
 import { useTrip } from './TripProvider';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
 import type { Transfer, TransferMode } from '@/lib/types';
@@ -10,12 +11,12 @@ import type { UiKey } from '@/lib/i18n';
 // Выбор способа переезда между городами — требование §4.2 ТЗ
 // («Shaxsiylashtirilgan transfer va AI trip-planner»).
 
-const MODE: Record<TransferMode, { icon: string; key: UiKey }> = {
-  plane: { icon: '✈️', key: 'transferPlane' },
-  train: { icon: '🚄', key: 'transferTrain' },
-  bus: { icon: '🚌', key: 'transferBus' },
-  car: { icon: '🚗', key: 'transferCar' },
-  minibus: { icon: '🚐', key: 'transferMinibus' },
+const MODE: Record<TransferMode, { icon: IconName; key: UiKey }> = {
+  plane: { icon: 'plane', key: 'transferPlane' },
+  train: { icon: 'train', key: 'transferTrain' },
+  bus: { icon: 'bus', key: 'transferBus' },
+  car: { icon: 'car', key: 'transferCar' },
+  minibus: { icon: 'minibus', key: 'transferMinibus' },
 };
 
 export function TransferCard({ transfer }: { transfer: Transfer }) {
@@ -41,7 +42,8 @@ export function TransferCard({ transfer }: { transfer: Transfer }) {
             data-active={chosen === option.mode}
             onClick={() => setChosen(option.mode)}
           >
-            {MODE[option.mode].icon} {t(MODE[option.mode].key, lang)} · {option.hours}{' '}
+            <Icon name={MODE[option.mode].icon} size={16} />
+            {t(MODE[option.mode].key, lang)} · {option.hours}{' '}
             {t('transferHours', lang)} · ${option.priceUsd}
           </button>
         ))}

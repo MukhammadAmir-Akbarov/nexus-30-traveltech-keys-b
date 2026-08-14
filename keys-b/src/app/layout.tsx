@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
 import { OfflineReady } from '@/components/OfflineReady';
 import { Onboarding } from '@/components/Onboarding';
+import { TabBar } from '@/components/TabBar';
 import { TripProvider } from '@/components/TripProvider';
 
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin', 'cyrillic'] });
@@ -31,8 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <OfflineReady />
           <Onboarding />
           <Nav />
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+          <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:pb-6">{children}</main>
           <Footer />
+          <TabBar />
         </TripProvider>
       </body>
     </html>

@@ -37,8 +37,8 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-5">
       <section>
-        <h1 className="text-2xl font-bold">{t('homeTitle', lang)}</h1>
-        <p className="muted mt-1 max-w-2xl text-sm">{t('homeLead', lang)}</p>
+        <h1>{t('homeTitle', lang)}</h1>
+        <p className="muted prose-measure mt-2 text-[15px]">{t('homeLead', lang)}</p>
       </section>
 
       <section className="card flex flex-col gap-5">
@@ -163,16 +163,16 @@ export default function Home() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Link href="/check" className="card transition hover:opacity-85">
-          <div className="text-sm font-semibold">{t('cardCheckTitle', lang)}</div>
+        <Link href="/check" className="card card-link">
+          <div className="text-[15px] font-semibold">{t('cardCheckTitle', lang)}</div>
           <p className="muted mt-1 text-[13px]">{t('cardCheckText', lang)}</p>
         </Link>
-        <Link href="/plan" className="card transition hover:opacity-85">
-          <div className="text-sm font-semibold">{t('cardPlanTitle', lang)}</div>
+        <Link href="/plan" className="card card-link">
+          <div className="text-[15px] font-semibold">{t('cardPlanTitle', lang)}</div>
           <p className="muted mt-1 text-[13px]">{t('cardPlanText', lang)}</p>
         </Link>
-        <Link href="/guides" className="card transition hover:opacity-85">
-          <div className="text-sm font-semibold">{t('cardGuidesTitle', lang)}</div>
+        <Link href="/guides" className="card card-link">
+          <div className="text-[15px] font-semibold">{t('cardGuidesTitle', lang)}</div>
           <p className="muted mt-1 text-[13px]">{t('cardGuidesText', lang)}</p>
         </Link>
       </section>

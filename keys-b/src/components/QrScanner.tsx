@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrip } from './TripProvider';
+import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 
 // Сканер QR — на штатном BarcodeDetector браузера, без библиотек распознавания.
@@ -90,6 +91,7 @@ export function QrScanner() {
   return (
     <div className="flex flex-col gap-2">
       <button type="button" className="btn" onClick={() => (scanning ? stop() : start())}>
+        <Icon name={scanning ? 'stop' : 'qr'} />
         {scanning ? t('qrStop', lang) : t('qrScan', lang)}
       </button>
       <video

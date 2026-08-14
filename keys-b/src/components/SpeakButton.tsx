@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTrip } from './TripProvider';
+import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 
@@ -40,6 +41,7 @@ export function SpeakButton({ text }: { text: string }) {
 
   return (
     <button type="button" className="chip" onClick={toggle} aria-pressed={speaking}>
+      <Icon name={speaking ? 'stop' : 'volume'} size={16} />
       {speaking ? t('speakStop', lang) : t('speakStart', lang)}
     </button>
   );
