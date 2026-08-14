@@ -2,8 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
+import { ShareTrip } from '@/components/ShareTrip';
+import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
@@ -16,7 +18,18 @@ const RouteMap = dynamic(() => import('@/components/RouteMap'), {
 });
 
 export default function PlanPage() {
-  const { trip, lang } = useTrip();
+  const { trip, lang, update } = useTrip();
+
+  // сюда попадают по ссылке «поделиться поездкой»: /plan?trip=<контекст>
+  useEffect(() => {
+    const encoded = new URLSearchParams(window.location.search).get('trip');
+    if (!encoded) return;
+    try {
+      update(JSON.parse(decodeURIComponent(atob(encoded))));
+    } catch {
+      // ссылка битая — остаёмся со своим контекстом
+    }
+  }, [update]);
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [mode, setMode] = useState<Mode>('offline');
   const [loading, setLoading] = useState(false);
@@ -64,6 +77,9 @@ export default function PlanPage() {
           {loading ? t('planLoading', lang) : t('planButton', lang)}
         </button>
       </section>
+
+      <SoloPanel />
+      <ShareTrip />
 
       {error && (
         <div className="card text-sm" style={{ color: 'var(--danger)' }}>

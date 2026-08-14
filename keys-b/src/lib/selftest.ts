@@ -250,6 +250,27 @@ assert.ok(
   'в базе есть гиды с французским и итальянским',
 );
 
+// требование №3 ТЗ: у одиночки подтверждённый статус гида весит больше
+const soloQuery = { ...baseQuery, travelType: 'solo' as const, region: 'tashkent' as const };
+const soloPick = matchGuides(GUIDES, soloQuery);
+const groupPick = matchGuides(GUIDES, { ...soloQuery, travelType: 'group' as const });
+const scoreOf = (list: typeof soloPick, id: string) =>
+  list.find((g) => g.guide.id === id)?.score ?? 0;
+// g4 (Ташкент, без подтверждения) против подтверждённых: в соло-режиме разрыв больше
+assert.ok(
+  scoreOf(soloPick, 'g9') - scoreOf(soloPick, 'g4') >
+    scoreOf(groupPick, 'g9') - scoreOf(groupPick, 'g4'),
+  'в одиночной поездке подтверждённый гид должен отрываться сильнее',
+);
+assert.ok(
+  soloPick.find((g) => g.guide.verified)?.why.includes('в одиночку'),
+  'в объяснении подтверждённого гида должна появиться причина «для поездки в одиночку»',
+);
+assert.ok(
+  !groupPick.find((g) => g.guide.verified)?.why.includes('в одиночку'),
+  'для группы этой причины быть не должно',
+);
+
 // §9 ТЗ: метка «подтверждён» должна опираться на конкретные проверки,
 // а непроверенный гид не должен иметь ни лицензии, ни записи в реестре
 for (const guide of GUIDES) {

@@ -62,6 +62,11 @@ const REASON = {
     ru: 'фактов подтвердилось {percent}% ({n} проверок)',
     en: '{percent}% of claims confirmed ({n} checks)',
   },
+  soloSafety: {
+    uz: 'yakka sayohat uchun tasdiqlangan gid',
+    ru: 'проверенный гид для поездки в одиночку',
+    en: 'verified guide for solo travel',
+  },
   fallback: {
     uz: 'hudud bo‘yicha umumiy moslik',
     ru: 'общий профиль по региону',
@@ -107,6 +112,11 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
       if (guide.verified) {
         score += 1.5;
         reasons.push(REASON.verified[lang]);
+        // требование №3: одиночке подтверждённый статус важнее, чем остальным
+        if (q.travelType === 'solo') {
+          score += 2;
+          reasons.push(REASON.soloSafety[lang]);
+        }
       }
       score += guide.rating - 4;
       score += Math.min(guide.experienceYears, 15) / 15;
