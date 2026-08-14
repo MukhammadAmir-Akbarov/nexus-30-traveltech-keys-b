@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { QrScanner } from '@/components/QrScanner';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
+import { GUIDES } from '@/data/guides';
 import { PLACE_BY_ID } from '@/data/places';
 import { t, tr } from '@/lib/i18n';
 import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
@@ -46,6 +47,7 @@ export default function CheckPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
   const [placeId, setPlaceId] = useState<string | null>(null);
+  const [guideId, setGuideId] = useState('');
 
   // сюда приходят после сканирования QR у объекта: /check?place=registan
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function CheckPage() {
       const res = await fetch('/api/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim: value, lang }),
+        body: JSON.stringify({ claim: value, lang, guideId: guideId || undefined }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setResult(await res.json());
@@ -113,6 +115,18 @@ export default function CheckPage() {
           <VoiceInput lang={SPEECH_LOCALE[lang]} onText={(text) => check(text)} />
           <QrScanner />
         </div>
+        <label className="flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="muted">{t('checkWhoSaid', lang)}</span>
+          <select className="field max-w-56" value={guideId} onChange={(e) => setGuideId(e.target.value)}>
+            <option value="">{t('checkNoGuide', lang)}</option>
+            {GUIDES.map((guide) => (
+              <option key={guide.id} value={guide.id}>
+                {guide.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((example) => (
             <button key={example.en} className="chip" onClick={() => check(example[lang])}>
@@ -137,6 +151,7 @@ export default function CheckPage() {
             <span className="tag">
               {result.mode === 'ai' ? t('modeAi', lang) : t('modeOffline', lang)}
             </span>
+            {guideId && <span className="tag">{t('checkCounted', lang)}</span>}
           </div>
 
           <blockquote className="muted text-sm italic">«{result.verdict.claim}»</blockquote>

@@ -5,8 +5,10 @@ import type {
   Lang,
   Place,
   Region,
+  Transfer,
   TripContext,
 } from './types.ts';
+import { buildTransfer, transferHours } from './transfer.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
@@ -18,8 +20,6 @@ import type {
 //    переезд между городами занимает часть дня.
 
 const MINUTES_PER_DAY = 330; // ~5.5 часов осмотра, остальное — дорога и еда
-const ROAD_SPEED_KMH = 65; // средняя по трассе с остановками
-const ROAD_FACTOR = 1.25; // дорога длиннее прямой линии
 /** Точка входа в страну: сюда прилетают и отсюда улетают. */
 const ENTRY_REGION: Region = 'tashkent';
 
@@ -50,16 +50,6 @@ const TEXT = {
     ru: 'Маршрут по стране на {days} дн. — городов: {cities}, объектов: {n}. Старт: Ташкент.',
     en: 'A {days}-day countrywide itinerary — cities: {cities}, places: {n}. Starts in Tashkent.',
   },
-  transfer: {
-    uz: 'Ko‘chish: {from} → {to}, yo‘lda ~{hours} soat.',
-    ru: 'Переезд: {from} → {to}, в пути ~{hours} ч.',
-    en: 'Transfer: {from} → {to}, about {hours} h on the road.',
-  },
-  returnHome: {
-    uz: 'Toshkentga qaytish: {from} → {to}, yo‘lda ~{hours} soat.',
-    ru: 'Возвращение в Ташкент: {from} → {to}, в пути ~{hours} ч.',
-    en: 'Return to Tashkent: {from} → {to}, about {hours} h on the road.',
-  },
 } satisfies Record<string, I18nText>;
 
 const REGION_NAME: Record<Region, I18nText> = {
@@ -88,12 +78,6 @@ function centroid(places: Place[]): Point {
   const lat = places.reduce((s, p) => s + p.lat, 0) / places.length;
   const lng = places.reduce((s, p) => s + p.lng, 0) / places.length;
   return { lat, lng };
-}
-
-/** Время переезда между городами по прямой с поправкой на дорогу. */
-export function transferHours(from: Place[], to: Place[]): number {
-  const km = haversineKm(centroid(from), centroid(to)) * ROAD_FACTOR;
-  return Math.max(1, Math.round(km / ROAD_SPEED_KMH));
 }
 
 export function scorePlace(place: Place, ctx: TripContext): number {
@@ -164,7 +148,7 @@ function makeDay(
   picked: Place[],
   ctx: TripContext,
   lang: Lang,
-  transferNote?: string,
+  transfer?: Transfer,
 ): ItineraryDay {
   const ordered = orderByProximity(picked);
   const cityTitle = REGION_NAME[ordered[0].region][lang];
@@ -174,22 +158,9 @@ function makeDay(
       ordered.length > 1
         ? `${cityTitle}: ${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
         : `${cityTitle}: ${ordered[0].name[lang]}`,
-    transfer: transferNote,
+    transfer,
     items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx, lang) })),
   };
-}
-
-function transferNote(
-  from: Region,
-  to: Region,
-  hours: number,
-  lang: Lang,
-  isReturn: boolean,
-): string {
-  return (isReturn ? TEXT.returnHome : TEXT.transfer)[lang]
-    .replace('{from}', REGION_NAME[from][lang])
-    .replace('{to}', REGION_NAME[to][lang])
-    .replace('{hours}', String(hours));
 }
 
 export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
@@ -227,19 +198,22 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
 
     while (cityPool.length && days.length < ctx.days) {
       let budget = MINUTES_PER_DAY;
-      let note: string | undefined;
+      let transfer: Transfer | undefined;
 
       // первый день в новом городе укорачивается на дорогу
       if (firstDayInCity && previousRegion && previousRegion !== region) {
-        const hours = transferHours(byRegion.get(previousRegion)!, byRegion.get(region)!);
-        note = transferNote(previousRegion, region, hours, lang, false);
-        budget = Math.max(120, MINUTES_PER_DAY - hours * 60);
+        transfer = buildTransfer(
+          previousRegion,
+          region,
+          haversineKm(centroid(byRegion.get(previousRegion)!), centroid(byRegion.get(region)!)),
+        );
+        budget = Math.max(120, MINUTES_PER_DAY - transferHours(transfer) * 60);
       }
       firstDayInCity = false;
 
       const picked = fillDay(cityPool, budget);
       cityPool = cityPool.filter((p) => !picked.includes(p));
-      days.push(makeDay(days.length + 1, picked, ctx, lang, note));
+      days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
       previousRegion = region;
     }
     if (days.length >= ctx.days) break;
@@ -254,14 +228,19 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
     byRegion.has(ENTRY_REGION) &&
     days.length < ctx.days
   ) {
-    const hours = transferHours(byRegion.get(lastRegion)!, byRegion.get(ENTRY_REGION)!);
+    const transfer = buildTransfer(
+      lastRegion,
+      ENTRY_REGION,
+      haversineKm(centroid(byRegion.get(lastRegion)!), centroid(byRegion.get(ENTRY_REGION)!)),
+    );
     const used = new Set(days.flatMap((d) => d.items.map((i) => i.placeId)));
     const leftovers = byRegion.get(ENTRY_REGION)!.filter((p) => !used.has(p.id));
     if (leftovers.length) {
-      const picked = fillDay(leftovers, Math.max(120, MINUTES_PER_DAY - hours * 60));
-      days.push(
-        makeDay(days.length + 1, picked, ctx, lang, transferNote(lastRegion, ENTRY_REGION, hours, lang, true)),
+      const picked = fillDay(
+        leftovers,
+        Math.max(120, MINUTES_PER_DAY - transferHours(transfer) * 60),
       );
+      days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
     }
   }
 

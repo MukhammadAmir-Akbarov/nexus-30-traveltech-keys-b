@@ -1,4 +1,4 @@
-import type { Gender, Guide, I18nText, ScoredGuide, TripContext } from './types.ts';
+import type { Gender, Guide, GuideAccuracy, I18nText, ScoredGuide, TripContext } from './types.ts';
 
 // Подбор гида: чистая функция, без LLM. Объяснение «почему этот гид»
 // собирается из совпавших признаков — модель здесь не нужна.
@@ -11,7 +11,15 @@ export type GuideQuery = TripContext & {
   languages: string[];
   gender: Gender | 'any';
   needTransport: boolean;
+  /** Репутация по проверкам фактов: guideId -> счётчики вердиктов. */
+  accuracy?: Record<string, GuideAccuracy>;
 };
+
+/** Доля подтверждённых утверждений среди проверенных. */
+export function accuracyRate(stats: GuideAccuracy): number | null {
+  const decided = stats.confirmed + stats.refuted;
+  return decided === 0 ? null : stats.confirmed / decided;
+}
 
 const REASON = {
   region: {
@@ -48,6 +56,11 @@ const REASON = {
     uz: 'holati tasdiqlangan (demo)',
     ru: 'статус подтверждён (демо)',
     en: 'status verified (demo)',
+  },
+  accuracy: {
+    uz: 'faktlarining {percent}% tasdiqlangan ({n} ta tekshiruv)',
+    ru: 'фактов подтвердилось {percent}% ({n} проверок)',
+    en: '{percent}% of claims confirmed ({n} checks)',
   },
   fallback: {
     uz: 'hudud bo‘yicha umumiy moslik',
@@ -98,10 +111,24 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
       score += guide.rating - 4;
       score += Math.min(guide.experienceYears, 15) / 15;
 
+      // репутация по проверкам фактов: гид, чьи утверждения подтверждаются,
+      // поднимается; тот, кого система регулярно опровергает, опускается
+      const stats = q.accuracy?.[guide.id];
+      const rate = stats ? accuracyRate(stats) : null;
+      if (stats && rate !== null) {
+        score += (rate - 0.5) * 6;
+        reasons.push(
+          REASON.accuracy[lang]
+            .replace('{percent}', String(Math.round(rate * 100)))
+            .replace('{n}', String(stats.confirmed + stats.refuted)),
+        );
+      }
+
       return {
         guide,
         score,
         why: reasons.length ? reasons.join(' · ') : REASON.fallback[lang],
+        accuracy: stats,
       };
     })
     .filter((g) => g.score > 0)
