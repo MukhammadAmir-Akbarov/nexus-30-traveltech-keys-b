@@ -131,7 +131,12 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
 
   return guides
     // жёсткие фильтры: то, что турист прямо запросил
-    .filter((g) => q.gender === 'any' || g.gender === q.gender)
+    // `q.gender ?? 'any'`, а не `q.gender === 'any'`: незаданный фильтр означает
+    // «неважно», а не «ни один не подходит». Раньше запрос без gender отсеивал
+    // ВСЕХ гидов и возвращал пустой список — молча, без ошибки. На границе
+    // (/api/guides) это уже закрыто значением по умолчанию, но matchGuides()
+    // вызывают и из кода, и там та же ловушка ждала следующего.
+    .filter((g) => (q.gender ?? 'any') === 'any' || g.gender === q.gender)
     .filter((g) => !q.needTransport || g.hasTransport)
     .map((guide) => {
       const reasons: string[] = [];
@@ -161,7 +166,7 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
         score += sharedLangs.length * 3;
         reasons.push(REASON.language[lang].replace('{n}', String(sharedLangs.length)));
       }
-      if (q.gender !== 'any') reasons.push(REASON.gender[lang]);
+      if ((q.gender ?? 'any') !== 'any') reasons.push(REASON.gender[lang]);
       if (q.needTransport) {
         score += 1;
         reasons.push(REASON.transport[lang]);
@@ -175,7 +180,6 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
           reasons.push(REASON.soloSafety[lang]);
         }
       }
-      score += guide.rating - 4;
       score += Math.min(guide.experienceYears, 15) / 15;
 
       // репутация по проверкам фактов: гид, чьи утверждения подтверждаются,
@@ -195,6 +199,23 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
         // проверок мало — на подбор не влияем вовсе, но говорим об этом честно
         reasons.push(REASON.tooFewChecks[lang].replace('{n}', String(decided)));
       }
+
+      /*
+       * Звёздный рейтинг — только пока гида не измерили.
+       *
+       * Раньше `score += guide.rating - 4` стояло безусловно, и написанное
+       * от руки число до +1 складывалось в ту же сумму, что нижняя граница
+       * Вильсона (±3). То есть придуманный балл весил треть всей заработанной
+       * репутации — в продукте, который утверждает ровно обратное: репутация
+       * набирается проверками фактов, а не звёздами.
+       *
+       * Убрать совсем тоже неверно: у нового гида проверок нет, и тогда его
+       * нечем упорядочить вовсе. Поэтому правило простое и объяснимое вслух:
+       * звёзды работают, ПОКА система не набрала MIN_CHECKS вердиктов; как
+       * только измерение появилось — оно звёзды заменяет, а не делит с ними вес.
+       */
+      const measured = rate !== null && decided >= MIN_CHECKS;
+      if (!measured) score += guide.rating - 4;
 
       // Точность именно по объектам маршрута (из голосового отзыва):
       // общий балл гида может быть высоким, а нужный объект он знает плохо.

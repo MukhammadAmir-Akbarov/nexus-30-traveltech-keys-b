@@ -133,12 +133,20 @@ export async function POST(req: Request) {
         'используй их id без изменений. Учитывай формат поездки, интересы и время осмотра: ' +
         'не более ~5,5 часов осмотра в день. Объекты одного дня должны быть в одном городе. ' +
         'Для формата family не предлагай объекты с familyFriendly=false. ' +
+        'Если указан город, где турист уже находится, первый день начинается в нём. ' +
         `Весь текст ответа (summary, title, note) пиши на языке: ${LANG_LABEL[lang]}.`,
       prompt:
         `Формат поездки: ${ctx.travelType}. Дней: ${ctx.days}. ` +
         `Интересы: ${ctx.interests.join(', ') || 'не указаны'}. ` +
-        `Регион: ${ctx.region === 'all' ? 'любой' : tr(REGION_LABEL[ctx.region], lang)}.\n\n` +
-        `Доступные объекты:\n${JSON.stringify(candidates, null, 1)}`,
+        `Регион: ${ctx.region === 'all' ? 'любой' : tr(REGION_LABEL[ctx.region], lang)}. ` +
+        // Город старта доезжал до buildItinerary, но не до модели: без ключа
+        // маршрут начинался откуда просил турист, а с ключом — откуда решит
+        // модель, и причина такого расхождения на демо была бы не видна.
+        (ctx.startRegion
+          ? `Турист уже находится в городе: ${tr(REGION_LABEL[ctx.startRegion], lang)}, ` +
+            'первый день обязан проходить именно там.'
+          : '') +
+        `\n\nДоступные объекты:\n${JSON.stringify(candidates, null, 1)}`,
     });
 
     const itinerary = sanitize(object as Itinerary);

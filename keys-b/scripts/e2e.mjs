@@ -111,6 +111,23 @@ await check('семья и соло дают разные маршруты', asy
   assert.notDeepEqual([...a].sort(), [...b].sort());
 });
 
+// Город старта проверяем именно здесь, а не в selftest: у ручки две ветки —
+// правила и модель, — и поле раньше доезжало только до первой. Проверка через
+// живой сервер ловит обе, в каком бы режиме он ни был запущен.
+await check('маршрут начинается в городе, откуда турист стартует', async () => {
+  const { data } = await json('/api/plan', {
+    ...trip,
+    regions: [],
+    region: 'all',
+    days: 4,
+    startRegion: 'khiva',
+  });
+  const first = data.itinerary.days[0];
+  assert.ok(first, 'первый день есть');
+  // заголовок дня начинается с города; на узбекском это «Xiva: …»
+  assert.match(first.title, /Xiva|Хива|Khiva/, `первый день не в Хиве: ${first.title}`);
+});
+
 // --- проверка фактов ---
 console.log('\nПроверка фактов');
 for (const [lang, claim, expected] of [

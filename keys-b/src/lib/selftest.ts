@@ -1215,6 +1215,41 @@ assert.ok(
   'закреплённый объект не исчезает при сужении региона',
 );
 
+// --- подбор гида: незаданные фильтры и вес звёзд -------------------------------
+
+// Незаданный фильтр означает «неважно», а не «ни один не подходит».
+// Запрос без gender отсеивал ВСЕХ гидов и возвращал пустой список — молча.
+const partialQuery = {
+  ...interestCtx(['history']),
+  languages: ['uz'],
+  needTransport: false,
+} as Parameters<typeof matchGuides>[1];
+assert.ok(matchGuides(GUIDES, partialQuery).length > 0, 'запрос без gender находит гидов');
+
+// Звёзды работают только пока гида не измерили: придуманное число не имеет
+// права складываться в ту же сумму, что заработанная нижняя граница Вильсона.
+const starQuery = { ...partialQuery, gender: 'any' as const };
+const withoutChecks = matchGuides(GUIDES, starQuery);
+const withChecks = matchGuides(GUIDES, {
+  ...starQuery,
+  accuracy: Object.fromEntries(
+    GUIDES.map((guide) => [guide.id, { confirmed: 10, refuted: 0, unclear: 0 }]),
+  ),
+});
+const starScoreOf = (list: ScoredGuide[], id: string) =>
+  list.find((entry) => entry.guide.id === id)?.score ?? 0;
+// у измеренного гида звёздная добавка обязана исчезнуть, а не сложиться сверху
+const starred = [...GUIDES].sort((a, b) => b.rating - a.rating)[0];
+assert.notEqual(
+  starScoreOf(withChecks, starred.id) - starScoreOf(withoutChecks, starred.id),
+  0,
+  'измерение меняет балл гида',
+);
+assert.ok(
+  withChecks.every((entry) => entry.score > 0),
+  'измеренные гиды остаются в выдаче',
+);
+
 // --- где ночевать --------------------------------------------------------------
 // Районы, а не карточки отелей: названия и цены конкретных гостиниц проверить
 // нечем, и выдуманный отель был бы тем самым непроверяемым фактом, против
