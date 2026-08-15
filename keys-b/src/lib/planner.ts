@@ -13,7 +13,8 @@ import type {
 import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 import { adviceFor } from './weather.ts';
-import { seasonNote } from './calendar.ts';
+import { seasonBudgetFactor, seasonNote } from './calendar.ts';
+import { tripDates } from './weather.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
@@ -36,8 +37,19 @@ const PACE_MINUTES: Record<NonNullable<TripContext['pace']>, number> = {
   packed: 420,
 };
 
-function dayBudget(ctx: TripContext): number {
-  return PACE_MINUTES[ctx.pace ?? 'normal'];
+/**
+ * Бюджет осмотра на день: темп поездки плюс поправка на праздник.
+ * В Навруз и Ураза-байрам учреждения работают короче — это меняет не порядок
+ * объектов, а сколько их влезает, поэтому поправка применяется здесь,
+ * при наборе дня, а не потом вместе с погодой.
+ *
+ * `dayIndex` — порядковый номер дня от нуля; дата берётся из начала поездки.
+ */
+function dayBudget(ctx: TripContext, dayIndex = 0): number {
+  const base = PACE_MINUTES[ctx.pace ?? 'normal'];
+  if (!ctx.startDate) return base;
+  const date = tripDates(dayIndex + 1, ctx.startDate)[dayIndex];
+  return Math.round(base * seasonBudgetFactor(date));
 }
 /** Начало осмотра. Позже жары и раньше закрытия музеев — обычный туристический день. */
 const DAY_START = 9 * 60;
@@ -360,7 +372,7 @@ export function buildItinerary(
     let firstDayInCity = true;
 
     while (cityPool.length && days.length < ctx.days) {
-      let budget = dayBudget(ctx);
+      let budget = dayBudget(ctx, days.length);
       let transfer: Transfer | undefined;
 
       // первый день в новом городе укорачивается на дорогу
@@ -370,7 +382,7 @@ export function buildItinerary(
           region,
           haversineKm(centroid(byRegion.get(previousRegion)!), centroid(byRegion.get(region)!)),
         );
-        budget = Math.max(120, dayBudget(ctx) - transferHours(transfer) * 60);
+        budget = Math.max(120, dayBudget(ctx, days.length) - transferHours(transfer) * 60);
       }
       firstDayInCity = false;
 
@@ -405,7 +417,7 @@ export function buildItinerary(
     if (leftovers.length) {
       const picked = fillDay(
         leftovers,
-        Math.max(120, dayBudget(ctx) - transferHours(transfer) * 60),
+        Math.max(120, dayBudget(ctx, days.length) - transferHours(transfer) * 60),
       );
       days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
     }
