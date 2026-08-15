@@ -11,11 +11,48 @@ export type Session = { email: string; role: Role; guideId?: string; exp: number
 export const SESSION_COOKIE = 'nexus30_session';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Ключ подписи сессий.
+ *
+ * Раньше без SESSION_SECRET возвращалась строка-константа — в любом окружении,
+ * включая продакшен. Репозиторий открыт, значит подпись знал бы каждый:
+ * достаточно собрать cookie с {"role":"admin"} и подписать той же строкой,
+ * чтобы войти в админку. render.yaml задаёт секрет через generateValue, но
+ * полагаться на то, что деплой всегда пройдёт именно по блюпринту, нельзя.
+ *
+ * Теперь константа живёт только в разработке — там она удобна тем, что сессия
+ * переживает перезапуск. В продакшене без переменной окружения берётся
+ * случайный ключ процесса: подделать его нельзя, а расплата — разлогин при
+ * рестарте, что несопоставимо дешевле открытой админки.
+ */
+export const DEV_SESSION_SECRET = 'nexus30-dev-secret-do-not-use-in-production';
+
+let fallbackSecret: string | null = null;
+
+/**
+ * Принимает окружение параметром, а не читает глобальное: в Node 22 NODE_ENV
+ * защищён от переопределения, и самопроверка иначе не смогла бы убедиться,
+ * что в продакшене ключ действительно не берётся из репозитория.
+ */
+export function sessionSecret(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.SESSION_SECRET) return env.SESSION_SECRET;
+
+  if (env.NODE_ENV === 'production') {
+    if (!fallbackSecret) {
+      fallbackSecret = randomBytes(32).toString('base64url');
+      console.warn(
+        '[auth] SESSION_SECRET не задан. Взят случайный ключ процесса: ' +
+          'сессии не переживут перезапуск. Задайте SESSION_SECRET в окружении.',
+      );
+    }
+    return fallbackSecret;
+  }
+
+  return DEV_SESSION_SECRET;
+}
+
 function secret(): string {
-  const value = process.env.SESSION_SECRET;
-  if (value) return value;
-  // без переменной окружения работаем, но подпись предсказуема — только для локального демо
-  return 'nexus30-dev-secret-do-not-use-in-production';
+  return sessionSecret();
 }
 
 function b64url(input: Buffer | string): string {

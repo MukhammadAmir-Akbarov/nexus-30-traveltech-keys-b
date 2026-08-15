@@ -32,11 +32,13 @@ import {
 import type { DayWeather } from './types.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, UI, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
+  DEV_SESSION_SECRET,
   clearLoginAttempts,
   hashPassword,
   isLockedOut,
   loginKey,
   noteFailedLogin,
+  sessionSecret,
   signSession,
   verifyPassword,
   verifySession,
@@ -1015,6 +1017,35 @@ assert.equal(
 assert.ok(
   navigatorUrl([registan, bibiKhanym]).includes('39.65470,66.97490~39.66060,66.97970'),
   'ссылка в навигатор ведёт по тем же точкам и в том же порядке',
+);
+
+// --- подпись сессии в продакшене не берётся из репозитория -------------------
+// Раньше без SESSION_SECRET secret() возвращал строку-константу в ЛЮБОМ
+// окружении. Репозиторий открыт, значит cookie с ролью admin подписал бы кто
+// угодно. Проверяем на живом процессе: тот же токен, подписанный в режиме
+// продакшена без переменной окружения, не должен приниматься кодом,
+// который знает только константу из репозитория.
+// в разработке ключ предсказуем осознанно: сессия переживает перезапуск
+assert.equal(
+  sessionSecret({ NODE_ENV: 'development' } as NodeJS.ProcessEnv),
+  DEV_SESSION_SECRET,
+  'в разработке используется прежний удобный ключ',
+);
+
+// а в продакшене без переменной окружения ключ обязан быть случайным
+const prodSecret = sessionSecret({ NODE_ENV: 'production' } as NodeJS.ProcessEnv);
+assert.notEqual(
+  prodSecret,
+  DEV_SESSION_SECRET,
+  'в продакшене подпись НЕ должна браться из репозитория',
+);
+assert.ok(prodSecret.length >= 32, 'случайный ключ продакшена достаточно длинный');
+
+// заданная переменная окружения всегда сильнее любого запасного варианта
+assert.equal(
+  sessionSecret({ NODE_ENV: 'production', SESSION_SECRET: 'from-env' } as NodeJS.ProcessEnv),
+  'from-env',
+  'SESSION_SECRET из окружения имеет приоритет',
 );
 
 // --- интересы влияют на СОСТАВ маршрута, а не только на порядок --------------

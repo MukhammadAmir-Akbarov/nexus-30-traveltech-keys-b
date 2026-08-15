@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { currentSession } from '@/lib/session';
 import {
   addCorpusItem,
@@ -25,9 +26,22 @@ type Action =
   | { type: 'request-done'; id: string }
   | { type: 'export' };
 
-/** Пароль для доступа гида: показывается администратору один раз. */
+/**
+ * Пароль для доступа гида: показывается администратору один раз.
+ *
+ * randomBytes, а не Math.random: это настоящий пароль от чужого кабинета.
+ * Math.random не криптографический — его поток предсказуем по нескольким
+ * выданным значениям, а выдаёт их та же самая ручка администратора.
+ */
 function tempPassword(): string {
-  return Math.random().toString(36).slice(2, 10);
+  return randomBytes(9).toString('base64url');
+}
+
+/** Ручной разбор возражения гида: значение приходит из тела запроса, поэтому проверяем. */
+const DISPUTE_OUTCOMES = ['upheld', 'rejected'] as const;
+
+function isDisputeOutcome(value: unknown): value is (typeof DISPUTE_OUTCOMES)[number] {
+  return DISPUTE_OUTCOMES.includes(value as (typeof DISPUTE_OUTCOMES)[number]);
 }
 
 export async function POST(req: Request) {
@@ -75,8 +89,12 @@ export async function POST(req: Request) {
         : Response.json({ error: 'exists_or_not_found' }, { status: 409 });
     }
 
-    case 'resolve-dispute':
+    case 'resolve-dispute': {
+      if (!isDisputeOutcome(action.outcome)) {
+        return Response.json({ error: 'bad_outcome' }, { status: 400 });
+      }
       return Response.json({ ok: resolveDispute(action.id, action.outcome) });
+    }
 
     case 'request-done':
       return Response.json({ ok: markRequestDone(action.id) });
