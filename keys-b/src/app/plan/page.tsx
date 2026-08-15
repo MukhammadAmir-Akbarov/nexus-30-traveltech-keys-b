@@ -12,15 +12,17 @@ import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
+import { POIS } from '@/data/poi';
+import { POI_ICON, POI_LABEL, nearestPois } from '@/lib/poi';
 import { itineraryToIcs } from '@/lib/ics';
 import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
 import { overBudget, usdToUzsLabel } from '@/lib/budget';
 import { isWindy } from '@/lib/weather';
-import { distanceLabel, navigatorUrl, routeTotals } from '@/lib/route';
+import { dayDuration, distanceLabel, hoursLabel, navigatorUrl, routeTotals } from '@/lib/route';
 import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
-import type { RoutePoint } from '@/components/RouteMap';
+import type { MapPoi, RoutePoint } from '@/components/RouteMap';
 import type { Itinerary, ItineraryDay, Mode } from '@/lib/types';
 
 // MapLibre трогает window и WebGL — грузим только на клиенте.
@@ -122,6 +124,28 @@ export default function PlanPage() {
   const routes = useDayRoutes(dayPoints);
   const routeByDay = new Map(routes.map((route) => [route.day, route]));
 
+  // Инфраструктура вдоль маршрута — по кнопке. Постоянно на карте это шум,
+  // но в поездке намазхона и туалет нужнее ещё одного медресе.
+  const [showPois, setShowPois] = useState(false);
+  const mapPois: MapPoi[] = showPois
+    ? [
+        ...new Map(
+          routePoints
+            .flatMap(({ place }) => nearestPois(POIS, place))
+            .map(({ poi }) => [
+              poi.id,
+              {
+                id: poi.id,
+                lat: poi.lat,
+                lng: poi.lng,
+                label: `${tr(POI_LABEL[poi.kind], lang)}: ${tr(poi.name, lang)}`,
+                icon: POI_ICON[poi.kind],
+              },
+            ]),
+        ).values(),
+      ]
+    : [];
+
   return (
     <div className="flex flex-col gap-4">
       <section className="flex flex-wrap items-end justify-between gap-3">
@@ -183,7 +207,21 @@ export default function PlanPage() {
           </section>
 
           {routePoints.length > 0 && (
-            <RouteMap points={routePoints} routes={routes} lang={lang} />
+            <>
+              <RouteMap points={routePoints} routes={routes} pois={mapPois} lang={lang} />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="chip"
+                  data-active={showPois}
+                  onClick={() => setShowPois(!showPois)}
+                >
+                  <Icon name="fuel" size={14} />
+                  {t('mapPois', lang)}
+                  {showPois && <span className="muted">· {mapPois.length}</span>}
+                </button>
+                <span className="muted text-[12px]">{t('mapPoisHint', lang)}</span>
+              </div>
+            </>
           )}
 
           <section className="flex flex-col gap-3">
@@ -291,6 +329,20 @@ export default function PlanPage() {
                         <Icon name="route" size={13} />
                         {t('routeHow', lang)}
                       </span>
+                      {/* Сколько займёт день целиком: «влезет ли это до вечера» —
+                          первый вопрос, а складывать в уме приходилось самому. */}
+                      {(() => {
+                        const d = dayDuration(
+                          placesOf(day).map(({ place }) => place.visitMinutes),
+                          route.legs,
+                        );
+                        return (
+                          <span className="tag" title={t('dayDurationHint', lang)}>
+                            <Icon name="clock" size={13} />
+                            {t('dayDuration', lang)} ≈ {hoursLabel(d.total, lang)}
+                          </span>
+                        );
+                      })()}
                       {totals.walkKm > 0 && (
                         <span className="tag">
                           <Icon name="walk" size={13} />

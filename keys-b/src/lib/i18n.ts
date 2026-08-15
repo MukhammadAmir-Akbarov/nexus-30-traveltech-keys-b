@@ -535,6 +535,27 @@ export const UI = {
   profileCheckMore: { uz: 'faktni tekshirish', ru: 'проверить факт', en: 'check a fact' },
   planDaysShort: { uz: 'kun', ru: 'дн.', en: 'days' },
 
+  mapPois: { uz: 'Infratuzilma', ru: 'Инфраструктура', en: 'Amenities' },
+  mapPoisHint: {
+    uz: 'Zapravka, hojatxona, namozxona, tibbiy punkt va kafe — xaritada.',
+    ru: 'Заправки, туалеты, намазхона, медпункт и кафе — на карте.',
+    en: 'Fuel, toilets, prayer rooms, clinics and cafes on the map.',
+  },
+
+  dayDuration: { uz: 'Kun', ru: 'День', en: 'Day' },
+  dayDurationHint: {
+    uz: 'Ko‘rish vaqti va obyektlar orasidagi yo‘l qo‘shilgan.',
+    ru: 'Время осмотра плюс дорога между объектами.',
+    en: 'Sightseeing time plus travel between the places.',
+  },
+  tripCountdown: {
+    uz: 'Sayohatgacha',
+    ru: 'До поездки',
+    en: 'Until your trip',
+  },
+  tripToday: { uz: 'Sayohat bugun boshlanadi', ru: 'Поездка начинается сегодня', en: 'Your trip starts today' },
+  tripDaysLeft: { uz: 'kun', ru: 'дн.', en: 'days' },
+
   windLabel: { uz: 'Shamol', ru: 'Ветер', en: 'Wind' },
   windUnit: { uz: 'km/soat', ru: 'км/ч', en: 'km/h' },
   windDust: { uz: 'shamolli', ru: 'ветрено', en: 'windy' },
