@@ -645,6 +645,97 @@ const UI = {
 
   planIcs: { uz: 'Kalendarga qo‘shish', ru: 'В календарь', en: 'Add to calendar' },
 
+  // Спорные темы: у части утверждений нет одного «верно»
+  disputedTitle: {
+    uz: 'Manbalar bir-biriga zid',
+    ru: 'Источники расходятся',
+    en: 'Sources disagree',
+  },
+  disputedPosition: { uz: 'Versiya', ru: 'Версия', en: 'Position' },
+  disputedNotCounted: {
+    uz: 'Bunday holat gid reytingiga yozilmaydi: manbalar kelisha olmagan bo‘lsa, gidning aybi yo‘q.',
+    ru: 'Такой случай не идёт в рейтинг гида: если источники не сошлись, вины гида здесь нет.',
+    en: 'This does not count against the guide: when the sources disagree, it is not the guide’s fault.',
+  },
+
+  // Границы прототипа: без этой страницы жюри домысливает их само
+  howTitle: {
+    uz: 'Bu qanday joriy etiladi',
+    ru: 'Как это внедряется',
+    en: 'How this gets deployed',
+  },
+  howLead: {
+    uz: 'Prototipda nima demo, nima tashqaridan olinadi va Qo‘mitadan nima kerak.',
+    ru: 'Что в прототипе демонстрационное, что берётся снаружи и что нужно от Комитета.',
+    en: 'What is demo data here, what comes from outside, and what the Committee needs to provide.',
+  },
+  howTableTitle: { uz: 'Hozir va ishchi versiyada', ru: 'Сейчас и в рабочей версии', en: 'Now and in production' },
+  howColNow: { uz: 'Prototipda', ru: 'В прототипе', en: 'In the prototype' },
+  howColProd: { uz: 'Ishchi versiyada', ru: 'В рабочей версии', en: 'In production' },
+  howDataNow: { uz: '31 ta obyekt qo‘lda kiritilgan', ru: '31 объект, заведены вручную', en: '31 sites, entered by hand' },
+  howDataProd: {
+    uz: 'Qo‘mitaning obyektlar bazasi API orqali',
+    ru: 'База объектов Комитета по API',
+    en: 'The Committee’s site registry over an API',
+  },
+  howGuidesNow: { uz: '10 ta gid, «tasdiqlangan» belgisi — demo', ru: '10 гидов, метка «подтверждён» — демо', en: '10 guides, the “verified” badge is demo' },
+  howGuidesProd: {
+    uz: 'Qo‘mita reestri: litsenziya, shaxs va til tekshiruvi',
+    ru: 'Реестр Комитета: лицензия, личность и проверка языков',
+    en: 'The Committee registry: licence, identity and language checks',
+  },
+  howFactsNow: { uz: '40 abzas rasmiy manbalardan', ru: '40 абзацев из официальных источников', en: '40 paragraphs from official sources' },
+  howFactsProd: {
+    uz: 'Muzeylar va arxivlarning rasmiy matnlari, versiyalari bilan',
+    ru: 'Официальные тексты музеев и архивов с версионированием',
+    en: 'Official museum and archive texts, versioned',
+  },
+  howAiNow: { uz: 'Kalitsiz — qoidalar va oldindan yozilgan javoblar', ru: 'Без ключа — правила и предзаписанные ответы', en: 'Without a key — rules and pre-recorded answers' },
+  howAiProd: {
+    uz: 'Model qo‘shiladi, qoidalar zaxira yo‘l bo‘lib qoladi',
+    ru: 'Подключается модель, правила остаются запасным путём',
+    en: 'A model is connected; the rules remain the fallback',
+  },
+  howStoreNow: { uz: 'Ma’lumotlar jarayon xotirasida', ru: 'Данные в памяти процесса', en: 'Data lives in process memory' },
+  howStoreProd: {
+    uz: 'Ma’lumotlar bazasi: store.ts o‘rnini almashtirish yetadi',
+    ru: 'База данных: достаточно заменить реализацию store.ts',
+    en: 'A database: only the store.ts implementation changes',
+  },
+  howStepsTitle: { uz: 'Qo‘mitadan nima kerak', ru: 'Что нужно от Комитета', en: 'What the Committee needs to provide' },
+  howStep1: {
+    uz: 'Obyektlar bazasiga kirish: nom, joylashuv, ish vaqti, chipta narxi.',
+    ru: 'Доступ к базе объектов: название, координаты, часы работы, цена билета.',
+    en: 'Access to the site registry: name, coordinates, opening hours, ticket price.',
+  },
+  howStep2: {
+    uz: 'Gidlar reestri va tasdiqlash mezonlari — TZning §9 bandi.',
+    ru: 'Реестр гидов и критерии подтверждения — пункт §9 ТЗ.',
+    en: 'The guide registry and verification criteria — clause §9 of the brief.',
+  },
+  howStep3: {
+    uz: 'Rasmiy matnlar manbasi: kim yozadi va kim yangilaydi.',
+    ru: 'Источник официальных текстов: кто пишет и кто обновляет.',
+    en: 'A source of official texts: who writes them and who keeps them current.',
+  },
+  howStep4: {
+    uz: 'Gidlar e’tirozini kim ko‘rib chiqadi — bu odam kerak, kod emas.',
+    ru: 'Кто разбирает возражения гидов — здесь нужен человек, а не код.',
+    en: 'Who reviews guide disputes — this needs a person, not code.',
+  },
+  howPrivacy: {
+    uz: 'Maxfiylik: sayohat konteksti faqat brauzerda saqlanadi, geolokatsiya so‘ralmaydi, tekshiruvlar qurilma identifikatoriga bog‘lanadi — shaxsga emas.',
+    ru: 'Приватность: контекст поездки хранится только в браузере, геолокация не запрашивается, проверки привязаны к идентификатору устройства, а не к личности.',
+    en: 'Privacy: the trip context stays in the browser, no geolocation is requested, and checks are tied to a device identifier rather than a person.',
+  },
+  howQrTitle: { uz: 'Obyektlar uchun QR varaqasi', ru: 'Лист QR-кодов для объектов', en: 'QR sheet for the sites' },
+  howQrHint: {
+    uz: 'Chop eting va obyekt kiraverishiga yopishtiring: turist skanerlaydi va faktlarni tekshirish sahifasiga tushadi. Manzil so‘rovdan olinadi, shuning uchun kodlar joriy manzilga ishlaydi.',
+    ru: 'Распечатайте и наклейте у входа на объект: турист сканирует и попадает на карточку с проверкой фактов. Адрес берётся из запроса, поэтому коды ведут на текущий адрес, а не на localhost.',
+    en: 'Print and post at each site entrance: a tourist scans it and lands on the fact-check card. The address comes from the request, so the codes point at the current host, not localhost.',
+  },
+  howQrOpen: { uz: 'QR varaqasini ochish', ru: 'Открыть лист QR', en: 'Open the QR sheet' },
+
   // Сравнение форматов: разницу проще показать, чем объяснить словами
   tabCompare: { uz: 'Taqqoslash', ru: 'Сравнение', en: 'Compare' },
   compareTitle: {

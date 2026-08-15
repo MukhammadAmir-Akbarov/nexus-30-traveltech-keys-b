@@ -13,7 +13,18 @@ import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode } from '@/lib/type
 import type { UiKey } from '@/lib/i18n';
 
 type Counted = 'counted' | 'duplicate' | 'rate-limited';
-type Result = { verdict: CheckVerdict; passages: string[]; mode: Mode; counted?: Counted };
+type Disputed = {
+  question: string;
+  note: string;
+  positions: { claim: string; title: string; url: string }[];
+};
+type Result = {
+  verdict: CheckVerdict;
+  passages: string[];
+  mode: Mode;
+  counted?: Counted;
+  disputed?: Disputed;
+};
 
 /** Что показать про учёт в рейтинге гида — вместо молчаливого «учтено» всегда. */
 const COUNTED_UI: Record<Counted, { key: UiKey; cls: string }> = {
@@ -229,6 +240,42 @@ export default function CheckPage() {
             >
               {result.verdict.claim}
             </blockquote>
+
+            {/* Источники расходятся — показываем обе стороны, а не выбираем удобную */}
+            {result.disputed && (
+              <div
+                className="flex flex-col gap-3 rounded-xl p-3"
+                style={{ background: 'var(--warn-weak)' }}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="tag tag-warn">
+                    <Icon name="alert" size={13} />
+                    {t('disputedTitle', lang)}
+                  </span>
+                  <b className="text-[13px]">{result.disputed.question}</b>
+                </div>
+
+                {result.disputed.positions.map((position, index) => (
+                  <div key={position.url} className="text-[13px]">
+                    <div className="font-semibold">
+                      {t('disputedPosition', lang)} {index + 1}: {position.claim}
+                    </div>
+                    <a
+                      href={position.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      {position.title}
+                      <Icon name="external" size={13} />
+                    </a>
+                  </div>
+                ))}
+
+                <p className="muted prose-measure text-[12px]">{t('disputedNotCounted', lang)}</p>
+              </div>
+            )}
 
             <p className="prose-measure text-[15px] leading-relaxed">{result.verdict.explanation}</p>
 
