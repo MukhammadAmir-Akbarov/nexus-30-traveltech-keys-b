@@ -23,7 +23,24 @@ export default function RouteMap({ places, lang }: { places: Place[]; lang: Lang
   const points = places.map((p) => [p.lat, p.lng] as [number, number]);
 
   return (
-    <MapContainer center={points[0]} zoom={13} scrollWheelZoom={false}>
+    <>
+      {/*
+        Скринридеру карта не говорит ничего: Leaflet рисует тайлы и svg-круги.
+        Поэтому рядом лежит текстовый эквивалент того же маршрута — он не виден
+        глазами, но читается вслух и находится поиском по странице.
+      */}
+      <ol className="sr-only">
+        {places.map((place, index) => (
+          <li key={place.id}>
+            {index + 1}. {tr(place.name, lang)}
+          </li>
+        ))}
+      </ol>
+
+      {/* aria-hidden вешаем на обёртку: MapContainer чужие атрибуты не пробрасывает.
+          Карта — вспомогательная картинка, порядок объектов уже прочитан выше. */}
+      <div aria-hidden="true">
+      <MapContainer center={points[0]} zoom={13} scrollWheelZoom={false}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -41,7 +58,9 @@ export default function RouteMap({ places, lang }: { places: Place[]; lang: Lang
           </Tooltip>
         </CircleMarker>
       ))}
-      <FitBounds points={points} />
-    </MapContainer>
+        <FitBounds points={points} />
+      </MapContainer>
+      </div>
+    </>
   );
 }

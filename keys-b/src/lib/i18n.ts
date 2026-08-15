@@ -645,6 +645,8 @@ const UI = {
 
   planIcs: { uz: 'Kalendarga qo‘shish', ru: 'В календарь', en: 'Add to calendar' },
 
+  skipToContent: { uz: 'Asosiy qismga o‘tish', ru: 'К содержимому', en: 'Skip to content' },
+
   // Спорные темы: у части утверждений нет одного «верно»
   disputedTitle: {
     uz: 'Manbalar bir-biriga zid',
