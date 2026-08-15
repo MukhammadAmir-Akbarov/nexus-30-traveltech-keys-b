@@ -28,6 +28,12 @@ export type TravelType = 'solo' | 'family' | 'group';
 /** Темп: сколько часов осмотра турист готов выдержать за день. */
 export type Pace = 'relaxed' | 'normal' | 'packed';
 
+/** Дневной бюджет поездки. Тот же вопрос, что в мобильном приложении. */
+export type Budget = 'low' | 'mid' | 'high';
+
+/** Языки, на которых турист готов общаться с гидом. */
+export type GuideLang = 'uz' | 'ru' | 'en' | 'tr' | 'ar' | 'zh' | 'fr' | 'de';
+
 export type TripContext = {
   /** Пустой список = вся страна. Регионов можно выбрать несколько. */
   regions: Region[];
@@ -43,6 +49,13 @@ export type TripContext = {
   summer: boolean;
   /** Темп поездки. По умолчанию обычный. */
   pace?: Pace;
+  /** Дневной бюджет: меняет очки объектов, выбор переезда и предупреждения. */
+  budget?: Budget;
+  /**
+   * Языки общения туриста. Не то же самое, что язык интерфейса: узбек может
+   * искать англоязычного гида, и подбор обязан идти по этому полю.
+   */
+  guideLangs?: GuideLang[];
   /** Объекты, которые турист убрал руками. */
   excluded?: string[];
   /** Объекты, которые турист хочет обязательно — они идут в маршрут первыми. */
@@ -176,6 +189,8 @@ export type TripCost = {
   ticketsUsd: number;
   transferUsd: number;
   totalUsd: number;
+  /** Траты по дням: без них не сказать, какой именно день вылез за бюджет. */
+  perDayUsd?: number[];
 };
 
 export type TransferMode = 'plane' | 'train' | 'bus' | 'car' | 'minibus';

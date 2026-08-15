@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceTrip } from '@/components/VoiceTrip';
 import {
+  GUIDE_LANGS,
+  GUIDE_LANG_LABEL,
   INTEREST_LABEL,
   INTERESTS,
   REGIONS,
@@ -13,7 +15,8 @@ import {
   t,
   tr,
 } from '@/lib/i18n';
-import type { Interest, Pace } from '@/lib/types';
+import { BUDGET_DESC, BUDGET_LABEL, BUDGET_LEVELS, BUDGET_PRICE } from '@/lib/budget';
+import type { GuideLang, Interest, Pace } from '@/lib/types';
 
 const PACES: { pace: Pace; key: 'paceRelaxed' | 'paceNormal' | 'pacePacked' }[] = [
   { pace: 'relaxed', key: 'paceRelaxed' },
@@ -192,6 +195,61 @@ export default function Home() {
                   {t(key, lang)}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Бюджет: тот же вопрос, что задаёт мобильное приложение. Он не
+              косметический — меняет очки объектов, порядок вариантов переезда
+              и предупреждение о превышении дневного потолка. */}
+          <div>
+            <div className="mb-2 text-sm font-semibold">
+              {t('fieldBudget', lang)}{' '}
+              <span className="muted font-normal">· {t('budgetHint', lang)}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {BUDGET_LEVELS.map((level) => (
+                <button
+                  key={level}
+                  className="chip"
+                  data-active={trip.budget === level}
+                  title={tr(BUDGET_DESC[level], lang)}
+                  onClick={() => update({ budget: trip.budget === level ? undefined : level })}
+                >
+                  {tr(BUDGET_LABEL[level], lang)}
+                  <span className="muted">· {tr(BUDGET_PRICE[level], lang)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Языки общения — не язык интерфейса: узбек может искать
+              англоязычного гида. Спрашиваем здесь, используем при подборе. */}
+          <div>
+            <div className="mb-2 text-sm font-semibold">
+              {t('fieldGuideLangs', lang)}{' '}
+              <span className="muted font-normal">· {t('guideLangsHint', lang)}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {GUIDE_LANGS.map((code) => {
+                const chosen = trip.guideLangs?.length ? trip.guideLangs : [lang];
+                const active = chosen.includes(code as GuideLang);
+                return (
+                  <button
+                    key={code}
+                    className="chip"
+                    data-active={active}
+                    onClick={() =>
+                      update({
+                        guideLangs: (active
+                          ? chosen.filter((l) => l !== code)
+                          : [...chosen, code as GuideLang]) as GuideLang[],
+                      })
+                    }
+                  >
+                    {tr(GUIDE_LANG_LABEL[code], lang)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

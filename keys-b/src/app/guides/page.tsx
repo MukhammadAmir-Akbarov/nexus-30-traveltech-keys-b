@@ -19,13 +19,18 @@ import {
 } from '@/lib/i18n';
 import { MIN_CHECKS } from '@/lib/match';
 import { PLACE_BY_ID } from '@/data/places';
-import type { Gender, ScoredGuide } from '@/lib/types';
+import type { Gender, ScoredGuide, TripContext } from '@/lib/types';
 
 const GENDERS: (Gender | 'any')[] = ['any', 'female', 'male'];
 
 export default function GuidesPage() {
-  const { trip, lang, ready } = useTrip();
-  const [languages, setLanguages] = useState<string[]>(['ru']);
+  const { trip, lang, ready, update } = useTrip();
+  // Языки общения — часть контекста поездки, а не настройка этой страницы:
+  // раньше здесь всегда стоял русский, каким бы ни был интерфейс и кто бы
+  // ни искал гида. Пока турист не выбрал — берём язык интерфейса.
+  const languages: string[] = trip.guideLangs?.length ? trip.guideLangs : [lang];
+  const setLanguages = (next: string[]) =>
+    update({ guideLangs: (next.length ? next : [lang]) as TripContext['guideLangs'] });
   const [gender, setGender] = useState<Gender | 'any'>('any');
   const [needTransport, setNeedTransport] = useState(false);
   const [guides, setGuides] = useState<ScoredGuide[]>([]);
@@ -37,14 +42,20 @@ export default function GuidesPage() {
       const res = await fetch('/api/guides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...trip, languages, gender, needTransport }),
+        body: JSON.stringify({
+          ...trip,
+          languages: trip.guideLangs?.length ? trip.guideLangs : [lang],
+          gender,
+          needTransport,
+        }),
       });
       const data = (await res.json()) as { guides: ScoredGuide[] };
       setGuides(data.guides);
     } finally {
       setLoading(false);
     }
-  }, [trip, languages, gender, needTransport]);
+    // languages выведены из trip, который уже в зависимостях
+  }, [trip, lang, gender, needTransport]);
 
   // Загрузка списка — сетевой запрос: setState происходит после await, но
   // правило видит вызов внутри эффекта. Другого места у запроса нет.
@@ -56,8 +67,8 @@ export default function GuidesPage() {
   }, [ready, load]);
 
   const toggleLanguage = (code: string) =>
-    setLanguages((prev) =>
-      prev.includes(code) ? prev.filter((l) => l !== code) : [...prev, code],
+    setLanguages(
+      languages.includes(code) ? languages.filter((l) => l !== code) : [...languages, code],
     );
 
   return (
