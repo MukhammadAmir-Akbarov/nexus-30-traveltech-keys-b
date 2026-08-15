@@ -74,14 +74,6 @@ type HistoryItem = { claim: string; status: CheckStatus; at: string };
 export default function CheckPage() {
   const { lang } = useTrip();
   const [history, setHistory] = useState<HistoryItem[]>([]);
-
-  useEffect(() => {
-    try {
-      setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'));
-    } catch {
-      // повреждённое хранилище — просто пустая история
-    }
-  }, []);
   const [claim, setClaim] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -89,10 +81,17 @@ export default function CheckPage() {
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [guideId, setGuideId] = useState('');
 
-  // сюда приходят после сканирования QR у объекта: /check?place=registan
+  // Один эффект на всё, что читается из браузера после монтирования:
+  // объект из QR-ссылки и история проверок с этого устройства.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('place');
     if (id && PLACE_BY_ID[id]) setPlaceId(id);
+    try {
+      const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') as HistoryItem[];
+      if (saved.length) setHistory(saved);
+    } catch {
+      // повреждённое хранилище — просто пустая история
+    }
   }, []);
 
   const place = placeId ? PLACE_BY_ID[placeId] : null;

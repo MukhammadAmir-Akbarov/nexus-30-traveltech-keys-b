@@ -71,7 +71,6 @@ export function VoiceInput({
 
   useEffect(() => {
     if (listening && seconds >= MAX_SECONDS) stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds, listening]);
 
   if (!supported) return null;
