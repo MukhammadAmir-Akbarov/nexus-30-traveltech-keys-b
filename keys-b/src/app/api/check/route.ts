@@ -5,8 +5,9 @@ import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
 import { hasAI, isMockAI, MODEL } from '@/lib/model';
-import { LANG_LABEL, tr } from '@/lib/i18n';
+import { LANG_LABEL, t, tr } from '@/lib/i18n';
 import { retrieve } from '@/lib/retrieval';
+import { ruleVerdict, toRoman, type RuleVerdict } from '@/lib/verdict';
 import type { CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
 
 const verdictSchema = z.object({
@@ -34,6 +35,37 @@ const OFFLINE_TEXT = {
     en: 'The model is unavailable right now. Below are passages from the official sources for your query.',
   },
 } satisfies Record<string, I18nText>;
+
+/**
+ * Правило сработало — превращаем его в вердикт на языке интерфейса.
+ *
+ * Объяснение собирается из чисел, а не из текста источника: отрывки у нас
+ * канонически по-русски, и подставлять их в узбекский интерфейс как объяснение
+ * значит отвечать не на том языке, на котором спросили. Сам отрывок при этом
+ * никуда не девается — он приходит в passages и показан рядом.
+ */
+function fromRule(
+  ruled: RuleVerdict,
+  claim: string,
+  lang: Lang,
+  sources: CheckVerdict['sources'],
+): CheckVerdict {
+  const format = (value: number) => (ruled.kind === 'century' ? toRoman(value) : String(value));
+  const first = ruled.sourceValues[0];
+  const last = ruled.sourceValues[ruled.sourceValues.length - 1];
+  const sourceText = first === last ? format(first) : `${format(first)}–${format(last)}`;
+
+  return {
+    claim,
+    status: 'refuted',
+    explanation:
+      `${t(ruled.kind === 'century' ? 'ruleRefutedCentury' : 'ruleRefutedYear', lang)} ` +
+      `${t('ruleClaimLabel', lang)}: ${format(ruled.claimValue)}; ` +
+      `${t('ruleSourceLabel', lang)}: ${sourceText}. ${t('ruleModeNote', lang)}`,
+    correction: ruled.passage,
+    sources,
+  };
+}
 
 const CLIENT_COOKIE = 'nexus30_client';
 
@@ -113,19 +145,31 @@ export async function POST(req: Request) {
   // Репетиция ветки модели без ключа: путь тот же, метка та же, ответ подставлен.
   if (isMockAI()) {
     if (cached) return respond({ ...cached, explanation: `[MOCK] ${cached.explanation}` }, 'ai');
-    return respond(
-      {
-        claim,
-        status: hits.length ? 'confirmed' : 'unclear',
-        explanation: `[MOCK] ${hits[0]?.item.text ?? OFFLINE_TEXT.noHits[lang]}`,
-        sources,
-      },
-      'ai',
-    );
+    // Раньше здесь стояло `hits.length ? 'confirmed' : 'unclear'`: любое
+    // утверждение, к которому нашёлся отрывок, объявлялось подтверждённым —
+    // включая заведомо ложное. Подтверждать по факту совпадения слов нельзя.
+    const ruled = ruleVerdict(claim, passages);
+    const base: CheckVerdict = ruled
+      ? fromRule(ruled, claim, lang, sources)
+      : {
+          claim,
+          status: 'unclear',
+          explanation: hits[0]?.item.text ?? OFFLINE_TEXT.noHits[lang],
+          sources,
+        };
+    return respond({ ...base, explanation: `[MOCK] ${base.explanation}` }, 'ai');
   }
 
   if (!hasAI()) {
     if (cached) return respond(cached, 'offline');
+
+    // Без ключа мы всё равно умеем ловить перепутанный век и год — это
+    // арифметика по отрывку, а не суждение модели. Раньше на любой вопрос
+    // вне демо-кэша здесь возвращалось «unclear: сверьте формулировку сами»,
+    // то есть главная функция продукта визуально ничего не делала.
+    const ruled = ruleVerdict(claim, passages);
+    if (ruled) return respond(fromRule(ruled, claim, lang, sources), 'offline');
+
     return respond(
       {
         claim,

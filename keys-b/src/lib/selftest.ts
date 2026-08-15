@@ -11,6 +11,7 @@ import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve, tokenize } from './retrieval.ts';
+import { ruleVerdict, toRoman } from './verdict.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { itineraryToIcs } from './ics.ts';
 import { disputedForLang, findDisputed } from './disputed.ts';
@@ -1015,6 +1016,44 @@ assert.ok(
   navigatorUrl([registan, bibiKhanym]).includes('39.65470,66.97490~39.66060,66.97970'),
   'ссылка в навигатор ведёт по тем же точкам и в том же порядке',
 );
+
+// --- вердикт по правилам (работает без ключа модели) -------------------------
+// Правило существует ради одного: без ключа продукт обязан ловить перепутанный
+// век и год, а не отвечать «сверьте формулировку сами» на любой живой вопрос.
+// И столь же обязан МОЛЧАТЬ там, где не уверен: ложное обвинение гида хуже,
+// чем отсутствие вердикта.
+
+const passagesFor = (claim: string) => retrieve(CORPUS, claim, 3).map((hit) => hit.item.text);
+
+for (const claim of [
+  'Registon XII asrda qurilgan',
+  'Регистан построен в XII веке',
+  'Registan was built in the 12th century',
+]) {
+  const ruled = ruleVerdict(claim, passagesFor(claim));
+  assert.ok(ruled, `перепутанный век обязан ловиться: «${claim}»`);
+  assert.equal(ruled.kind, 'century', 'опровержение именно по веку');
+  assert.equal(ruled.claimValue, 12, 'век утверждения прочитан верно');
+}
+
+const wrongYear = 'Ulug‘bek madrasasi 1250-yilda qurilgan';
+assert.equal(ruleVerdict(wrongYear, passagesFor(wrongYear))?.kind, 'year', 'чужой год ловится');
+
+// Молчание правила — не «утверждение верно», а «правило не берётся судить».
+for (const claim of [
+  'Ulug‘bek madrasasi 1417-yilda qurilgan', // верный год
+  'Registon ansambli uchta madrasadan iborat', // чисел нет
+  'Kalon minorasi juda baland', // оценка, а не факт
+]) {
+  assert.equal(
+    ruleVerdict(claim, passagesFor(claim)),
+    null,
+    `правило обязано молчать: «${claim}»`,
+  );
+}
+
+assert.equal(ruleVerdict('Registon XII asrda qurilgan', []), null, 'без источников правило молчит');
+assert.equal(toRoman(15), 'XV', 'век печатается римскими');
 
 // --- витрина главной ---------------------------------------------------------
 // Главная — первый экран и для туриста, и для жюри. Опечатка в id даёт молча

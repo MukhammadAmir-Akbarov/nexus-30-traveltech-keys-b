@@ -241,6 +241,26 @@ export const UI = {
   planSetupToggle: { uz: 'Kontekstni o‘zgartirish', ru: 'Изменить контекст', en: 'Change context' },
   planSetupDone: { uz: 'Marshrutni ko‘rish', ru: 'Показать маршрут', en: 'Show the itinerary' },
 
+  // Вердикт по правилам (без модели): опровержение по веку или году.
+  ruleRefutedCentury: {
+    uz: 'Da’vodagi asr manbalardagi ma’lumotga to‘g‘ri kelmaydi.',
+    ru: 'Век в утверждении не совпадает с тем, что указано в источниках.',
+    en: 'The century in the claim does not match the sources.',
+  },
+  ruleRefutedYear: {
+    uz: 'Da’vodagi yil manbalardagi ma’lumotga to‘g‘ri kelmaydi.',
+    ru: 'Год в утверждении не совпадает с тем, что указано в источниках.',
+    en: 'The year in the claim does not match the sources.',
+  },
+  ruleClaimLabel: { uz: 'da’voda', ru: 'в утверждении', en: 'in the claim' },
+  ruleSourceLabel: { uz: 'manbada', ru: 'в источнике', en: 'in the source' },
+  // Честная подпись: это арифметика по числам, а не суждение модели.
+  ruleModeNote: {
+    uz: 'Modelsiz aniqlandi: sana va asr manba bilan solishtirildi.',
+    ru: 'Определено без модели: дата и век сверены с источником.',
+    en: 'Determined without a model: the date and century were compared with the source.',
+  },
+
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },
