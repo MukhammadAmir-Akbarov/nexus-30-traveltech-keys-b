@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import './globals.css';
 import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
@@ -9,7 +9,9 @@ import { SkipLink } from '@/components/SkipLink';
 import { TabBar } from '@/components/TabBar';
 import { TripProvider } from '@/components/TripProvider';
 
-const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin', 'cyrillic'] });
+// Manrope — тот же шрифт, что в мобильном приложении SafarAI: одна семья
+// на весь продукт, чтобы веб и приложение читались как одна система.
+const manrope = Manrope({ variable: '--font-sans', subsets: ['latin', 'cyrillic'] });
 
 export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
@@ -28,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className={geist.variable}>
+      <body className={manrope.variable}>
         <TripProvider>
           <OfflineReady />
           <Onboarding />

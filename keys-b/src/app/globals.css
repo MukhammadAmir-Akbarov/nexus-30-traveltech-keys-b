@@ -6,64 +6,91 @@
    и фиксирует её, дальше выбор за пользователем.
    ───────────────────────────────────────────────────────────── */
 
+/*
+  Палитра, радиусы и высоты взяты один в один из мобильного приложения
+  SafarAI (`SafarColors`, `Dimens` в его теме). Веб и приложение — один
+  продукт команды, и выглядеть они должны как один продукт, а не как два
+  похожих. Имена токенов здесь свои: слева наша роль, справа их значение.
+*/
+
 :root {
-  /* поверхности */
-  --bg: #f7f6f2;
+  /* поверхности: bg / surf / surf2 */
+  --bg: #edf1f2;
   --surface: #ffffff;
-  --surface-2: #f1efe9;
-  --border: #e4e0d6;
-  --border-strong: #cfc9ba;
+  --surface-2: #f4f8f8;
+  /* line — чернила под 9%, а не отдельный серый: граница чуть холоднее фона */
+  --border: rgb(12 31 40 / 0.09);
+  --border-strong: rgb(12 31 40 / 0.2);
 
-  /* текст */
-  --text: #14171c;
-  --muted: #61656d;
+  /* текст: ink / ink2 */
+  --text: #0c1f28;
+  --muted: #5f757f;
 
-  /* акцент — бирюза самаркандских изразцов */
-  --accent: #0d7a75;
-  --accent-hover: #0a615d;
-  --accent-weak: #e2f1f0;
+  /* акцент — tq, бирюза самаркандских изразцов */
+  --accent: #0e979d;
+  --accent-hover: #0b7a7f;
+  --accent-weak: #e3f2f2;
   --on-accent: #ffffff;
 
-  /* семантика */
-  --ok: #16733a;
-  --ok-weak: #e3f3e8;
-  --warn: #8a5a00;
-  --warn-weak: #fbf0d9;
-  --danger: #b3261e;
-  --danger-weak: #fbe7e5;
+  /* navy — второй, «серьёзный» цвет: шапка, тёмные плашки, главная кнопка */
+  --navy: #0b2733;
+  --on-navy: #ffffff;
 
-  /* форма */
-  --radius: 14px;
-  --radius-sm: 10px;
+  /* семантика: green / gold / red */
+  --ok: #178f62;
+  --ok-weak: #e4f3ec;
+  --warn: #b8862a;
+  --warn-weak: #f8f0de;
+  --danger: #ce4034;
+  --danger-weak: #fbe9e7;
+
+  /* форма — Dimens приложения: карточка 20, кнопка и поле 16, чип 12 */
+  --radius: 20px;
+  --radius-lg: 24px;
+  --radius-hero: 26px;
+  --radius-sm: 16px;
+  --radius-chip: 12px;
+  --radius-tile: 13px;
   --radius-pill: 999px;
-  --shadow-1: 0 1px 2px rgb(20 23 28 / 0.04), 0 1px 3px rgb(20 23 28 / 0.06);
-  --shadow-2: 0 4px 12px rgb(20 23 28 / 0.08), 0 2px 4px rgb(20 23 28 / 0.04);
+
+  /* высоты касаний: кнопка 56, чип 36, минимум под палец 44 */
+  --h-button: 56px;
+  --h-button-2: 52px;
+  --h-chip: 36px;
+  --h-input: 56px;
+  --tile: 40px;
+
+  --shadow-1: 0 1px 2px rgb(12 31 40 / 0.04), 0 1px 3px rgb(12 31 40 / 0.06);
+  --shadow-2: 0 4px 12px rgb(12 31 40 / 0.08), 0 2px 4px rgb(12 31 40 / 0.04);
   --ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 
   --map-filter: none;
 }
 
 :root[data-theme='dark'] {
-  --bg: #000000;
-  --surface: #0e1013;
-  --surface-2: #16191e;
-  --border: #24272e;
-  --border-strong: #363b44;
+  --bg: #061318;
+  --surface: #0e242c;
+  --surface-2: #14303a;
+  --border: rgb(255 255 255 / 0.1);
+  --border-strong: rgb(255 255 255 / 0.22);
 
-  --text: #eceef1;
-  --muted: #969ca6;
+  --text: #e9f2f3;
+  --muted: #8ca5ad;
 
-  --accent: #2fd4c4;
-  --accent-hover: #55e0d2;
-  --accent-weak: #0d2a29;
-  --on-accent: #04110f;
+  --accent: #2cb6bb;
+  --accent-hover: #46c8cd;
+  --accent-weak: #0f3a40;
+  --on-accent: #04161a;
 
-  --ok: #4ade80;
-  --ok-weak: #10251a;
-  --warn: #fbbf24;
-  --warn-weak: #241d0c;
-  --danger: #ff6b60;
-  --danger-weak: #2a1310;
+  --navy: #071c25;
+  --on-navy: #e9f2f3;
+
+  --ok: #33be87;
+  --ok-weak: #0d2b21;
+  --warn: #ddb25c;
+  --warn-weak: #2b2312;
+  --danger: #e8584b;
+  --danger-weak: #2e1512;
 
   --shadow-1: none;
   --shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
@@ -84,7 +111,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px; /* минимум для мобильных: мельче — не читается */
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -120,7 +147,7 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 20px;
   box-shadow: var(--shadow-1);
 }
 
@@ -142,15 +169,15 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px; /* палец, а не курсор */
-  padding: 10px 18px;
+  min-height: var(--h-button);
+  padding: 10px 22px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.08s ease;
 }
@@ -172,9 +199,9 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
+  min-height: var(--h-chip);
   padding: 8px 14px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--muted);
@@ -197,12 +224,12 @@ h2 {
 
 .field {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--h-input);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
-  padding: 10px 12px;
+  padding: 10px 16px;
   font: inherit;
   font-size: 16px; /* меньше 16px — iOS зумит страницу при фокусе */
   transition: border-color 0.18s ease;
