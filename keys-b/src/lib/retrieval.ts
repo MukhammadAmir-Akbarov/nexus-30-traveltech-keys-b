@@ -48,11 +48,28 @@ const ALIASES: Record<string, string> = {
   aydarkol: 'айдаркуль', aydarkul: 'айдаркуль',
 };
 
+/**
+ * Все начертания узбекского тутука, какие реально приходят с клавиатур и из
+ * наших же данных: ' ` ’ (U+2019) ‘ (U+2018) ʻ (U+02BB) ʼ (U+02BC) ´ (U+00B4).
+ *
+ * Почему это важнее, чем выглядит. Раньше в наборе не было ‘ ʻ ʼ — а именно их
+ * ставит узбекская раскладка и именно они лежат в corpus.ts («O‘zbekiston»)
+ * и disputed.ts («Ulug‘bek»). Символ не вырезался, и следующая строка —
+ * [^a-zа-я0-9-] — превращала его в пробел, разрывая слово пополам:
+ *
+ *   «Ulug‘bek madrasasi» -> ['ulug', 'bek', 'madras']   -> 0 источников
+ *   «Ulug’bek madrasasi» -> ['улугбе', 'madras']        -> 3 источника
+ *
+ * То есть турист, пишущий по-узбекски правильно, на любой вопрос получал
+ * «нет данных». Проверку на это держит npm run check.
+ */
+const APOSTROPHES = /['`’‘ʻʼ´]/g;
+
 export function normalize(text: string): string {
   return text
     .toLowerCase()
     .replace(/ё/g, 'е')
-    .replace(/[’'`]/g, '')
+    .replace(APOSTROPHES, '')
     .replace(/[^a-zа-я0-9-]+/gi, ' ')
     .trim();
 }

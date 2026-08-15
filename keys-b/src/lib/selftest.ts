@@ -10,7 +10,7 @@ import { PLACES } from '../data/places.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
-import { retrieve } from './retrieval.ts';
+import { retrieve, tokenize } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { itineraryToIcs } from './ics.ts';
 import { disputedForLang, findDisputed } from './disputed.ts';
@@ -65,6 +65,26 @@ assert.equal(
   'c16',
   'английский запрос должен находить тот же абзац',
 );
+
+// Узбекский тутук приходит в шести начертаниях, и раскладка ставит вовсе не то,
+// что стоит в коде. Пока в normalize() не было ‘ ʻ ʼ, запрос «Ulug‘bek» рвался
+// на ['ulug','bek'] и находил НОЛЬ источников, то есть турист, пишущий
+// по-узбекски правильно, всегда получал «нет данных». Стережём все варианты.
+const APOSTROPHE_FORMS = ['Ulug‘bek', 'Ulugʻbek', 'Ulug’bek', "Ulug'bek", 'Ulugbek'];
+const apostropheTokens = APOSTROPHE_FORMS.map((form) => tokenize(form).join(' '));
+assert.equal(
+  new Set(apostropheTokens).size,
+  1,
+  `все начертания тутука обязаны токенизироваться одинаково: ${apostropheTokens.join(' | ')}`,
+);
+for (const form of APOSTROPHE_FORMS) {
+  assert.ok(
+    retrieve(CORPUS, `${form} madrasasi qachon qurilgan`, 3).length > 0,
+    `запрос «${form}» обязан находить источники`,
+  );
+}
+// «O‘zbekiston» раньше терял первую букву и превращался в «zbekis»
+assert.equal(tokenize('O‘zbekiston')[0], 'ozbeki', 'тутук не должен отрывать первую букву');
 
 // --- предзаписанные вердикты демо на всех языках ---
 for (const lang of LANGS) {
