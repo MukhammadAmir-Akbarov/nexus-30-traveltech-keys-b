@@ -339,24 +339,48 @@ h2 {
 }
 .tabbar a[data-active='true'] { color: var(--accent); font-weight: 600; }
 
-/* ── Leaflet ──────────────────────────────────────────────── */
+/* ── Карта (MapLibre GL) ──────────────────────────────────── */
 
-.leaflet-container {
-  height: 380px;
+.route-map {
+  height: 400px;
   width: 100%;
   border-radius: var(--radius);
   background: var(--surface-2);
-  z-index: 0;
+  overflow: hidden;
 }
 
-.leaflet-tile-pane { filter: var(--map-filter); }
+/* Тёмная тема: подкрашиваем полотно карты, чтобы белая подложка
+   не слепила рядом с тёмным интерфейсом. */
+.route-map canvas { filter: var(--map-filter); }
 
-.leaflet-container .leaflet-tooltip {
+/* Нумерованная точка маршрута. Цвет задаётся из кода — по дню. */
+.map-pin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+}
+
+.maplibregl-popup-content {
   background: var(--surface);
   color: var(--text);
-  border-color: var(--border);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-1);
   font-size: 12px;
+  padding: 8px 10px;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: var(--surface);
+  border-bottom-color: var(--surface);
 }
 
 /* ── Доступность ──────────────────────────────────────────────
