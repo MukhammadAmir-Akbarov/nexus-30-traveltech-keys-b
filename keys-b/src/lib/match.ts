@@ -7,6 +7,7 @@ import type {
   ScoredGuide,
   TripContext,
 } from './types.ts';
+import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 
 // Подбор гида: чистая функция, без LLM. Объяснение «почему этот гид»
 // собирается из совпавших признаков — модель здесь не нужна.
@@ -121,7 +122,8 @@ export function matchGuides(guides: Guide[], q: GuideQuery, limit = 5): ScoredGu
       }
       if (guide.travelTypes.includes(q.travelType)) {
         score += 2;
-        reasons.push(REASON.travelType[lang].replace('{type}', q.travelType));
+        // формат поездки — словом на языке интерфейса, а не ключом «solo»
+        reasons.push(REASON.travelType[lang].replace('{type}', TRAVEL_TYPE_LABEL[q.travelType][lang]));
       }
       const sharedLangs = guide.languages.filter((l) => wanted.includes(l));
       if (sharedLangs.length) {

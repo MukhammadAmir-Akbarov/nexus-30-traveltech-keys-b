@@ -35,6 +35,9 @@ const ALIASES: Record<string, string> = {
   temur: 'темур', timur: 'темур',
   unesco: 'юнеско', yunesko: 'юнеско',
   balandligi: 'высота', height: 'высота', asr: 'век', century: 'век',
+  // без этой пары «первый объект ЮНЕСКО» находился только по-русски,
+  // а на узбекском и английском тот же пример отвечал «нет данных»
+  birinchi: 'первый', first: 'первый',
   bozor: 'базар', bazaar: 'базар',
   somoniylar: 'саманиды', samanid: 'саманиды',
   oqsaroy: 'сарай', saray: 'сарай',

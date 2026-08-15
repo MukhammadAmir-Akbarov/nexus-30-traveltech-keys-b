@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
@@ -10,7 +10,7 @@ import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
-import { REGION_LABEL, t, tr } from '@/lib/i18n';
+import { t, tr } from '@/lib/i18n';
 import type { Itinerary, Mode, Place } from '@/lib/types';
 
 // Leaflet трогает window — грузим только на клиенте.
@@ -37,7 +37,7 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  const build = async () => {
+  const build = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -55,7 +55,18 @@ export default function PlanPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [trip]);
+
+  // Контекст уже собран на главной — ждать нажатия незачем. Заодно это чинит
+  // и смену языка: текст дней и заметок приходит с сервера уже переведённым,
+  // иначе половина карточки остаётся на прежнем языке.
+  const builtFor = useRef<string>('');
+  useEffect(() => {
+    const key = JSON.stringify(trip);
+    if (builtFor.current === key) return;
+    builtFor.current = key;
+    void build();
+  }, [trip, build]);
 
   const orderedPlaces: Place[] =
     itinerary?.days
@@ -77,12 +88,13 @@ export default function PlanPage() {
         </div>
         <button className="btn btn-primary" disabled={loading} onClick={build}>
           <Icon name="route" />
-          {loading ? t('planLoading', lang) : t('planButton', lang)}
+          {loading
+            ? t('planLoading', lang)
+            : itinerary
+              ? t('planRebuild', lang)
+              : t('planButton', lang)}
         </button>
       </section>
-
-      <SoloPanel />
-      <ShareTrip />
 
       {error && (
         <div className="card text-sm" style={{ color: 'var(--danger)' }}>
@@ -103,7 +115,7 @@ export default function PlanPage() {
           <section className="card flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold">{t('planTotal', lang)}</span>
-              <span className="tag">
+              <span className="tag" title={mode === 'ai' ? undefined : t('modeOfflineHint', lang)}>
                 {mode === 'ai' ? t('planModeAi', lang) : t('modeOffline', lang)}
               </span>
             </div>
@@ -158,6 +170,10 @@ export default function PlanPage() {
               </div>
             ))}
           </section>
+
+          {/* и подсказки одиночке, и «поделиться» имеют смысл только когда маршрут есть */}
+          <SoloPanel />
+          <ShareTrip />
         </>
       )}
     </div>

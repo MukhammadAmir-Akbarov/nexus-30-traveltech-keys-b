@@ -117,7 +117,7 @@ export default function CheckPage() {
 
       <section className="card flex flex-col gap-4">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold">{t('checkButton', lang)}</span>
+          <span className="text-sm font-semibold">{t('checkFieldLabel', lang)}</span>
           <textarea
             className="field min-h-28 leading-relaxed"
             placeholder={t('checkPlaceholder', lang)}
@@ -139,28 +139,35 @@ export default function CheckPage() {
           <QrScanner />
         </div>
 
-        <label className="flex flex-wrap items-center gap-2 text-[13px]">
-          <span className="muted">{t('checkWhoSaid', lang)}</span>
-          <select
-            className="field max-w-56"
-            value={guideId}
-            onChange={(e) => setGuideId(e.target.value)}
-          >
-            <option value="">{t('checkNoGuide', lang)}</option>
-            {GUIDES.map((guide) => (
-              <option key={guide.id} value={guide.id}>
-                {guide.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-col gap-1">
+          <label className="flex flex-wrap items-center gap-2 text-[13px]">
+            <span className="muted">{t('checkWhoSaid', lang)}</span>
+            <select
+              className="field max-w-56"
+              value={guideId}
+              onChange={(e) => setGuideId(e.target.value)}
+            >
+              <option value="">{t('checkNoGuide', lang)}</option>
+              {GUIDES.map((guide) => (
+                <option key={guide.id} value={guide.id}>
+                  {guide.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {/* без этой строки турист не понимает, зачем ему выбирать из десяти незнакомых имён */}
+          <p className="muted prose-measure text-[12px]">{t('checkWhoSaidHint', lang)}</p>
+        </div>
 
-        <div className="flex flex-wrap gap-2">
-          {EXAMPLES.map((example) => (
-            <button key={example.en} className="chip" onClick={() => check(example[lang])}>
-              {example[lang]}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <span className="muted text-[12px]">{t('checkExamplesLabel', lang)}</span>
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLES.map((example) => (
+              <button key={example.en} className="chip" onClick={() => check(example[lang])}>
+                {example[lang]}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -195,7 +202,10 @@ export default function CheckPage() {
                 <Icon name={status.icon} size={16} />
                 {t(status.key, lang)}
               </span>
-              <span className="tag">
+              <span
+                className="tag"
+                title={result.mode === 'ai' ? undefined : t('modeOfflineHint', lang)}
+              >
                 {result.mode === 'ai' ? t('modeAi', lang) : t('modeOffline', lang)}
               </span>
               {guideId && <span className="tag tag-accent">{t('checkCounted', lang)}</span>}

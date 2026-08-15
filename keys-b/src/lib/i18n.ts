@@ -169,6 +169,13 @@ const UI = {
   themeLight: { uz: 'Yorug‘', ru: 'Светлая', en: 'Light' },
   themeDark: { uz: 'Qora', ru: 'Тёмная', en: 'Dark' },
 
+  // язык — первый вопрос: модалка перекрывает шапку, и без этого шага
+  // русскоязычный или иностранец заперт в узбекском интерфейсе
+  onbLang: {
+    uz: 'Qaysi tilda davom etamiz?',
+    ru: 'На каком языке продолжим?',
+    en: 'Which language shall we continue in?',
+  },
   onbInterests: {
     uz: 'Nimalarga qiziqasiz?',
     ru: 'Что вам интересно?',
@@ -251,6 +258,13 @@ const UI = {
     en: 'For example: “Registan was built in the 12th century”',
   },
   checkButton: { uz: 'Tekshirish', ru: 'Проверить', en: 'Check' },
+  // подпись поля и надпись на кнопке — разные вещи: поле должно объяснять, что вводить
+  checkFieldLabel: {
+    uz: 'Gid nima dedi?',
+    ru: 'Что сказал гид?',
+    en: 'What did the guide say?',
+  },
+  checkExamplesLabel: { uz: 'Tayyor misollar:', ru: 'Готовые примеры:', en: 'Ready examples:' },
   checkLoading: { uz: 'Tekshiryapman…', ru: 'Проверяю…', en: 'Checking…' },
   checkError: {
     uz: 'Tekshirib bo‘lmadi. Yana urinib ko‘ring.',
@@ -279,7 +293,13 @@ const UI = {
     en: 'Show the retrieved passages',
   },
   modeAi: { uz: 'model javobi', ru: 'ответ модели', en: 'model answer' },
-  modeOffline: { uz: 'oflayn rejim', ru: 'офлайн-режим', en: 'offline mode' },
+  // «офлайн-режим» читалось как «у вас нет интернета»; на деле это ответ по правилам
+  modeOffline: { uz: 'modelsiz, qoidalar bo‘yicha', ru: 'без модели, по правилам', en: 'rule-based, no model' },
+  modeOfflineHint: {
+    uz: 'Model ulanmagan: javob rasmiy manbalar va qoidalar asosida. Internet bilan bog‘liq emas.',
+    ru: 'Модель не подключена: ответ собран по официальным источникам и правилам. С интернетом это не связано.',
+    en: 'No model connected: the answer comes from official sources and rules. This is not about your connection.',
+  },
 
   speakStart: { uz: 'Ovoz bilan tinglash', ru: 'Прослушать', en: 'Listen' },
   speakStop: { uz: 'To‘xtatish', ru: 'Остановить', en: 'Stop' },
@@ -342,6 +362,7 @@ const UI = {
   },
   planChange: { uz: 'o‘zgartirish', ru: 'изменить', en: 'change' },
   planButton: { uz: 'Marshrut tuzish', ru: 'Построить маршрут', en: 'Build itinerary' },
+  planRebuild: { uz: 'Qayta tuzish', ru: 'Пересобрать', en: 'Rebuild' },
   planLoading: { uz: 'Marshrut yig‘ilmoqda…', ru: 'Собираю маршрут…', en: 'Building…' },
   planError: {
     uz: 'Marshrut tuzilmadi. Yana urinib ko‘ring.',
@@ -460,10 +481,22 @@ const UI = {
     ru: 'По утверждениям, проверенным в приложении',
     en: 'Based on claims verified in the app',
   },
+  // ★ и «точность фактов» — разные вещи, и в этом вся идея продукта
+  guidesTwoScores: {
+    uz: '★ — turistlar qo‘ygan baho. «Faktlar aniqligi» — gid gaplarining rasmiy manbalar bilan tasdiqlangan ulushi.',
+    ru: '★ — оценка туристов. «Точность фактов» — доля утверждений гида, подтверждённых официальными источниками.',
+    en: '★ is the tourists’ rating. “Fact accuracy” is the share of the guide’s claims confirmed by official sources.',
+  },
+  guidesWhyMore: { uz: 'yana sabablar', ru: 'ещё причины', en: 'more reasons' },
   checkWhoSaid: {
     uz: 'Kimning gapi tekshirilyapti?',
     ru: 'Чьё утверждение проверяем?',
     en: 'Whose claim is this?',
+  },
+  checkWhoSaidHint: {
+    uz: 'Gidni tanlasangiz, natija uning faktlar aniqligiga qo‘shiladi. Tanlamasangiz ham tekshiruv ishlaydi.',
+    ru: 'Если выбрать гида, результат попадёт в его точность фактов. Без выбора проверка тоже работает.',
+    en: 'Pick a guide and the verdict counts towards their fact accuracy. The check works without picking, too.',
   },
   checkNoGuide: { uz: 'ko‘rsatilmagan', ru: 'не указан', en: 'not specified' },
   checkCounted: {

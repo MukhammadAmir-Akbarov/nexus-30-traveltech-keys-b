@@ -10,7 +10,7 @@ import { accuracyRate, matchGuides } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
-import { GUIDE_LANGS, REVIEW_TEMPLATE, reviewsLabel, yearsLabel } from './i18n.ts';
+import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
 import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
 import type { Lang, ScoredGuide, TripContext } from './types.ts';
 
@@ -318,6 +318,50 @@ assert.ok(
     .days[0].items.some((i) => i.note.includes('+38')),
   'вне летнего режима пометки про жару быть не должно',
 );
+
+// --- то, что пользователь читает глазами ---
+
+// формат поездки в тексте должен быть словом на языке интерфейса, а не ключом «solo»
+for (const lang of LANGS) {
+  const localized = buildItinerary(PLACES, { ...family, travelType: 'solo', lang });
+  assert.ok(
+    !localized.summary.includes('solo') || lang === 'en',
+    `в сводке на ${lang} не должно быть сырого ключа «solo»: ${localized.summary}`,
+  );
+  assert.ok(
+    localized.summary.includes(TRAVEL_TYPE_LABEL.solo[lang]),
+    `в сводке на ${lang} формат поездки должен быть подписан словом`,
+  );
+}
+const soloGuideWhy = matchGuides(GUIDES, { ...baseQuery, travelType: 'solo' })[0].why;
+assert.ok(
+  !soloGuideWhy.includes('«solo»'),
+  `в объяснении подбора не должно быть сырого ключа: ${soloGuideWhy}`,
+);
+
+// маршрут короче запрошенного — это надо сказать, иначе выглядит как поломка
+const short = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  regions: ['nurata'],
+  days: 6,
+});
+assert.ok(short.days.length < 6, 'в Нурате объектов на шесть дней не наберётся');
+assert.ok(
+  short.summary.includes('короче запрошенных 6'),
+  `короткий маршрут должен объяснять, что запрошено было больше: ${short.summary}`,
+);
+assert.ok(
+  !buildItinerary(PLACES, { ...family, travelType: 'solo', days: 1 }).summary.includes('короче'),
+  'когда дней хватило, оговорки быть не должно',
+);
+
+// «Совпадает с вашими интересами» под каждым объектом подряд читается как шум
+const noisy = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 2 });
+for (const day of noisy.days) {
+  const repeats = day.items.filter((i) => i.note.includes('Совпадает с вашими интересами')).length;
+  assert.ok(repeats <= 1, `в дне ${day.day} причина про интересы повторяется ${repeats} раз`);
+}
 
 // новые голосовые: несколько регионов сразу
 const twoRegions = buildItinerary(PLACES, {
