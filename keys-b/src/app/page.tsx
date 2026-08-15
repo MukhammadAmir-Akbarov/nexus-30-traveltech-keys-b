@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTrip } from '@/components/TripProvider';
+import { HomeShowcase } from '@/components/HomeShowcase';
 import { VoiceTrip } from '@/components/VoiceTrip';
 import {
   GUIDE_LANGS,
@@ -59,8 +60,12 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Витрина: погода на сегодня и три объекта под интересы. Раньше первое,
+          что видел человек, — форма из восьми полей. */}
+      <HomeShowcase />
+
       <section>
-        <h1>{t('homeTitle', lang)}</h1>
+        <h2>{t('homeTitle', lang)}</h2>
         <p className="muted prose-measure mt-2 text-[15px]">{t('homeLead', lang)}</p>
       </section>
 

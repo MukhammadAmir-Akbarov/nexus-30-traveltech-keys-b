@@ -15,6 +15,17 @@ export const RAIN_MM = 2;
 /** Холодный короткий день: темнеет рано, объекты закрываются раньше. */
 export const COLD_C = 5;
 
+/**
+ * Порог, за которым ветер уже меняет день: на площадях и в степи поднимается
+ * пыль. Порядок объектов он не трогает — это сведение, а не правило: выдумывать
+ * перестановку из скорости ветра мы не станем.
+ */
+export const WINDY_KMH = 30;
+
+export function isWindy(weather: DayWeather): boolean {
+  return (weather.windKmh ?? 0) >= WINDY_KMH;
+}
+
 export function adviceFor(weather: DayWeather): WeatherAdvice {
   if (weather.precipMm >= RAIN_MM) return 'rain';
   if (weather.tMaxC >= HEAT_C) return 'heat';
@@ -47,7 +58,12 @@ export function tripDates(days: number, startDate?: string): string[] {
 }
 
 type OpenMeteoDaily = {
-  daily?: { time?: string[]; temperature_2m_max?: number[]; precipitation_sum?: number[] };
+  daily?: {
+    time?: string[];
+    temperature_2m_max?: number[];
+    precipitation_sum?: number[];
+    wind_speed_10m_max?: number[];
+  };
 };
 
 /**
@@ -62,7 +78,7 @@ async function fetchOpenMeteo(
   const { lat, lng } = REGION_CENTER[region];
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-    `&daily=temperature_2m_max,precipitation_sum&timezone=Asia%2FTashkent` +
+    `&daily=temperature_2m_max,precipitation_sum,wind_speed_10m_max&timezone=Asia%2FTashkent` +
     `&start_date=${dates[0]}&end_date=${dates[dates.length - 1]}`;
   try {
     const res = await fetch(url, { signal });
@@ -71,6 +87,7 @@ async function fetchOpenMeteo(
     const time = data.daily?.time;
     const tmax = data.daily?.temperature_2m_max;
     const rain = data.daily?.precipitation_sum;
+    const wind = data.daily?.wind_speed_10m_max;
     if (!time?.length || !tmax?.length) return null;
     return dates.map((date) => {
       const i = time.indexOf(date);
@@ -81,12 +98,26 @@ async function fetchOpenMeteo(
         region,
         tMaxC: Math.round(tmax[i]),
         precipMm: rain?.[i] ?? 0,
+        windKmh: wind?.[i] === undefined ? undefined : Math.round(wind[i]),
         source: 'forecast' as const,
       };
     });
   } catch {
     return null;
   }
+}
+
+/**
+ * Погода на сегодня для главной страницы. Прогноз, если сеть ответила,
+ * иначе климатическая норма — и подпись в интерфейсе честно говорит, что это.
+ */
+export async function todayWeather(
+  region: Region,
+  date: string,
+  signal?: AbortSignal,
+): Promise<DayWeather> {
+  const forecast = await fetchOpenMeteo(region, [date], signal ?? new AbortController().signal);
+  return forecast?.[0] ?? climateNorm(region, date);
 }
 
 /**
