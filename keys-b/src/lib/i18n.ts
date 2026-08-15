@@ -389,6 +389,34 @@ export const UI = {
   legTaxi: { uz: 'taksi', ru: 'такси', en: 'taxi' },
   legKm: { uz: 'km', ru: 'км', en: 'km' },
   legM: { uz: 'm', ru: 'м', en: 'm' },
+
+  fieldBudget: { uz: 'Kunlik budjet', ru: 'Дневной бюджет', en: 'Daily budget' },
+  budgetHint: {
+    uz: 'Bir kunlik taxminiy xarajat: marshrut va transfer shunga moslanadi.',
+    ru: 'Ориентировочные траты за день: под них подстраиваются маршрут и переезд.',
+    en: 'Roughly what you spend per day: the itinerary and transfers adapt to it.',
+  },
+  budgetOver: {
+    uz: 'Kun budjetdan oshdi',
+    ru: 'День выходит за бюджет',
+    en: 'This day goes over budget',
+  },
+  budgetDay: { uz: 'Kun xarajati', ru: 'Траты за день', en: 'Spend for the day' },
+  fieldGuideLangs: { uz: 'Muloqot tillari', ru: 'Языки общения', en: 'Languages you speak' },
+  guideLangsHint: {
+    uz: 'Gid tanlashda ishlatiladi — interfeys tili bilan bir xil bo‘lishi shart emas.',
+    ru: 'Используется при подборе гида — это не обязательно язык интерфейса.',
+    en: 'Used when matching a guide — not necessarily your interface language.',
+  },
+
+  photoCredit: { uz: 'Surat', ru: 'Фото', en: 'Photo' },
+  photoSource: { uz: 'fayl sahifasi', ru: 'страница файла', en: 'file page' },
+  photoNone: { uz: 'Surat yo‘q', ru: 'Фото нет', en: 'No photo' },
+  photoLicense: {
+    uz: 'Suratlar — Vikiombordan, erkin litsenziyalar ostida; muallif va litsenziya obyekt sahifasida ko‘rsatilgan.',
+    ru: 'Фотографии — с Викисклада, под свободными лицензиями; автор и лицензия указаны на странице объекта.',
+    en: 'Photos come from Wikimedia Commons under free licences; author and licence are shown on each place page.',
+  },
   routeNavigator: {
     uz: 'Navigatorda ochish',
     ru: 'Открыть в навигаторе',

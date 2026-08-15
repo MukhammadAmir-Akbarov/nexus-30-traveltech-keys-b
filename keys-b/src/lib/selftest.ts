@@ -17,6 +17,13 @@ import { prayerTimes, prayersDuring } from './prayer.ts';
 import { parseTripPhrase } from './voice-trip.ts';
 import { seasonBudgetFactor, seasonFor, seasonNote, seasonsFor } from './calendar.ts';
 import {
+  budgetScoreBonus,
+  dailyCapUsd,
+  overBudget,
+  usdToUzsLabel,
+} from './budget.ts';
+import { PHOTOS } from '../data/photos.ts';
+import {
   directRoute,
   distanceLabel,
   haversineKm,
@@ -924,6 +931,59 @@ assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а �
       `день ${day.day}: в жару объекты под открытым небом идут раньше крытых`,
     );
   }
+}
+
+// --- бюджет ---
+assert.equal(dailyCapUsd('low'), 24, '300 тысяч сум — это примерно 24 доллара в день');
+assert.ok(dailyCapUsd('mid') > dailyCapUsd('low'), 'средний потолок выше экономного');
+assert.equal(dailyCapUsd('high'), Infinity, 'у премиума потолка нет');
+assert.ok(overBudget(30, 'low'), 'тридцать долларов за день не влезают в экономный бюджет');
+assert.ok(!overBudget(30, 'mid'), 'в средний влезают');
+assert.ok(!overBudget(500, undefined), 'бюджет не выбран — предупреждать не о чем');
+
+// Поправка решает споры равных, но главное не выкидывает: Регистан за $5
+// обязан остаться в маршруте даже у экономного туриста.
+assert.ok(budgetScoreBonus(0, 'low') > 0, 'бесплатный объект экономному в плюс');
+assert.ok(budgetScoreBonus(5, 'low') < 0, 'платный — в минус');
+assert.ok(budgetScoreBonus(5, 'low') > -2, 'но поправка мала: интерес весит больше');
+assert.equal(budgetScoreBonus(5, undefined), 0, 'без бюджета поправки нет');
+
+const cheap = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3, budget: 'low' });
+assert.ok(
+  cheap.days.flatMap((d) => d.items).some((i) => i.placeId === 'registan'),
+  'бюджет не должен выкидывать главный объект города',
+);
+assert.ok(
+  (cheap.cost?.perDayUsd ?? []).length === cheap.days.length,
+  'траты считаются по каждому дню — иначе не сказать, какой день вылез',
+);
+assert.ok(usdToUzsLabel(24, 'ru').includes('сум'), 'сумма показывается в сумах');
+
+// --- языки общения туриста ---
+// Узбек может искать англоязычного гида: подбор идёт по выбранным языкам,
+// а не по языку интерфейса.
+const uzUi: TripContext = { ...family, lang: 'uz', travelType: 'solo' };
+const guideQuery = { ...uzUi, gender: 'any' as const, needTransport: false };
+const wantEnglish = matchGuides(GUIDES, { ...guideQuery, languages: ['en'] });
+const wantUzbek = matchGuides(GUIDES, { ...guideQuery, languages: ['uz'] });
+assert.ok(wantEnglish.length > 0 && wantUzbek.length > 0, 'гиды находятся в обоих случаях');
+assert.ok(
+  wantEnglish[0].guide.languages.includes('en'),
+  'первым при запросе английского идёт англоговорящий гид',
+);
+assert.notDeepEqual(
+  wantEnglish.map((g) => g.guide.id),
+  wantUzbek.map((g) => g.guide.id),
+  'выбор языка обязан менять выдачу, иначе поле бесполезно',
+);
+
+// --- фотографии объектов ---
+assert.ok(Object.keys(PHOTOS).length >= 25, 'у большинства объектов есть снимок');
+for (const [id, photo] of Object.entries(PHOTOS)) {
+  assert.ok(PLACES.some((p) => p.id === id), `снимок ${id} привязан к несуществующему объекту`);
+  assert.ok(photo.url.startsWith('/photos/'), `${id}: снимок обязан лежать у нас, а не на чужом хосте`);
+  assert.ok(photo.author.length > 0 && photo.license.length > 0, `${id}: автор и лицензия обязательны`);
+  assert.ok(photo.page.includes('commons.wikimedia.org'), `${id}: ссылка на страницу файла`);
 }
 
 // --- маршрут по дорогам ---

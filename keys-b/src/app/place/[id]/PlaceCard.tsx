@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { NearbyPois } from '@/components/NearbyPois';
+import { PlacePhoto } from '@/components/PlacePhoto';
 import { RequestForm } from '@/components/RequestForm';
 import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
@@ -13,6 +14,16 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
 
   return (
     <div className="flex flex-col gap-4">
+      <PlacePhoto
+        placeId={place.id}
+        alt={tr(place.name, lang)}
+        lang={lang}
+        ratio={21 / 9}
+        credit
+        priority
+        sizes="(max-width: 900px) 100vw, 900px"
+      />
+
       <section>
         <div className="muted text-[13px]">
           {tr(REGION_LABEL[place.region], lang)} · {place.visitMinutes} {t('planMinutes', lang)}

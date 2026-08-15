@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PlacePhoto } from '@/components/PlacePhoto';
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
@@ -66,6 +67,7 @@ export default function PlacesPage() {
 
         {found.map((place) => (
           <Link key={place.id} href={`/place/${place.id}`} className="card card-link flex flex-col gap-2">
+            <PlacePhoto placeId={place.id} alt={tr(place.name, lang)} lang={lang} />
             <div className="text-[15px] font-semibold">{tr(place.name, lang)}</div>
             <p className="muted text-[13px]">{tr(place.summary, lang)}</p>
 
@@ -87,6 +89,10 @@ export default function PlacesPage() {
           </Link>
         ))}
       </section>
+
+      {/* Права на снимки называем один раз внизу списка: у каждой карточки
+          подпись заслоняла бы сам объект, а не сказать нельзя. */}
+      <p className="muted text-[12px]">{t('photoLicense', lang)}</p>
     </div>
   );
 }
