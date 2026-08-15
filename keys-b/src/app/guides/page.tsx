@@ -18,10 +18,23 @@ import {
   tr,
 } from '@/lib/i18n';
 import { MIN_CHECKS } from '@/lib/match';
+import { dailyCapUsd, usdToUzsLabel } from '@/lib/budget';
 import { PLACE_BY_ID } from '@/data/places';
 import type { Gender, ScoredGuide, TripContext } from '@/lib/types';
 
 const GENDERS: (Gender | 'any')[] = ['any', 'female', 'male'];
+
+/** Порядок выдачи. `match` — как посчитал подбор, остальное задаёт турист. */
+type Sort = 'match' | 'accuracy' | 'price' | 'experience';
+const SORTS: { key: Sort; label: 'sortMatch' | 'sortAccuracy' | 'sortPrice' | 'sortExperience' }[] = [
+  { key: 'match', label: 'sortMatch' },
+  { key: 'accuracy', label: 'sortAccuracy' },
+  { key: 'price', label: 'sortPrice' },
+  { key: 'experience', label: 'sortExperience' },
+];
+
+/** Строку ищут первой: по имени, городу, языку и специализации сразу. */
+const normalize = (value: string) => value.toLowerCase().replace(/ʻ|'|‘|’/g, '');
 
 export default function GuidesPage() {
   const { trip, lang, ready, update } = useTrip();
@@ -35,6 +48,14 @@ export default function GuidesPage() {
   const [needTransport, setNeedTransport] = useState(false);
   const [guides, setGuides] = useState<ScoredGuide[]>([]);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<Sort>('match');
+  // Бюджет турист уже назвал на главной, и цена гида относительно него —
+  // важная информация. Но фильтровать по нему **по умолчанию нельзя**:
+  // у «Tejamkor» дневной потолок $24, а гиды стоят $55–70, и раздел
+  // становится пустым — выглядит как сломанный, а не как честный.
+  // Поэтому по умолчанию показываем всех и помечаем тех, кто дороже.
+  const [withinBudget, setWithinBudget] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +68,8 @@ export default function GuidesPage() {
           languages: trip.guideLangs?.length ? trip.guideLangs : [lang],
           gender,
           needTransport,
+          // весь подходящий список: поиск и сортировка идут на клиенте
+          limit: 50,
         }),
       });
       const data = (await res.json()) as { guides: ScoredGuide[] };
@@ -65,6 +88,47 @@ export default function GuidesPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready) load();
   }, [ready, load]);
+
+  // Потолок цены гида берём из дневного бюджета поездки. Бюджет не выбран —
+  // ограничения нет: выдумывать за туриста нельзя.
+  const priceCap = trip.budget ? dailyCapUsd(trip.budget) : Infinity;
+
+  const shown = (() => {
+    const needle = normalize(query.trim());
+    let list = guides;
+    if (needle) {
+      list = list.filter(({ guide }) =>
+        normalize(
+          [
+            guide.name,
+            ...guide.regions.map((r) => tr(REGION_LABEL[r], lang)),
+            ...guide.languages.map((l) => tr(GUIDE_LANG_LABEL[l], lang)),
+            ...guide.specializations.map((sp) => tr(INTEREST_LABEL[sp], lang)),
+          ].join(' '),
+        ).includes(needle),
+      );
+    }
+    if (withinBudget && Number.isFinite(priceCap)) {
+      list = list.filter(({ guide }) => guide.pricePerDay <= priceCap);
+    }
+    const byAccuracy = (g: ScoredGuide) => {
+      const a = g.accuracy;
+      const decided = a ? a.confirmed + a.refuted : 0;
+      // до порога процент не показываем и здесь не сортируем по нему
+      return decided >= MIN_CHECKS ? (a!.confirmed / decided) * 100 : -1;
+    };
+    const sorted = [...list];
+    if (sort === 'accuracy') sorted.sort((a, b) => byAccuracy(b) - byAccuracy(a));
+    if (sort === 'price') sorted.sort((a, b) => a.guide.pricePerDay - b.guide.pricePerDay);
+    if (sort === 'experience')
+      sorted.sort((a, b) => b.guide.experienceYears - a.guide.experienceYears);
+    return sorted;
+  })();
+
+  const verifiedCount = shown.filter(({ guide }) => guide.verified).length;
+  const aboveBudget = Number.isFinite(priceCap)
+    ? guides.filter(({ guide }) => guide.pricePerDay > priceCap).length
+    : 0;
 
   const toggleLanguage = (code: string) =>
     setLanguages(
@@ -101,6 +165,32 @@ export default function GuidesPage() {
           </div>
         </div>
 
+        {/* Строку ищут первой: имя, город, язык и специализация сразу. */}
+        <input
+          className="field"
+          type="search"
+          placeholder={t('guidesSearch', lang)}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label={t('guidesSearch', lang)}
+        />
+
+        <div>
+          <div className="mb-2 text-sm font-semibold">{t('guidesSort', lang)}</div>
+          <div className="flex flex-wrap gap-2">
+            {SORTS.map(({ key, label }) => (
+              <button
+                key={key}
+                className="chip"
+                data-active={sort === key}
+                onClick={() => setSort(key)}
+              >
+                {t(label, lang)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-end gap-6">
           <div>
             <div className="mb-2 text-sm font-semibold">{t('guidesGender', lang)}</div>
@@ -128,16 +218,69 @@ export default function GuidesPage() {
             {t('guidesTransport', lang)}
           </label>
 
+          {/* Бюджет турист уже назвал — гид за пределами этого бюджета
+              бессмыслен, но запрещать его мы не вправе. */}
+          {trip.budget && (
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={withinBudget}
+                onChange={(e) => setWithinBudget(e.target.checked)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              {t('guidesWithinBudget', lang)}
+              <span className="muted">· ≤ ${priceCap}</span>
+            </label>
+          )}
+
           {loading && <span className="muted text-sm">{t('guidesLoading', lang)}</span>}
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        {guides.length === 0 && !loading && (
-          <div className="card muted text-sm">{t('guidesEmpty', lang)}</div>
+        {/* Сколько нашлось и сколько из них подтверждено: подтверждённость —
+            главное отличие продукта, и она должна быть видна до карточек. */}
+        {!loading && shown.length > 0 && (
+          <div className="muted text-[13px]">
+            {t('guidesFound', lang)}: <b>{shown.length}</b> ·{' '}
+            {t('guidesVerifiedCount', lang)}: {verifiedCount}
+            {aboveBudget > 0 && (
+              <>
+                {' · '}
+                <button className="underline" onClick={() => setWithinBudget(!withinBudget)}>
+                  {t('guidesAboveBudget', lang)}: {aboveBudget}
+                </button>
+              </>
+            )}
+          </div>
         )}
 
-        {guides.map(({ guide, why, accuracy, byPlace }) => (
+        {shown.length === 0 && !loading && (
+          <div className="card flex flex-col gap-2 text-sm">
+            <span className="muted">{t('guidesEmpty', lang)}</span>
+            {/* Пустой список обязан сказать, что именно снять — иначе человек
+                упирается и уходит, решив, что гидов нет вовсе. */}
+            <div className="flex flex-wrap gap-2">
+              {query && (
+                <button className="chip" onClick={() => setQuery('')}>
+                  {t('guidesClearSearch', lang)}
+                </button>
+              )}
+              {withinBudget && (
+                <button className="chip" onClick={() => setWithinBudget(false)}>
+                  {t('guidesHiddenByBudget', lang)}: {aboveBudget}
+                </button>
+              )}
+              {needTransport && (
+                <button className="chip" onClick={() => setNeedTransport(false)}>
+                  {t('guidesClearTransport', lang)}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {shown.map(({ guide, why, accuracy, byPlace }) => (
           <article key={guide.id} className="card flex flex-col gap-3">
             <div className="flex gap-3">
               <Avatar name={guide.name} size={52} />
@@ -155,7 +298,13 @@ export default function GuidesPage() {
                   </span>
                   <span className="tag tag-accent">
                     ${guide.pricePerDay} / {t('guidesPerDay', lang)}
+                    <span className="muted">· {usdToUzsLabel(guide.pricePerDay, lang)}</span>
                   </span>
+                  {/* Дороже названного бюджета — сказать, но не прятать:
+                      выбор всё равно за туристом. */}
+                  {guide.pricePerDay > priceCap && (
+                    <span className="tag tag-warn">{t('guidesAboveBudget', lang)}</span>
+                  )}
                   <span className="tag">
                     {guide.experienceYears} {yearsLabel(guide.experienceYears, lang)}
                   </span>
