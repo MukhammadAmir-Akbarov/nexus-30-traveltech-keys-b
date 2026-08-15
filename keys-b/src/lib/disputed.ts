@@ -1,0 +1,28 @@
+import { DISPUTED, type DisputedTopic } from '../data/disputed.ts';
+import { tokenize } from './retrieval.ts';
+import type { Lang } from './types.ts';
+
+// Поиск спорной темы работает так же, как предзаписанные вердикты: по набору
+// обязательных слов после токенизации, поэтому одинаково ловит запрос
+// на узбекском, русском и английском.
+
+export function findDisputed(claim: string): DisputedTopic | null {
+  const tokens = new Set(tokenize(claim));
+  const raw = claim.toLowerCase();
+  return (
+    DISPUTED.find((topic) => topic.must.every((m) => tokens.has(m) || raw.includes(m))) ?? null
+  );
+}
+
+/** Готовый к отправке вид: тексты уже на языке интерфейса. */
+export function disputedForLang(topic: DisputedTopic, lang: Lang) {
+  return {
+    question: topic.question[lang],
+    note: topic.note[lang],
+    positions: topic.positions.map((p) => ({
+      claim: p.claim[lang],
+      title: p.source.title[lang],
+      url: p.source.url,
+    })),
+  };
+}

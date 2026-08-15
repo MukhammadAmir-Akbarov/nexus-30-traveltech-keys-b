@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
+import { disputedForLang, findDisputed } from '@/lib/disputed';
 import { hasAI, MODEL } from '@/lib/model';
 import { LANG_LABEL, tr } from '@/lib/i18n';
 import { retrieve } from '@/lib/retrieval';
@@ -63,14 +64,22 @@ export async function POST(req: Request) {
   ];
   const passages = hits.map((h) => h.item.text);
 
+  // Спорные темы проверяем ДО модели и до кэша: если источники расходятся,
+  // выдавать одну сторону за истину нельзя — это ровно то, в чём мы упрекаем
+  // недобросовестного гида.
+  const topic = findDisputed(claim);
+  const disputed = topic ? disputedForLang(topic, lang) : undefined;
+
   const cached = lookupDemoVerdict(claim, lang);
   const respond = (verdict: CheckVerdict, mode: Mode) => {
     // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида —
     // но только если это не повтор того же утверждения и не поток от скрипта
-    const counted = guideId
-      ? recordFactCheck(guideId, verdict.status, placeId, client.id, claim)
-      : undefined;
-    const res = Response.json({ verdict, passages, mode, counted });
+    // спорную тему в репутацию не пишем: гид не виноват, что источники не сошлись
+    const counted =
+      guideId && !disputed
+        ? recordFactCheck(guideId, verdict.status, placeId, client.id, claim)
+        : undefined;
+    const res = Response.json({ verdict, passages, mode, counted, disputed });
     if (client.isNew) {
       res.headers.append(
         'Set-Cookie',
@@ -79,6 +88,18 @@ export async function POST(req: Request) {
     }
     return res;
   };
+
+  if (disputed) {
+    return respond(
+      {
+        claim,
+        status: 'unclear',
+        explanation: disputed.note,
+        sources: disputed.positions.map((p) => ({ title: p.title, url: p.url })),
+      },
+      'offline',
+    );
+  }
 
   if (!hasAI()) {
     if (cached) return respond(cached, 'offline');

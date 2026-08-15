@@ -11,6 +11,7 @@ import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { itineraryToIcs } from './ics.ts';
+import { disputedForLang, findDisputed } from './disputed.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
   clearLoginAttempts,
@@ -556,6 +557,27 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- спорные темы ---
+// ловится на всех трёх языках, потому что идёт через ту же токенизацию
+for (const claim of [
+  'Высота минарета Калян 46 метров',
+  'Kalon minorasining balandligi qancha',
+  'the height of the Kalyan minaret',
+]) {
+  const topic = findDisputed(claim);
+  assert.ok(topic, `спорная тема должна находиться по: ${claim}`);
+  assert.ok(topic!.positions.length >= 2, 'у спорной темы минимум две позиции');
+}
+assert.equal(findDisputed('Где поесть плов'), null, 'обычный вопрос спорной темой не считается');
+for (const lang of LANGS) {
+  const view = disputedForLang(findDisputed('высота минарета Калян')!, lang);
+  assert.ok(view.note.length > 0, `пояснение спорной темы не пустое на ${lang}`);
+  assert.ok(
+    view.positions.every((p) => p.claim.length > 0 && p.title.length > 0 && p.url.startsWith('http')),
+    `у каждой позиции есть текст и источник на ${lang}`,
+  );
+}
 
 // --- экспорт в календарь ---
 const ics = itineraryToIcs(

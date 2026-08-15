@@ -359,6 +359,40 @@ h2 {
   font-size: 12px;
 }
 
+/* ── Печать ───────────────────────────────────────────────────
+   Лист QR-кодов Комитет распечатывает и клеит у входа на объекты.
+   На бумаге не нужны ни навигация, ни тени, ни тёмная тема, а карточка
+   не должна разрываться между страницами. */
+
+@media print {
+  .no-print,
+  header,
+  footer,
+  .tabbar {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .qr-sheet {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8mm;
+  }
+
+  .qr-sheet .card {
+    border: 1px solid #ccc;
+    box-shadow: none;
+    background: #fff;
+    /* карточка целиком на одной странице: половина QR-кода не сканируется */
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 /* ── Уважение к настройке «меньше движения» ───────────────── */
 
 @media (prefers-reduced-motion: reduce) {
