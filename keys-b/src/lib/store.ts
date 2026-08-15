@@ -20,6 +20,14 @@ type Store = {
   users: Map<string, User>;
   guides: Guide[];
   corpus: CorpusItem[];
+  /**
+   * Уже зачтённые проверки: `clientId|guideId|утверждение`.
+   * Без этого любой желающий отправляет одну и ту же чушь двадцать раз подряд
+   * и топит репутацию гида — вся идея рейтинга по фактам рушится одним скриптом.
+   */
+  countedChecks: Set<string>;
+  /** Отметки времени проверок по клиенту — грубый лимит частоты. */
+  checkTimes: Map<string, number[]>;
   /** Итоги проверок по гидам: guideId -> счётчики вердиктов. */
   accuracy: Map<string, GuideAccuracy>;
   /**
@@ -57,7 +65,15 @@ function seed(): Store {
     ['g6|aydarkul', { confirmed: 4, refuted: 0, unclear: 1 }],
     ['g6|registan', { confirmed: 0, refuted: 3, unclear: 0 }],
   ]);
-  return { users, corpus: [...CORPUS], guides: [...GUIDES], accuracy, accuracyByPlace };
+  return {
+    users,
+    corpus: [...CORPUS],
+    guides: [...GUIDES],
+    accuracy,
+    accuracyByPlace,
+    countedChecks: new Set<string>(),
+    checkTimes: new Map<string, number[]>(),
+  };
 }
 
 function store(): Store {
@@ -127,23 +143,76 @@ export function removeGuide(id: string): boolean {
 
 // --- репутация гида по проверкам фактов ---
 
+/** Не больше стольких проверок с одного устройства за час. */
+const CHECKS_PER_HOUR = 30;
+
+export type RecordOutcome = 'counted' | 'duplicate' | 'rate-limited';
+
+/**
+ * Зачесть вердикт в репутацию гида — если это не повтор и не поток от бота.
+ * `clientId` приходит из HttpOnly-cookie: полноценной личности у туриста нет,
+ * но одного устройства достаточно, чтобы накрутка перестала быть бесплатной.
+ */
 export function recordFactCheck(
   guideId: string,
   status: CheckStatus,
-  placeId?: string,
-): GuideAccuracy {
+  placeId: string | undefined,
+  clientId: string,
+  claim: string,
+  now = Date.now(),
+): RecordOutcome {
+  // частота: скользящий час
+  const times = (store().checkTimes.get(clientId) ?? []).filter((t) => now - t < 3_600_000);
+  if (times.length >= CHECKS_PER_HOUR) {
+    store().checkTimes.set(clientId, times);
+    return 'rate-limited';
+  }
+  store().checkTimes.set(clientId, [...times, now]);
+
+  // повтор: то же утверждение про того же гида с того же устройства
+  const key = `${clientId}|${guideId}|${claim.trim().toLowerCase()}`;
+  if (store().countedChecks.has(key)) return 'duplicate';
+  store().countedChecks.add(key);
+
   const current = store().accuracy.get(guideId) ?? { confirmed: 0, refuted: 0, unclear: 0 };
   current[status] += 1;
   store().accuracy.set(guideId, current);
 
   // и отдельно по объекту, если известно, где именно это прозвучало
   if (placeId) {
-    const key = `${guideId}|${placeId}`;
-    const perPlace = store().accuracyByPlace.get(key) ?? { confirmed: 0, refuted: 0, unclear: 0 };
+    const placeKey = `${guideId}|${placeId}`;
+    const perPlace = store().accuracyByPlace.get(placeKey) ?? {
+      confirmed: 0,
+      refuted: 0,
+      unclear: 0,
+    };
     perPlace[status] += 1;
-    store().accuracyByPlace.set(key, perPlace);
+    store().accuracyByPlace.set(placeKey, perPlace);
   }
-  return current;
+  return 'counted';
+}
+
+/**
+ * Сводка по объектам для Комитета: где гидов опровергают чаще всего.
+ * Считаем по всем гидам сразу — это уже не репутация, а карта проблемных мест.
+ */
+export function getPlaceFactStats(): { placeId: string; confirmed: number; refuted: number }[] {
+  const totals = new Map<string, { confirmed: number; refuted: number }>();
+  for (const [key, stats] of store().accuracyByPlace) {
+    const placeId = key.split('|')[1];
+    const current = totals.get(placeId) ?? { confirmed: 0, refuted: 0 };
+    current.confirmed += stats.confirmed;
+    current.refuted += stats.refuted;
+    totals.set(placeId, current);
+  }
+  return [...totals.entries()]
+    .map(([placeId, stats]) => ({ placeId, ...stats }))
+    .filter((row) => row.confirmed + row.refuted > 0)
+    .sort(
+      (a, b) =>
+        b.refuted / (b.confirmed + b.refuted) - a.refuted / (a.confirmed + a.refuted) ||
+        b.refuted - a.refuted,
+    );
 }
 
 export function getAccuracy(): Record<string, GuideAccuracy> {

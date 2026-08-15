@@ -12,7 +12,15 @@ import { t, tr } from '@/lib/i18n';
 import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
 import type { UiKey } from '@/lib/i18n';
 
-type Result = { verdict: CheckVerdict; passages: string[]; mode: Mode };
+type Counted = 'counted' | 'duplicate' | 'rate-limited';
+type Result = { verdict: CheckVerdict; passages: string[]; mode: Mode; counted?: Counted };
+
+/** Что показать про учёт в рейтинге гида — вместо молчаливого «учтено» всегда. */
+const COUNTED_UI: Record<Counted, { key: UiKey; cls: string }> = {
+  counted: { key: 'checkCounted', cls: 'tag tag-accent' },
+  duplicate: { key: 'checkDuplicate', cls: 'tag tag-warn' },
+  'rate-limited': { key: 'checkRateLimited', cls: 'tag tag-warn' },
+};
 
 const EXAMPLES: I18nText[] = [
   {
@@ -208,7 +216,11 @@ export default function CheckPage() {
               >
                 {result.mode === 'ai' ? t('modeAi', lang) : t('modeOffline', lang)}
               </span>
-              {guideId && <span className="tag tag-accent">{t('checkCounted', lang)}</span>}
+              {guideId && result.counted && (
+                <span className={COUNTED_UI[result.counted].cls}>
+                  {t(COUNTED_UI[result.counted].key, lang)}
+                </span>
+              )}
             </div>
 
             <blockquote

@@ -16,6 +16,7 @@ import {
   t,
   tr,
 } from '@/lib/i18n';
+import { MIN_CHECKS } from '@/lib/match';
 import { PLACE_BY_ID } from '@/data/places';
 import type { Gender, ScoredGuide } from '@/lib/types';
 
@@ -157,30 +158,38 @@ export default function GuidesPage() {
               </div>
             </div>
 
-            {accuracy && accuracy.confirmed + accuracy.refuted > 0 && (
-              <div className="flex flex-col gap-1.5 text-[13px]">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="muted">{t('guidesAccuracy', lang)}</span>
-                  <b>
-                    {Math.round((accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100)}%
-                  </b>
-                </div>
-                <div
-                  className="meter"
-                  role="img"
-                  aria-label={t('guidesAccuracy', lang)}
-                >
-                  <span
-                    style={{
-                      width: `${(accuracy.confirmed / (accuracy.confirmed + accuracy.refuted)) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="muted text-[12px]">
-                  {t('guidesAccuracyHint', lang)} · {accuracy.confirmed + accuracy.refuted}
-                </span>
-              </div>
-            )}
+            {accuracy &&
+              accuracy.confirmed + accuracy.refuted > 0 &&
+              (() => {
+                const decided = accuracy.confirmed + accuracy.refuted;
+                // до порога процент не показываем вовсе: «100% по одной проверке»
+                // выглядит убедительнее, чем «95% по двадцати двум», и это ложь
+                if (decided < MIN_CHECKS) {
+                  return (
+                    <div className="text-[13px]">
+                      <span className="tag tag-warn">
+                        <Icon name="alert" size={13} />
+                        {t('guidesFewChecks', lang)} · {decided}
+                      </span>
+                    </div>
+                  );
+                }
+                const percent = Math.round((accuracy.confirmed / decided) * 100);
+                return (
+                  <div className="flex flex-col gap-1.5 text-[13px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="muted">{t('guidesAccuracy', lang)}</span>
+                      <b>{percent}%</b>
+                    </div>
+                    <div className="meter" role="img" aria-label={`${t('guidesAccuracy', lang)}: ${percent}%`}>
+                      <span style={{ width: `${percent}%` }} />
+                    </div>
+                    <span className="muted text-[12px]">
+                      {t('guidesAccuracyHint', lang)} · {decided}
+                    </span>
+                  </div>
+                );
+              })()}
 
             {byPlace && Object.keys(byPlace).length > 0 && (
               <div className="flex flex-col gap-1 text-[13px]">
@@ -188,7 +197,8 @@ export default function GuidesPage() {
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(byPlace).map(([placeId, stats]) => {
                     const decided = stats.confirmed + stats.refuted;
-                    if (decided === 0) return null;
+                    // тот же принцип, что и с общей точностью, только порог ниже
+                    if (decided < 3) return null;
                     const percent = Math.round((stats.confirmed / decided) * 100);
                     const place = PLACE_BY_ID[placeId];
                     return (

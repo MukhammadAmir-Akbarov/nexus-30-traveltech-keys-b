@@ -54,6 +54,15 @@ export type Place = {
   summary: I18nText;
   /** Что посмотреть внутри: музей, рукопись, смотровая — турист хочет знать заранее. */
   highlights?: I18nText[];
+  /**
+   * Часы работы в минутах от полуночи. Маршрут, ставящий Регистан на 18:30,
+   * когда он закрыт, — это не маршрут, а список.
+   * Для площадей и открытых пространств не задаётся: туда можно в любое время.
+   */
+  opens?: number;
+  closes?: number;
+  /** Входной билет, ориентировочно в долларах. Нужен, чтобы посчитать бюджет поездки. */
+  ticketUsd?: number;
 };
 
 /** Инфраструктура по маршруту: заправки, туалеты, намазхона, медпункт, кафе. */
@@ -121,6 +130,17 @@ export type CorpusItem = {
 export type ItineraryItem = {
   placeId: string;
   note: string;
+  /** Ориентировочное начало осмотра, «HH:MM». День стартует в 9:00. */
+  at?: string;
+  /** Объект в это время уже закрыт — предупреждаем, а не молчим. */
+  closed?: boolean;
+};
+
+/** Ориентировочная стоимость поездки. Не тариф — оценка по демо-данным. */
+export type TripCost = {
+  ticketsUsd: number;
+  transferUsd: number;
+  totalUsd: number;
 };
 
 export type TransferMode = 'plane' | 'train' | 'bus' | 'car' | 'minibus';
@@ -150,6 +170,7 @@ export type ItineraryDay = {
 export type Itinerary = {
   summary: string;
   days: ItineraryDay[];
+  cost?: TripCost;
 };
 
 export type CheckStatus = 'confirmed' | 'refuted' | 'unclear';

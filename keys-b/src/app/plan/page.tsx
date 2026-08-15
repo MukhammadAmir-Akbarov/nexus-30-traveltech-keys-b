@@ -120,6 +120,18 @@ export default function PlanPage() {
               </span>
             </div>
             <p className="text-sm">{itinerary.summary}</p>
+
+            {itinerary.cost && itinerary.cost.totalUsd > 0 && (
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px]">
+                <span className="muted">{t('planCost', lang)}</span>
+                <b className="text-[15px]">≈ ${itinerary.cost.totalUsd}</b>
+                <span className="muted">
+                  ({t('planCostTickets', lang)} ${itinerary.cost.ticketsUsd} ·{' '}
+                  {t('planCostTransfer', lang)} ${itinerary.cost.transferUsd})
+                </span>
+                <span className="muted text-[12px]">· {t('planCostNote', lang)}</span>
+              </div>
+            )}
           </section>
 
           {orderedPlaces.length > 0 && <RouteMap places={orderedPlaces} lang={lang} />}
@@ -148,10 +160,25 @@ export default function PlanPage() {
                         <div>
                           <div className="flex flex-wrap items-center gap-x-2 text-[15px] font-semibold">
                             {tr(place.name, lang)}
+                            {item.at && (
+                              <span className="tag">
+                                <Icon name="clock" size={13} />
+                                {item.at}
+                              </span>
+                            )}
                             <span className="tag">
-                              <Icon name="clock" size={13} />
                               {place.visitMinutes} {t('planMinutes', lang)}
                             </span>
+                            {place.ticketUsd ? (
+                              <span className="tag">${place.ticketUsd}</span>
+                            ) : null}
+                            {/* закрыт — это надо сказать, а не тихо поставить в план */}
+                            {item.closed && (
+                              <span className="tag tag-warn">
+                                <Icon name="alert" size={13} />
+                                {t('planClosed', lang)}
+                              </span>
+                            )}
                           </div>
                           <div className="muted prose-measure text-[13.5px]">{item.note}</div>
                         </div>

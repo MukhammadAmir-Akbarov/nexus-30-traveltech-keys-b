@@ -1,4 +1,5 @@
 import { generateObject } from 'ai';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
@@ -33,6 +34,15 @@ const OFFLINE_TEXT = {
   },
 } satisfies Record<string, I18nText>;
 
+const CLIENT_COOKIE = 'nexus30_client';
+
+/** Идентификатор устройства для защиты от накрутки. Личность не нужна, нужна повторяемость. */
+function clientIdFrom(req: Request): { id: string; isNew: boolean } {
+  const cookie = req.headers.get('cookie') ?? '';
+  const match = cookie.match(new RegExp(`${CLIENT_COOKIE}=([^;]+)`));
+  return match ? { id: match[1], isNew: false } : { id: randomUUID(), isNew: true };
+}
+
 export async function POST(req: Request) {
   const { claim, lang = 'ru', guideId, placeId } = (await req.json()) as {
     claim: string;
@@ -43,6 +53,7 @@ export async function POST(req: Request) {
   if (!claim?.trim()) {
     return Response.json({ error: 'Пустое утверждение' }, { status: 400 });
   }
+  const client = clientIdFrom(req);
 
   const hits = retrieve(getCorpus(), claim, 3);
   const sources = [
@@ -54,9 +65,19 @@ export async function POST(req: Request) {
 
   const cached = lookupDemoVerdict(claim, lang);
   const respond = (verdict: CheckVerdict, mode: Mode) => {
-    // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида
-    if (guideId) recordFactCheck(guideId, verdict.status, placeId);
-    return Response.json({ verdict, passages, mode });
+    // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида —
+    // но только если это не повтор того же утверждения и не поток от скрипта
+    const counted = guideId
+      ? recordFactCheck(guideId, verdict.status, placeId, client.id, claim)
+      : undefined;
+    const res = Response.json({ verdict, passages, mode, counted });
+    if (client.isNew) {
+      res.headers.append(
+        'Set-Cookie',
+        `${CLIENT_COOKIE}=${client.id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`,
+      );
+    }
+    return res;
   };
 
   if (!hasAI()) {

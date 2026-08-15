@@ -8,8 +8,30 @@
 //    под рукой офлайн.
 // ponytail: без Workbox — здесь тридцать строк, библиотека не окупается.
 
-const CACHE = 'hamroh-v1';
+const CACHE = 'hamroh-v2';
 const APP_SHELL = ['/', '/plan', '/check', '/guides', '/manifest.webmanifest', '/icon.svg'];
+
+// Тайлы карты живут отдельно: их много, они не меняются и переживают
+// обновление приложения. Без этого офлайн-режим врал: интерфейс открывался,
+// а карта маршрута оставалась серым прямоугольником.
+const TILE_CACHE = 'hamroh-tiles-v1';
+const TILE_HOSTS = ['tile.openstreetmap.org', 'a.tile.openstreetmap.org', 'b.tile.openstreetmap.org', 'c.tile.openstreetmap.org'];
+/** Потолок, чтобы кэш не рос бесконечно: примерно два города на всех зумах. */
+const TILE_LIMIT = 600;
+
+async function cacheTile(request) {
+  const cache = await caches.open(TILE_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  // тайлы отдаются с CORS, но даже opaque-ответ годится: его можно вернуть как есть
+  if (response.ok || response.type === 'opaque') {
+    await cache.put(request, response.clone());
+    const keys = await cache.keys();
+    if (keys.length > TILE_LIMIT) await cache.delete(keys[0]);
+  }
+  return response;
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,7 +43,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => k !== CACHE && k !== TILE_CACHE).map((k) => caches.delete(k)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -29,7 +55,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return; // тайлы карты и прочее не трогаем
+  // тайлы карты: сначала кэш, потом сеть — один раз посмотрел онлайн,
+  // дальше карта открывается и без сети
+  if (TILE_HOSTS.includes(url.hostname)) {
+    event.respondWith(cacheTile(request).catch(() => Response.error()));
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
 
   const isApi = url.pathname.startsWith('/api/');
   if (isApi && request.method !== 'POST') return;

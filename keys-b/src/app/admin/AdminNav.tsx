@@ -8,6 +8,7 @@ import type { UiKey } from '@/lib/i18n';
 
 const TABS: { href: string; key: UiKey }[] = [
   { href: '/admin', key: 'adminStats' },
+  { href: '/admin/report', key: 'adminReport' },
   { href: '/admin/guides', key: 'adminGuides' },
   { href: '/admin/facts', key: 'adminFacts' },
   { href: '/admin/users', key: 'adminUsers' },

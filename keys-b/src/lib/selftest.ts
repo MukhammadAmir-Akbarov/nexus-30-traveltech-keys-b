@@ -6,7 +6,7 @@ import { CORPUS } from '../data/corpus.ts';
 import { GUIDES } from '../data/guides.ts';
 import { PLACES } from '../data/places.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
-import { accuracyRate, matchGuides } from './match.ts';
+import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
@@ -260,6 +260,47 @@ assert.equal(
 );
 assert.equal(accuracyRate({ confirmed: 3, refuted: 1, unclear: 9 }), 0.75, 'unclear не портит долю');
 
+// --- справедливость репутации ---
+
+// одна удачная проверка не должна выглядеть как безупречная репутация
+assert.ok(!hasEnoughChecks({ confirmed: 1, refuted: 0, unclear: 0 }), '1 проверки мало');
+assert.ok(
+  hasEnoughChecks({ confirmed: MIN_CHECKS, refuted: 0, unclear: 0 }),
+  `${MIN_CHECKS} проверок достаточно`,
+);
+assert.ok(
+  wilsonLowerBound(1, 1) < wilsonLowerBound(20, 20),
+  'при равной доле больше проверок — выше нижняя граница',
+);
+assert.ok(wilsonLowerBound(1, 1) < 0.5, '1 из 1 не должно котироваться как половина');
+assert.equal(wilsonLowerBound(0, 0), 0, 'без проверок граница нулевая, деления на ноль нет');
+
+// новичок с одной проверкой не обгоняет гида с двадцатью при той же доле
+const rookieVsVeteran = matchGuides(
+  GUIDES,
+  {
+    ...baseQuery,
+    accuracy: {
+      g2: { confirmed: 1, refuted: 0, unclear: 0 },
+      g1: { confirmed: 20, refuted: 0, unclear: 0 },
+    },
+  },
+  10,
+);
+const scoreById = (id: string) => rookieVsVeteran.find((g) => g.guide.id === id)?.score ?? 0;
+assert.ok(
+  scoreById('g1') > scoreById('g2'),
+  'гид с 20 подтверждениями должен быть выше гида с одним',
+);
+assert.ok(
+  rookieVsVeteran.find((g) => g.guide.id === 'g2')?.why.includes('мало'),
+  'у гида с одной проверкой в объяснении должно быть сказано, что данных мало',
+);
+assert.ok(
+  !rookieVsVeteran.find((g) => g.guide.id === 'g2')?.why.includes('100%'),
+  'процент по одной проверке показывать нельзя',
+);
+
 // отзыв с записи 5: узбекский обязателен, и языков должно быть больше трёх
 assert.ok(
   GUIDE_LANGS.includes('uz') && GUIDE_LANGS.length >= 8,
@@ -362,6 +403,43 @@ for (const day of noisy.days) {
   const repeats = day.items.filter((i) => i.note.includes('Совпадает с вашими интересами')).length;
   assert.ok(repeats <= 1, `в дне ${day.day} причина про интересы повторяется ${repeats} раз`);
 }
+
+// --- часы работы и бюджет ---
+
+const timed = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3 });
+assert.ok(
+  timed.days[0].items.every((i) => /^\d{2}:\d{2}$/.test(i.at ?? '')),
+  'у каждого объекта должно быть время осмотра',
+);
+assert.equal(timed.days[0].items[0].at, '09:00', 'день без переезда начинается в 9:00');
+assert.ok(
+  timed.days[0].items.every((i) => !i.closed),
+  'в обычном дневном маршруте закрытых объектов быть не должно',
+);
+// день с переездом стартует позже: сначала дорога
+const withTransfer = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  region: 'all',
+  regions: [],
+  days: 7,
+}).days.find((d) => d.transfer);
+assert.ok(withTransfer, 'страновой маршрут содержит день с переездом');
+assert.ok(
+  withTransfer!.items[0].at! > '09:00',
+  `после переезда осмотр начинается позже 9:00, а получили ${withTransfer!.items[0].at}`,
+);
+
+assert.ok(timed.cost, 'у маршрута должна быть оценка стоимости');
+const ticketsSum = timed.days
+  .flatMap((d) => d.items)
+  .reduce((sum, i) => sum + (PLACES.find((p) => p.id === i.placeId)?.ticketUsd ?? 0), 0);
+assert.equal(timed.cost!.ticketsUsd, Math.round(ticketsSum), 'билеты считаются по объектам плана');
+assert.equal(
+  timed.cost!.totalUsd,
+  timed.cost!.ticketsUsd + timed.cost!.transferUsd,
+  'итог — сумма билетов и дороги',
+);
 
 // новые голосовые: несколько регионов сразу
 const twoRegions = buildItinerary(PLACES, {
