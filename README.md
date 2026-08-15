@@ -31,7 +31,8 @@ traveltech/
 
 Код в `keys-b/` устроен так, что кейс A получается вычитанием: остаются
 `/plan`, `src/lib/planner.ts`, `src/data/places.ts`, карта и общий контекст.
-Подробности — в [keys-a/README.md](keys-a/README.md).
+Требования кейса — в [keys-a/README.md](keys-a/README.md), полный план работы
+с фазами, оценками и разделением на троих — в [keys-a/PLAN.md](keys-a/PLAN.md).
 
 ## Запуск
 
