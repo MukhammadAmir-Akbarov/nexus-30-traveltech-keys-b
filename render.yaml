@@ -15,7 +15,15 @@ services:
     # После слияния вернуть сюда cyber — autoDeploy подхватит сам.
     branch: elbek
     rootDir: keys-b
-    buildCommand: npm ci && npm run build
+    # --include=dev обязателен. На Render у Node-сервисов NODE_ENV=production,
+    # а при нём npm сам выставляет omit=dev — измерено на npm 10.9.8:
+    #   NODE_ENV=production      npm config get omit  →  dev
+    #   NODE_ENV=production --include=dev             →  (пусто)
+    # typescript, tailwindcss и @tailwindcss/postcss лежат в devDependencies,
+    # то есть без этого флага `next build` падает на отсутствующем компиляторе.
+    # Берём --include=dev, а не NPM_CONFIG_PRODUCTION=false: последний npm
+    # помечает устаревшим («Use `--omit=dev` instead») и печатает warning.
+    buildCommand: npm ci --include=dev && npm run build
     # Render передаёт порт в $PORT — next start по умолчанию слушает 3000, поэтому порт задаём явно
     startCommand: npx next start -p $PORT
     healthCheckPath: /
