@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .data/
+
+# Prisma qoldigi: ilova fayl/xotira malumotida ishlaydi, ORM ulanmagan
+*.db
+prisma/

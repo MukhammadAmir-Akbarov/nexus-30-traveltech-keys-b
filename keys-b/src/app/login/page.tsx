@@ -18,7 +18,7 @@ export default function LoginPage() {
       */}
       <div
         className="hidden md:block md:w-1/2 relative bg-cover bg-center"
-        style={{ backgroundImage: "url('/places/registan.jpg')" }}
+        style={{ backgroundImage: "url('/photos/registan.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/10"></div>
       </div>
