@@ -10,6 +10,7 @@ import { PLACES } from '../data/places.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
+import { NEAR_LIMIT_KM, nearestRegion } from './geo.ts';
 import { retrieve, tokenize } from './retrieval.ts';
 import { ruleVerdict, toRoman } from './verdict.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
@@ -1179,6 +1180,24 @@ const oddStart = buildItinerary(PLACES, {
   startRegion: 'khiva',
 });
 assert.ok(oddStart.days.length > 0, 'недостижимый старт не оставляет туриста без маршрута');
+
+// --- определение города по координатам ----------------------------------------
+// §9 кейса требует учитывать защиту данных. Обещание в интерфейсе — «координаты
+// не уходят на сервер» — держится ровно на том, что вся работа это чистая
+// функция ниже. Поэтому её и проверяем, а не рассказ о ней.
+
+assert.equal(nearestRegion(39.6547, 66.9758)?.region, 'samarkand', 'Регистан — это Самарканд');
+assert.equal(nearestRegion(41.3111, 69.2797)?.region, 'tashkent', 'центр Ташкента — Ташкент');
+assert.equal(nearestRegion(39.7747, 64.4286)?.region, 'bukhara', 'центр Бухары — Бухара');
+assert.equal(nearestRegion(41.3783, 60.3639)?.region, 'khiva', 'Ичан-Кала — это Хива');
+
+// Далёкая точка обязана вернуть null, а не ближайший из наших городов:
+// «вы в Ташкенте» человеку в Астане — это ложь на первом же экране.
+assert.equal(nearestRegion(51.1694, 71.4491), null, 'Астана не должна стать Ташкентом');
+assert.equal(nearestRegion(0, 0), null, 'нулевые координаты не определяют город');
+
+// Порог задан явно и должен оставаться осмысленным
+assert.ok(NEAR_LIMIT_KM >= 100 && NEAR_LIMIT_KM <= 200, 'порог близости в разумных пределах');
 
 // --- вердикт по правилам (работает без ключа модели) -------------------------
 // Правило существует ради одного: без ключа продукт обязан ловить перепутанный

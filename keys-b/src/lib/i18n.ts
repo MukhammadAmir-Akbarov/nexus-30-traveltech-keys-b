@@ -303,6 +303,36 @@ export const UI = {
     en: 'Defaults to Tashkent',
   },
 
+  geoDetect: { uz: 'Men shu yerdaman', ru: 'Я уже здесь', en: 'I am already here' },
+  geoAsking: { uz: 'Aniqlanmoqda…', ru: 'Определяю…', en: 'Locating…' },
+  geoStartIs: { uz: 'Boshlanish shahri:', ru: 'Город старта:', en: 'Starting from:' },
+  // Обещание проверяемое: см. src/lib/geo.ts — расчёт целиком в браузере
+  geoPrivacy: {
+    uz: 'Koordinatalaringiz serverga yuborilmaydi: eng yaqin shahar brauzerda hisoblanadi va faqat shahar nomi saqlanadi.',
+    ru: 'Координаты не уходят на сервер: ближайший город считается в браузере, сохраняется только название города.',
+    en: 'Your coordinates never leave the browser: the nearest city is computed locally and only the city name is stored.',
+  },
+  geoDenied: {
+    uz: 'Ruxsat berilmadi — shaharni ro‘yxatdan tanlang.',
+    ru: 'Доступ не разрешён — выберите город из списка.',
+    en: 'Permission denied — pick the city from the list.',
+  },
+  geoUnsupported: {
+    uz: 'Brauzeringiz joylashuvni qo‘llab-quvvatlamaydi.',
+    ru: 'Браузер не поддерживает геолокацию.',
+    en: 'Your browser does not support geolocation.',
+  },
+  geoTooFar: {
+    uz: 'Siz bizning shaharlarimizdan uzoqdasiz — shaharni qo‘lda tanlang.',
+    ru: 'Вы далеко от наших городов — выберите город вручную.',
+    en: 'You are far from our cities — pick one manually.',
+  },
+  geoFailed: {
+    uz: 'Joylashuvni aniqlab bo‘lmadi — shaharni tanlang.',
+    ru: 'Не удалось определить местоположение — выберите город.',
+    en: 'Could not determine your location — pick a city.',
+  },
+
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },

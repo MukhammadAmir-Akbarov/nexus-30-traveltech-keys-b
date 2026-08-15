@@ -1,5 +1,6 @@
 'use client';
 
+import { StartFromLocation } from '@/components/StartFromLocation';
 import { VoiceTrip } from '@/components/VoiceTrip';
 import { useTrip } from '@/components/TripProvider';
 import {
@@ -109,7 +110,7 @@ export function TripSetup() {
           {t('fieldStartRegion', lang)}{' '}
           <span className="muted font-normal">· {t('fieldStartRegionHint', lang)}</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="mb-2 flex flex-wrap gap-2">
           {REGIONS.filter((region) => region !== 'all').map((region) => (
             <button
               key={region}
@@ -123,6 +124,7 @@ export function TripSetup() {
             </button>
           ))}
         </div>
+        <StartFromLocation />
       </div>
 
       <div>
