@@ -7,6 +7,7 @@ import { FEATURED_IDS, HOME_FEATURED_COUNT } from '../data/featured.ts';
 import { GUIDES } from '../data/guides.ts';
 import { PHOTOS } from '../data/photos.ts';
 import { PLACES } from '../data/places.ts';
+import { staysFor } from '../data/stays.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
@@ -1198,6 +1199,31 @@ assert.equal(nearestRegion(0, 0), null, 'нулевые координаты н�
 
 // Порог задан явно и должен оставаться осмысленным
 assert.ok(NEAR_LIMIT_KM >= 100 && NEAR_LIMIT_KM <= 200, 'порог близости в разумных пределах');
+
+// --- где ночевать --------------------------------------------------------------
+// Районы, а не карточки отелей: названия и цены конкретных гостиниц проверить
+// нечем, и выдуманный отель был бы тем самым непроверяемым фактом, против
+// которого сделан продукт. Проверяем то, что обещает интерфейс.
+
+for (const region of ['samarkand', 'bukhara', 'khiva', 'tashkent'] as const) {
+  const stays = staysFor(region);
+  assert.ok(stays.length > 0, `у города ${region} есть хотя бы один район для ночёвки`);
+  for (const stay of stays) {
+    assert.equal(stay.region, region, 'район приписан своему городу');
+    // Вилка, а не одна цена: показываем «от и до», и порядок обязан быть верным
+    assert.ok(stay.fromUsd > 0 && stay.toUsd > stay.fromUsd, `вилка цен осмысленна: ${stay.id}`);
+    // Ссылка на объект маршрута — то, ради чего район и выбирают
+    if (stay.nearPlaceId) {
+      const anchor = PLACES.find((place) => place.id === stay.nearPlaceId);
+      assert.ok(anchor, `ориентир ${stay.nearPlaceId} существует в PLACES`);
+      assert.equal(anchor.region, region, 'ориентир находится в том же городе, что и район');
+    }
+    for (const lang of LANGS) {
+      assert.ok(stay.name[lang]?.trim(), `название района переведено: ${stay.id}/${lang}`);
+      assert.ok(stay.why[lang]?.trim(), `пояснение района переведено: ${stay.id}/${lang}`);
+    }
+  }
+}
 
 // --- вердикт по правилам (работает без ключа модели) -------------------------
 // Правило существует ради одного: без ключа продукт обязан ловить перепутанный

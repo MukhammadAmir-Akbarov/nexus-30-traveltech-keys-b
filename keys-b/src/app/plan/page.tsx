@@ -8,6 +8,7 @@ import { NearbyPois } from '@/components/NearbyPois';
 import { OfflinePack } from '@/components/OfflinePack';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
+import { StayPanel } from '@/components/StayPanel';
 import { TripSetup } from '@/components/TripSetup';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
@@ -399,11 +400,19 @@ export default function PlanPage() {
                 </ol>
                 {(() => {
                   const anchor = PLACE_BY_ID[day.items[0]?.placeId];
-                  return anchor ? (
+                  if (!anchor) return null;
+                  // «Где ночевать» — один раз на город, а не в каждом его дне:
+                  // три одинаковых блока подряд читаются как шум.
+                  const firstDayInCity =
+                    itinerary.days.find(
+                      (other) => PLACE_BY_ID[other.items[0]?.placeId]?.region === anchor.region,
+                    )?.day === day.day;
+                  return (
                     <div className="mt-3">
                       <NearbyPois place={anchor} />
+                      {firstDayInCity && <StayPanel region={anchor.region} />}
                     </div>
-                  ) : null;
+                  );
                 })()}
               </div>
             ))}

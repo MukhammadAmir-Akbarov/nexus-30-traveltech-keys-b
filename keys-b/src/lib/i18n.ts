@@ -303,6 +303,17 @@ export const UI = {
     en: 'Defaults to Tashkent',
   },
 
+  stayTitle: { uz: 'Qayerda tunash', ru: 'Где ночевать', en: 'Where to stay' },
+  stayPerNight: { uz: 'kecha', ru: 'ночь', en: 'night' },
+  stayNear: { uz: 'Piyoda:', ru: 'Пешком до:', en: 'Walking distance to:' },
+  staySearch: { uz: 'Joy qidirish', ru: 'Искать жильё', en: 'Search for a place' },
+  // Честно: бронирование не делаем, цены — ориентир по демо-данным, а не тариф
+  stayDisclaimer: {
+    uz: 'Narxlar taxminiy. Bron tashqi saytda amalga oshiriladi — biz bron qilmaymiz.',
+    ru: 'Цены ориентировочные. Бронирование — на внешнем сайте, мы не бронируем.',
+    en: 'Prices are indicative. Booking happens on an external site — we do not book.',
+  },
+
   geoDetect: { uz: 'Men shu yerdaman', ru: 'Я уже здесь', en: 'I am already here' },
   geoAsking: { uz: 'Aniqlanmoqda…', ru: 'Определяю…', en: 'Locating…' },
   geoStartIs: { uz: 'Boshlanish shahri:', ru: 'Город старта:', en: 'Starting from:' },
