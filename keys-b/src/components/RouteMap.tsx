@@ -61,8 +61,12 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
   // Иначе массив точек — новый объект на каждый рендер, эффект перезапускается,
   // карта успевает только создаться и тут же уничтожиться: маркеры не появляются.
   const data = useRef({ points, lang });
-  data.current = { points, lang };
   const key = `${points.map((p) => `${p.place.id}:${p.day}`).join(',')}|${lang}`;
+
+  // ref обновляем в эффекте, а не во время рендера: рендер должен быть чистым
+  useEffect(() => {
+    data.current = { points, lang };
+  });
 
   useEffect(() => {
     if (!container.current) return;
