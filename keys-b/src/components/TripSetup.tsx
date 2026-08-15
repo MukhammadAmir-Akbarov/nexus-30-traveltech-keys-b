@@ -101,6 +101,30 @@ export function TripSetup() {
         </div>
       </div>
 
+      {/* Откуда человек стартует. Раньше маршрут всегда начинался с Ташкента,
+          и турист, прилетевший в Самарканд, первым делом получал переезд,
+          которого не должно было быть. */}
+      <div>
+        <div className="mb-2 text-sm font-semibold">
+          {t('fieldStartRegion', lang)}{' '}
+          <span className="muted font-normal">· {t('fieldStartRegionHint', lang)}</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {REGIONS.filter((region) => region !== 'all').map((region) => (
+            <button
+              key={region}
+              className="chip"
+              data-active={trip.startRegion === region}
+              onClick={() =>
+                update({ startRegion: trip.startRegion === region ? undefined : region })
+              }
+            >
+              {tr(REGION_LABEL[region], lang)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <div className="mb-2 text-sm font-semibold">{t('fieldDates', lang)}</div>
         <div className="flex flex-wrap items-center gap-2 text-sm">

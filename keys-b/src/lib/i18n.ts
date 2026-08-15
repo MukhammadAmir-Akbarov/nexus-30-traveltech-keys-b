@@ -292,6 +292,17 @@ export const UI = {
     en: 'Determined without a model: the date and century were compared with the source.',
   },
 
+  fieldStartRegion: {
+    uz: 'Sayohat qayerdan boshlanadi',
+    ru: 'Откуда начинается поездка',
+    en: 'Where the trip starts',
+  },
+  fieldStartRegionHint: {
+    uz: 'Tanlanmasa, Toshkentdan boshlanadi',
+    ru: 'Если не выбрать — из Ташкента',
+    en: 'Defaults to Tashkent',
+  },
+
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },

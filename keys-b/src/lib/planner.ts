@@ -459,10 +459,18 @@ export function buildItinerary(
     byRegion.set(place.region, [...(byRegion.get(place.region) ?? []), place]);
   }
 
-  // Порядок городов: точка входа (Ташкент) первой, дальше — ближайший к предыдущему.
+  // Порядок городов: сначала тот, откуда турист стартует, дальше — ближайший
+  // по времени в пути. Если старт не указан, работает прежнее правило —
+  // точка входа в страну.
   const regions = [...byRegion.keys()];
   const route: Region[] = [];
-  let current = regions.includes(ENTRY_REGION) ? ENTRY_REGION : regions[0];
+  const start =
+    ctx.startRegion && regions.includes(ctx.startRegion)
+      ? ctx.startRegion
+      : regions.includes(ENTRY_REGION)
+        ? ENTRY_REGION
+        : regions[0];
+  let current = start;
   const remaining = new Set(regions);
   while (remaining.size) {
     route.push(current);
@@ -516,22 +524,24 @@ export function buildItinerary(
     if (days.length >= ctx.days) break;
   }
 
-  // Возвращение в точку входа: только для маршрута по стране и если есть запас дня.
+  // Возвращение в точку старта: только для маршрута по стране и если есть запас
+  // дня. Возвращаемся туда, откуда человек выехал, — это его вокзал, гостиница
+  // и обратный билет; при незаданном старте это по-прежнему Ташкент.
   const lastRegion = days.length ? previousRegion : null;
   if (
     selectedRegions(ctx).length === 0 &&
     lastRegion &&
-    lastRegion !== ENTRY_REGION &&
-    byRegion.has(ENTRY_REGION) &&
+    lastRegion !== start &&
+    byRegion.has(start) &&
     days.length < ctx.days
   ) {
     const transfer = buildTransfer(
       lastRegion,
-      ENTRY_REGION,
-      haversineKm(centroid(byRegion.get(lastRegion)!), centroid(byRegion.get(ENTRY_REGION)!)),
+      start,
+      haversineKm(centroid(byRegion.get(lastRegion)!), centroid(byRegion.get(start)!)),
     );
     const used = new Set(days.flatMap((d) => d.items.map((i) => i.placeId)));
-    const leftovers = byRegion.get(ENTRY_REGION)!.filter((p) => !used.has(p.id));
+    const leftovers = byRegion.get(start)!.filter((p) => !used.has(p.id));
     if (leftovers.length) {
       const picked = fillDay(
         leftovers,

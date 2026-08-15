@@ -1140,6 +1140,46 @@ assert.equal(parseTripPhrase('вдвоем с женой на 3 дня').travelT
 assert.equal(parseTripPhrase('er-xotin ikkimiz Samarqandga').travelType, 'couple', 'uz: er-xotin');
 assert.equal(parseTripPhrase('travelling as a couple').travelType, 'couple', 'en: couple');
 
+// --- город старта -------------------------------------------------------------
+// Маршрут всегда начинался с Ташкента как с точки входа в страну. Но турист
+// может прилететь в Самарканд или уже быть в Бухаре — и тогда первый день
+// уходил на переезд, которого не должно было быть.
+
+const countrywide: TripContext = {
+  regions: [],
+  region: 'all',
+  interests: ['history', 'architecture'],
+  travelType: 'solo',
+  days: 6,
+  lang: 'uz',
+  summer: false,
+};
+
+const firstPlaceRegion = (ctx: TripContext) => {
+  const first = buildItinerary(PLACES, ctx).days[0]?.items[0]?.placeId;
+  return PLACES.find((place) => place.id === first)?.region;
+};
+
+assert.equal(firstPlaceRegion(countrywide), 'tashkent', 'без указания старта — вход через Ташкент');
+
+for (const from of ['khiva', 'bukhara', 'samarkand'] as const) {
+  assert.equal(
+    firstPlaceRegion({ ...countrywide, startRegion: from }),
+    from,
+    `маршрут обязан начинаться там, откуда турист стартует: ${from}`,
+  );
+}
+
+// Старт в регионе, которого нет в выборке, не должен ломать план —
+// работает прежнее правило, а не пустой маршрут.
+const oddStart = buildItinerary(PLACES, {
+  ...countrywide,
+  regions: ['samarkand'],
+  region: 'samarkand',
+  startRegion: 'khiva',
+});
+assert.ok(oddStart.days.length > 0, 'недостижимый старт не оставляет туриста без маршрута');
+
 // --- вердикт по правилам (работает без ключа модели) -------------------------
 // Правило существует ради одного: без ключа продукт обязан ловить перепутанный
 // век и год, а не отвечать «сверьте формулировку сами» на любой живой вопрос.
