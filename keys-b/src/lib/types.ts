@@ -33,6 +33,12 @@ export type TravelType = 'solo' | 'couple' | 'family' | 'group';
 /** Темп: сколько часов осмотра турист готов выдержать за день. */
 export type Pace = 'relaxed' | 'normal' | 'packed';
 
+/** Дневной бюджет поездки. Тот же вопрос, что в мобильном приложении. */
+export type Budget = 'low' | 'mid' | 'high';
+
+/** Языки, на которых турист готов общаться с гидом. */
+export type GuideLang = 'uz' | 'ru' | 'en' | 'tr' | 'ar' | 'zh' | 'fr' | 'de';
+
 export type TripContext = {
   /** Пустой список = вся страна. Регионов можно выбрать несколько. */
   regions: Region[];
@@ -48,6 +54,13 @@ export type TripContext = {
   summer: boolean;
   /** Темп поездки. По умолчанию обычный. */
   pace?: Pace;
+  /** Дневной бюджет: меняет очки объектов, выбор переезда и предупреждения. */
+  budget?: Budget;
+  /**
+   * Языки общения туриста. Не то же самое, что язык интерфейса: узбек может
+   * искать англоязычного гида, и подбор обязан идти по этому полю.
+   */
+  guideLangs?: GuideLang[];
   /** Объекты, которые турист убрал руками. */
   excluded?: string[];
   /** Объекты, которые турист хочет обязательно — они идут в маршрут первыми. */
@@ -61,6 +74,12 @@ export type TripContext = {
    * Не задан — прежнее поведение, вход через Ташкент.
    */
   startRegion?: Region;
+  /**
+   * Закладки: объекты, отложенные «на посмотреть». Это не то же самое, что
+   * `pinned`: закреплённый обязан попасть в маршрут, а сохранённый просто
+   * лежит в личном списке и ни на что не влияет.
+   */
+  saved?: string[];
 };
 
 export type Place = {
@@ -179,6 +198,12 @@ export type DayWeather = {
   region: Region;
   tMaxC: number;
   precipMm: number;
+  /**
+   * Максимальный ветер за день, км/ч. В Узбекистане это не мелочь: весной
+   * с ветром приходит пыль, и на открытых площадках день переносится иначе,
+   * чем при той же температуре в штиль. Прогноз отдаёт его тем же запросом.
+   */
+  windKmh?: number;
   source: 'forecast' | 'norm';
 };
 
@@ -190,6 +215,8 @@ export type TripCost = {
   ticketsUsd: number;
   transferUsd: number;
   totalUsd: number;
+  /** Траты по дням: без них не сказать, какой именно день вылез за бюджет. */
+  perDayUsd?: number[];
 };
 
 export type TransferMode = 'plane' | 'train' | 'bus' | 'car' | 'minibus';

@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { CORPUS } from '@/data/corpus';
 import { GUIDES } from '@/data/guides';
 import { hashPassword, verifyPassword, type Role } from './auth';
@@ -13,10 +15,19 @@ import type {
 } from './types';
 
 // Серверное хранилище прототипа.
-// ponytail: всё в памяти процесса — правки админа живут до перезапуска,
-// база данных здесь не нужна и на демо только мешает. Когда понадобится
-// сохранность, меняется реализация этого файла, вызовы остаются теми же.
-// Экспорт JSON на странице админки даёт перенести правки в data/*.
+//
+// Данные живут в памяти процесса, а после каждой правки снимок ложится
+// на диск. Перезапуск больше не стирает проверки фактов, репутацию гидов,
+// возражения и заявки: демо переживает падение сервера, а Комитет не теряет
+// накопленное между показами.
+//
+// ponytail: JSON-файл, а не база. Объём прототипа — сотни записей, запись
+// идёт пачкой на следующем тике, и переход на настоящую базу меняет только
+// две функции ниже, а не двадцать четыре вызова снаружи.
+//
+// Путь задаётся DATA_FILE; на площадке с эфемерным диском файл переживает
+// перезапуск процесса, но не пересоздание машины — это честно и достаточно
+// для прототипа.
 
 export type User = {
   email: string;
@@ -52,6 +63,62 @@ type Store = {
   /** Входящие от туристов: проблема на объекте и запрос гида. */
   requests: TouristRequest[];
 };
+
+const DATA_FILE = process.env.DATA_FILE ?? '.data/store.json';
+
+/** Что сохраняем. checkTimes не входит: это скользящее окно лимита, оно живёт час. */
+type Snapshot = {
+  users: [string, User][];
+  guides: Guide[];
+  corpus: CorpusItem[];
+  countedChecks: string[];
+  accuracy: [string, GuideAccuracy][];
+  accuracyByPlace: [string, GuideAccuracy][];
+  verdicts: FactRecord[];
+  requests: TouristRequest[];
+};
+
+function readSnapshot(): Snapshot | null {
+  try {
+    if (!existsSync(DATA_FILE)) return null;
+    return JSON.parse(readFileSync(DATA_FILE, 'utf8')) as Snapshot;
+  } catch {
+    // битый файл не должен ронять сервер: начинаем с посева
+    return null;
+  }
+}
+
+let pending: NodeJS.Timeout | null = null;
+
+/**
+ * Отложенная запись снимка. Пачкой на следующем тике: одна проверка факта
+ * трогает три структуры сразу, и писать файл трижды незачем.
+ */
+function persist(): void {
+  if (pending) return;
+  pending = setTimeout(() => {
+    pending = null;
+    const s = store();
+    const snapshot: Snapshot = {
+      users: [...s.users],
+      guides: s.guides,
+      corpus: s.corpus,
+      countedChecks: [...s.countedChecks],
+      accuracy: [...s.accuracy],
+      accuracyByPlace: [...s.accuracyByPlace],
+      verdicts: s.verdicts,
+      requests: s.requests,
+    };
+    try {
+      mkdirSync(dirname(DATA_FILE), { recursive: true });
+      writeFileSync(DATA_FILE, JSON.stringify(snapshot), 'utf8');
+    } catch {
+      // диск только для чтения — работаем как раньше, из памяти
+    }
+  }, 250);
+  // не держим процесс живым ради записи
+  pending.unref?.();
+}
 
 const globalStore = globalThis as unknown as { __nexus30?: Store };
 
@@ -150,7 +217,30 @@ function seed(): Store {
 }
 
 function store(): Store {
-  globalStore.__nexus30 ??= seed();
+  if (!globalStore.__nexus30) {
+    const fresh = seed();
+    const saved = readSnapshot();
+    if (saved) {
+      // Поверх посева кладём сохранённое: список объектов и гидов в коде
+      // может пополниться между запусками, а накопленное терять нельзя.
+      //
+      // Пользователи — единственное исключение, и порядок здесь обратный:
+      // сначала сохранённые (гиды, регистрации), сверху посев из окружения.
+      // Иначе администратор навсегда остаётся с тем паролем, с которым сервер
+      // запустили в первый раз: смена ADMIN_PASSWORD перестаёт действовать,
+      // а старый пароль продолжает пускать. Поймано измерением: после
+      // перезапуска с новым паролем вход отвечал 401.
+      fresh.users = new Map([...saved.users, ...fresh.users]);
+      if (saved.guides?.length) fresh.guides = saved.guides;
+      if (saved.corpus?.length) fresh.corpus = saved.corpus;
+      fresh.countedChecks = new Set(saved.countedChecks ?? []);
+      fresh.accuracy = new Map(saved.accuracy ?? []);
+      fresh.accuracyByPlace = new Map(saved.accuracyByPlace ?? []);
+      fresh.verdicts = saved.verdicts ?? [];
+      fresh.requests = saved.requests ?? [];
+    }
+    globalStore.__nexus30 = fresh;
+  }
   return globalStore.__nexus30;
 }
 
@@ -175,6 +265,7 @@ export function createUser(email: string, password: string, role: Role = 'user')
     createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
   };
   store().users.set(key, user);
+  persist();
   return user;
 }
 
@@ -199,6 +290,7 @@ export function toggleGuideVerified(id: string): Guide | null {
   const guide = store().guides.find((g) => g.id === id);
   if (!guide) return null;
   guide.verified = !guide.verified;
+  persist();
   return guide;
 }
 
@@ -206,12 +298,14 @@ export function upsertGuide(guide: Guide): Guide {
   const index = store().guides.findIndex((g) => g.id === guide.id);
   if (index >= 0) store().guides[index] = guide;
   else store().guides.push(guide);
+  persist();
   return guide;
 }
 
 export function removeGuide(id: string): boolean {
   const before = store().guides.length;
   store().guides = store().guides.filter((g) => g.id !== id);
+  persist();
   return store().guides.length < before;
 }
 
@@ -273,6 +367,7 @@ export function recordFactCheck(
     perPlace[status] += 1;
     store().accuracyByPlace.set(placeKey, perPlace);
   }
+  persist();
   return 'counted';
 }
 
@@ -333,6 +428,7 @@ export function createGuideAccount(guideId: string, password: string): User | nu
     createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
   };
   store().users.set(email, user);
+  persist();
   return user;
 }
 
@@ -345,6 +441,7 @@ export function disputeVerdict(verdictId: string, guideId: string, note: string)
   const record = store().verdicts.find((v) => v.id === verdictId && v.guideId === guideId);
   if (!record || record.dispute) return false;
   record.dispute = { note: note.trim().slice(0, 500), at: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+  persist();
   return true;
 }
 
@@ -365,6 +462,7 @@ export function resolveDispute(verdictId: string, outcome: 'upheld' | 'rejected'
       if (perPlace && perPlace[record.status] > 0) perPlace[record.status] -= 1;
     }
   }
+  persist();
   return true;
 }
 
@@ -385,6 +483,7 @@ export function addRequest(
     at: new Date().toISOString().slice(0, 16).replace('T', ' '),
   };
   store().requests.push(item);
+  persist();
   return item;
 }
 
@@ -409,16 +508,19 @@ export function markRequestDone(id: string): boolean {
   const item = store().requests.find((r) => r.id === id);
   if (!item) return false;
   item.done = true;
+  persist();
   return true;
 }
 
 export function addCorpusItem(item: CorpusItem): CorpusItem {
   store().corpus.push(item);
+  persist();
   return item;
 }
 
 export function removeCorpusItem(id: string): boolean {
   const before = store().corpus.length;
   store().corpus = store().corpus.filter((c) => c.id !== id);
+  persist();
   return store().corpus.length < before;
 }

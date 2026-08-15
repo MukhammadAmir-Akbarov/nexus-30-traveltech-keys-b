@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
 import { OfflinePack } from '@/components/OfflinePack';
+import { PlacePhoto } from '@/components/PlacePhoto';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { StayPanel } from '@/components/StayPanel';
@@ -15,6 +17,8 @@ import { PLACE_BY_ID } from '@/data/places';
 import { itineraryToIcs } from '@/lib/ics';
 import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
+import { overBudget, usdToUzsLabel } from '@/lib/budget';
+import { isWindy } from '@/lib/weather';
 import { distanceLabel, navigatorUrl, routeTotals } from '@/lib/route';
 import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
@@ -247,11 +251,45 @@ export default function PlanPage() {
                       {t(day.weather.source === 'forecast' ? 'weatherForecast' : 'weatherNorm', lang)}
                     </span>
                   )}
+
+                  {/* Ветер: при той же температуре день переносится иначе,
+                      а весной с ветром на площадях поднимается пыль. */}
+                  {day.weather?.windKmh !== undefined && (
+                    <span
+                      className={isWindy(day.weather) ? 'tag tag-warn' : 'tag'}
+                      title={isWindy(day.weather) ? t('windDustHint', lang) : undefined}
+                    >
+                      {t('windLabel', lang)} {day.weather.windKmh} {t('windUnit', lang)}
+                      {isWindy(day.weather) && ` · ${t('windDust', lang)}`}
+                    </span>
+                  )}
                 </div>
 
                 {day.weatherNote && (
                   <p className="muted mb-2 prose-measure text-[13px]">{day.weatherNote}</p>
                 )}
+
+                {/* Траты дня против дневного потолка: бюджет спросили —
+                    значит обязаны сказать, когда день из него вышел. */}
+                {(() => {
+                  const spend = itinerary.cost?.perDayUsd?.[day.day - 1];
+                  if (spend === undefined || spend === 0) return null;
+                  const over = overBudget(spend, trip.budget);
+                  return (
+                    <div className="mb-2 flex flex-wrap items-center gap-2 text-[12.5px]">
+                      <span className={over ? 'tag tag-warn' : 'tag'}>
+                        {over && <Icon name="alert" size={13} />}
+                        {t('budgetDay', lang)} ≈ ${spend}
+                        <span className="muted">· {usdToUzsLabel(spend, lang)}</span>
+                      </span>
+                      {over && (
+                        <span className="muted" style={{ color: 'var(--warn)' }}>
+                          {t('budgetOver', lang)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {day.seasonNote && (
                   <p
@@ -330,7 +368,18 @@ export default function PlanPage() {
                     return (
                       <li key={item.placeId} className="flex gap-3">
                         <span className="step-dot mt-0.5">{index + 1}</span>
-                        <div>
+                        <div className="min-w-0 flex-1">
+                          {/* Фотография объекта прямо в маршруте: турист выбирает
+                              глазами, а не по названию, которое ему ничего
+                              не говорит до первой поездки. */}
+                          <Link href={`/place/${place.id}`} className="mb-2 block max-w-[320px]">
+                            <PlacePhoto
+                              placeId={place.id}
+                              alt={tr(place.name, lang)}
+                              lang={lang}
+                              sizes="320px"
+                            />
+                          </Link>
                           <div className="flex flex-wrap items-center gap-x-2 text-[15px] font-semibold">
                             {tr(place.name, lang)}
                             {item.at && (

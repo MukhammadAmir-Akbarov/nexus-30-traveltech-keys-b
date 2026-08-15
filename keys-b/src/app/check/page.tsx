@@ -83,6 +83,37 @@ const HISTORY_KEY = 'nexus30.checks';
 type HistoryItem = { claim: string; status: CheckStatus; at: string };
 
 /**
+ * Заготовки под полем вопроса. Не украшение: пустое поле — самая частая
+ * причина, по которой человек ничего не проверяет. Первая подставляет
+ * название объекта, если турист пришёл со страницы объекта или по QR-коду.
+ */
+const SUGGESTIONS: { key: UiKey; text: (place: string, lang: Lang) => string }[] = [
+  {
+    key: 'suggestAge',
+    text: (place, lang) =>
+      place
+        ? { uz: `${place} qachon qurilgan?`, ru: `Когда построен(а) ${place}?`, en: `When was ${place} built?` }[lang]
+        : { uz: 'Registon qachon qurilgan?', ru: 'Когда построен Регистан?', en: 'When was the Registan built?' }[lang],
+  },
+  {
+    key: 'suggestGuideSaid',
+    text: (_place, lang) =>
+      ({
+        uz: 'Gid aytdi: Registon XII asrda qurilgan',
+        ru: 'Гид сказал: Регистан построен в XII веке',
+        en: 'The guide said the Registan was built in the 12th century',
+      })[lang],
+  },
+  {
+    key: 'suggestHeight',
+    text: (place, lang) =>
+      place
+        ? { uz: `${place} haqidagi ma'lumot to‘g‘rimi?`, ru: `Верна ли информация про ${place}?`, en: `Is the information about ${place} correct?` }[lang]
+        : { uz: 'Kalon minorasi balandligi 46 metr', ru: 'Высота минарета Калян — 46 метров', en: 'The Kalyan minaret is 46 metres tall' }[lang],
+  },
+];
+
+/**
  * useSearchParams требует границы Suspense: без неё страница не может быть
  * отрендерена заранее. Обёртка тонкая — вся страница внутри.
  */
@@ -95,7 +126,7 @@ export default function CheckPage() {
 }
 
 function CheckPageInner() {
-  const { lang } = useTrip();
+  const { lang, trip, update } = useTrip();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [claim, setClaim] = useState('');
   const [loading, setLoading] = useState(false);
@@ -199,6 +230,21 @@ function CheckPageInner() {
             onChange={(e) => setClaim(e.target.value)}
           />
         </label>
+
+        {/* Пустое поле не подсказывает, что сюда писать: человек видит форму
+            и уходит. Три заготовки снимают этот ступор — первая подставляет
+            фразу про объект, о котором он сейчас читает. */}
+        <div className="flex flex-wrap gap-2">
+          {SUGGESTIONS.map(({ key, text }) => (
+            <button
+              key={key}
+              className="chip"
+              onClick={() => setClaim(text(place ? tr(place.name, lang) : '', lang))}
+            >
+              {t(key, lang)}
+            </button>
+          ))}
+        </div>
 
         <div className="flex flex-wrap items-start gap-2">
           <button
@@ -332,6 +378,41 @@ function CheckPageInner() {
             )}
 
             <p className="prose-measure text-[15px] leading-relaxed">{result.verdict.explanation}</p>
+
+            {/* Проверка была тупиком: турист получал вердикт и упирался.
+                Отсюда есть два хода — посмотреть объект на карте маршрута
+                и закрепить его в поездке. Проверил — добавил к себе. */}
+            {place && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link className="btn" href={`/place/${place.id}`}>
+                  <Icon name="pin" size={16} />
+                  {t('verdictOnMap', lang)}
+                </Link>
+                <button
+                  className="btn"
+                  data-saved={(trip.pinned ?? []).includes(place.id)}
+                  onClick={() =>
+                    update({
+                      pinned: (trip.pinned ?? []).includes(place.id)
+                        ? (trip.pinned ?? []).filter((id) => id !== place.id)
+                        : [...(trip.pinned ?? []), place.id],
+                      excluded: (trip.excluded ?? []).filter((id) => id !== place.id),
+                    })
+                  }
+                >
+                  <Icon name={(trip.pinned ?? []).includes(place.id) ? 'check' : 'route'} size={16} />
+                  {t(
+                    (trip.pinned ?? []).includes(place.id) ? 'verdictSaved' : 'verdictSave',
+                    lang,
+                  )}
+                </button>
+                {(trip.pinned ?? []).includes(place.id) && (
+                  <Link className="underline text-[13px]" style={{ color: 'var(--accent)' }} href="/plan">
+                    {t('verdictOpenPlan', lang)}
+                  </Link>
+                )}
+              </div>
+            )}
 
             {result.verdict.correction && (
               <p

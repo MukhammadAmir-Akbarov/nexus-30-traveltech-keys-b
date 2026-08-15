@@ -528,6 +528,34 @@ export const UI = {
   legTaxi: { uz: 'taksi', ru: 'такси', en: 'taxi' },
   legKm: { uz: 'km', ru: 'км', en: 'km' },
   legM: { uz: 'm', ru: 'м', en: 'm' },
+
+  fieldBudget: { uz: 'Kunlik budjet', ru: 'Дневной бюджет', en: 'Daily budget' },
+  budgetHint: {
+    uz: 'Bir kunlik taxminiy xarajat: marshrut va transfer shunga moslanadi.',
+    ru: 'Ориентировочные траты за день: под них подстраиваются маршрут и переезд.',
+    en: 'Roughly what you spend per day: the itinerary and transfers adapt to it.',
+  },
+  budgetOver: {
+    uz: 'Kun budjetdan oshdi',
+    ru: 'День выходит за бюджет',
+    en: 'This day goes over budget',
+  },
+  budgetDay: { uz: 'Kun xarajati', ru: 'Траты за день', en: 'Spend for the day' },
+  fieldGuideLangs: { uz: 'Muloqot tillari', ru: 'Языки общения', en: 'Languages you speak' },
+  guideLangsHint: {
+    uz: 'Gid tanlashda ishlatiladi — interfeys tili bilan bir xil bo‘lishi shart emas.',
+    ru: 'Используется при подборе гида — это не обязательно язык интерфейса.',
+    en: 'Used when matching a guide — not necessarily your interface language.',
+  },
+
+  photoCredit: { uz: 'Surat', ru: 'Фото', en: 'Photo' },
+  photoSource: { uz: 'fayl sahifasi', ru: 'страница файла', en: 'file page' },
+  photoNone: { uz: 'Surat yo‘q', ru: 'Фото нет', en: 'No photo' },
+  photoLicense: {
+    uz: 'Suratlar — Vikiombordan, erkin litsenziyalar ostida; muallif va litsenziya obyekt sahifasida ko‘rsatilgan.',
+    ru: 'Фотографии — с Викисклада, под свободными лицензиями; автор и лицензия указаны на странице объекта.',
+    en: 'Photos come from Wikimedia Commons under free licences; author and licence are shown on each place page.',
+  },
   routeNavigator: {
     uz: 'Navigatorda ochish',
     ru: 'Открыть в навигаторе',
@@ -603,6 +631,121 @@ export const UI = {
   guidesVerified: { uz: '✓ tasdiqlangan (demo)', ru: '✓ подтверждён (демо)', en: '✓ verified (demo)' },
   guidesReviews: { uz: 'sharh', ru: 'отзывов', en: 'reviews' },
   guidesPerDay: { uz: 'kun', ru: 'день', en: 'day' },
+  tabProfile: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
+
+  homeOverline: { uz: 'O‘ZBEKISTON TURIZMI', ru: 'ТУРИЗМ УЗБЕКИСТАНА', en: 'UZBEKISTAN TRAVEL' },
+  homeGreetingSub: {
+    uz: 'Marshrut, faktlarni tekshirish va gid — bitta kontekstda.',
+    ru: 'Маршрут, проверка фактов и гид — в одном контексте.',
+    en: 'Itinerary, fact checking and a guide — in one context.',
+  },
+  homeRecommended: { uz: 'Siz uchun tavsiya', ru: 'Рекомендуем вам', en: 'Recommended for you' },
+
+  profileTitle: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
+  profileLead: {
+    uz: 'Saqlangan joylaringiz, tekshirgan faktlaringiz va sayohat sozlamalaringiz bir joyda.',
+    ru: 'Сохранённые места, проверенные факты и настройки поездки — одним местом.',
+    en: 'Your saved places, checked facts and trip settings in one place.',
+  },
+  profileStatSaved: { uz: 'Saqlangan', ru: 'Сохранено', en: 'Saved' },
+  profileStatChecks: { uz: 'Tekshirilgan', ru: 'Проверок', en: 'Checks' },
+  profileStatPinned: { uz: 'Marshrutda', ru: 'В маршруте', en: 'Pinned' },
+  profilePrefs: {
+    uz: 'Sayohat preferensiyalarim',
+    ru: 'Настройки поездки',
+    en: 'My trip preferences',
+  },
+  profileFindMore: { uz: 'obyektlarni ko‘rish', ru: 'смотреть объекты', en: 'browse places' },
+  profileChecks: {
+    uz: 'Oxirgi tekshiruvlar',
+    ru: 'Последние проверки',
+    en: 'Recent fact checks',
+  },
+  profileChecksEmpty: {
+    uz: 'Hali hech narsa tekshirilmagan.',
+    ru: 'Пока ничего не проверено.',
+    en: 'Nothing checked yet.',
+  },
+  profileCheckMore: { uz: 'faktni tekshirish', ru: 'проверить факт', en: 'check a fact' },
+  planDaysShort: { uz: 'kun', ru: 'дн.', en: 'days' },
+
+  windLabel: { uz: 'Shamol', ru: 'Ветер', en: 'Wind' },
+  windUnit: { uz: 'km/soat', ru: 'км/ч', en: 'km/h' },
+  windDust: { uz: 'shamolli', ru: 'ветрено', en: 'windy' },
+  windDustHint: {
+    uz: 'Kuchli shamol: ochiq maydonlarda chang ko‘tariladi.',
+    ru: 'Сильный ветер: на открытых площадках поднимается пыль.',
+    en: 'Strong wind: dust picks up on open squares.',
+  },
+
+  officialFacts: {
+    uz: 'Rasmiy manbalardan',
+    ru: 'Из официальных источников',
+    en: 'From official sources',
+  },
+  officialShort: { uz: 'Rasmiy manba', ru: 'Официальный источник', en: 'Official source' },
+  officialOf: { uz: 'tadan', ru: 'из', en: 'of' },
+  officialHint: {
+    uz: 'Bu obyekt haqidagi faktlarning nechtasi rasmiy manbalardan olingan: YUNESKO, vazirliklar, muzeylar.',
+    ru: 'Сколько фактов об объекте взято из официальных источников: ЮНЕСКО, министерства, музеи.',
+    en: 'How many facts about this place come from official sources: UNESCO, ministries, museums.',
+  },
+
+  saveAdd: { uz: 'Saqlash', ru: 'Сохранить', en: 'Save' },
+  savedAdded: { uz: 'Saqlangan', ru: 'Сохранено', en: 'Saved' },
+  savedTitle: { uz: 'Saqlangan joylar', ru: 'Сохранённые места', en: 'Saved places' },
+  savedEmpty: {
+    uz: 'Hali hech narsa saqlanmagan. Obyekt sahifasida «Saqlash» tugmasini bosing.',
+    ru: 'Пока ничего не сохранено. Нажмите «Сохранить» на странице объекта.',
+    en: 'Nothing saved yet. Press “Save” on a place page.',
+  },
+
+  verdictOnMap: { uz: 'Xaritada ko‘rish', ru: 'Показать на карте', en: 'Show on the map' },
+  verdictSave: {
+    uz: 'Marshrutga saqlash',
+    ru: 'Сохранить в маршрут',
+    en: 'Save to my itinerary',
+  },
+  verdictSaved: { uz: 'Marshrutda', ru: 'В маршруте', en: 'In your itinerary' },
+  verdictOpenPlan: { uz: 'marshrutni ochish', ru: 'открыть маршрут', en: 'open the itinerary' },
+
+  suggestAge: { uz: 'Qachon qurilgan?', ru: 'Когда построен?', en: 'When was it built?' },
+  suggestGuideSaid: { uz: 'Gid shunday dedi…', ru: 'Гид сказал…', en: 'The guide said…' },
+  suggestHeight: { uz: 'Bu ma’lumot to‘g‘rimi?', ru: 'Верна ли эта информация?', en: 'Is this correct?' },
+
+  guidesSearch: {
+    uz: 'Gid, shahar, til yoki yo‘nalish bo‘yicha qidiring…',
+    ru: 'Поиск по гиду, городу, языку или направлению…',
+    en: 'Search by guide, city, language or specialisation…',
+  },
+  guidesSort: { uz: 'Saralash', ru: 'Сортировка', en: 'Sort by' },
+  sortMatch: { uz: 'moslik bo‘yicha', ru: 'по совпадению', en: 'best match' },
+  sortAccuracy: { uz: 'aniqlik bo‘yicha', ru: 'по точности фактов', en: 'fact accuracy' },
+  sortPrice: { uz: 'narx bo‘yicha', ru: 'по цене', en: 'price' },
+  sortExperience: { uz: 'tajriba bo‘yicha', ru: 'по опыту', en: 'experience' },
+  guidesFound: { uz: 'Topildi', ru: 'Найдено', en: 'Found' },
+  guidesVerifiedCount: { uz: 'tasdiqlangan', ru: 'подтверждённых', en: 'verified' },
+  guidesWithinBudget: {
+    uz: 'Budjetim doirasida',
+    ru: 'В рамках моего бюджета',
+    en: 'Within my budget',
+  },
+  guidesAboveBudget: {
+    uz: 'budjetdan qimmat',
+    ru: 'дороже вашего бюджета',
+    en: 'above your budget',
+  },
+  guidesHiddenByBudget: {
+    uz: 'Budjetdan qimmatroq gidlarni ko‘rsatish',
+    ru: 'Показать гидов дороже бюджета',
+    en: 'Show guides above my budget',
+  },
+  guidesClearSearch: { uz: 'Qidiruvni tozalash', ru: 'Очистить поиск', en: 'Clear the search' },
+  guidesClearTransport: {
+    uz: 'Transport shartini olib tashlash',
+    ru: 'Снять условие «свой транспорт»',
+    en: 'Drop the “own transport” filter',
+  },
   guidesYears: { uz: 'yillik tajriba', ru: 'лет опыта', en: 'years of experience' },
   guidesByPlace: {
     uz: 'Obyektlar bo‘yicha aniqlik',

@@ -116,11 +116,11 @@ export default function HowPage() {
                 <span className="font-medium">{tr(place.name, lang)}</span>
                 <span className="muted">
                   {t('photoBy', lang)}{' '}
-                  <a href={photo.sourceUrl} target="_blank" rel="noreferrer" className="underline">
+                  <a href={photo.page} target="_blank" rel="noreferrer" className="underline">
                     {photo.author}
                   </a>{' '}
                   ·{' '}
-                  <a href={photo.licenseUrl} target="_blank" rel="noreferrer" className="underline">
+                  <a href={photo.page} target="_blank" rel="noreferrer" className="underline">
                     {photo.license}
                   </a>
                 </span>

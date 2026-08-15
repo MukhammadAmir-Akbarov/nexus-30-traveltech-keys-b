@@ -22,6 +22,14 @@ import { prayerTimes, prayersDuring } from './prayer.ts';
 import { parseTripPhrase } from './voice-trip.ts';
 import { seasonBudgetFactor, seasonFor, seasonNote, seasonsFor } from './calendar.ts';
 import {
+  budgetScoreBonus,
+  dailyCapUsd,
+  overBudget,
+  usdToUzsLabel,
+} from './budget.ts';
+import { officialFactsFor } from './sources.ts';
+import { WINDY_KMH, isWindy } from './weather.ts';
+import {
   directRoute,
   distanceLabel,
   haversineKm,
@@ -953,6 +961,83 @@ assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а �
   }
 }
 
+// --- ветер ---
+// Порядок объектов ветер не меняет: это сведение, а не правило.
+const windy: DayWeather = { date: '2026-04-10', region: 'bukhara', tMaxC: 24, precipMm: 0, windKmh: 34, source: 'forecast' };
+const calm: DayWeather = { ...windy, windKmh: 8 };
+assert.ok(isWindy(windy), `${WINDY_KMH} км/ч и выше — это уже ветрено`);
+assert.ok(!isWindy(calm), 'восемь километров в час ветром не считаются');
+assert.ok(!isWindy({ ...calm, windKmh: undefined }), 'нет данных о ветре — не выдумываем');
+assert.equal(adviceFor(windy), adviceFor(calm), 'ветер не меняет решение по дню');
+
+// --- значок официальных источников ---
+// Он обязан опираться на счёт, а не на желание показать галочку.
+const regFacts = officialFactsFor(CORPUS, 'registan');
+assert.ok(regFacts.total > 0, 'у Регистана есть факты в корпусе');
+assert.ok(regFacts.official > 0 && regFacts.official <= regFacts.total, 'официальных не больше, чем всего');
+assert.deepEqual(
+  officialFactsFor(CORPUS, 'нет-такого-объекта'),
+  { official: 0, total: 0 },
+  'у неизвестного объекта значка быть не должно',
+);
+assert.ok(
+  PLACES.some((p) => officialFactsFor(CORPUS, p.id).official === 0),
+  'значок стоит не у всех подряд — иначе он ничего не означает',
+);
+
+// --- бюджет ---
+assert.equal(dailyCapUsd('low'), 24, '300 тысяч сум — это примерно 24 доллара в день');
+assert.ok(dailyCapUsd('mid') > dailyCapUsd('low'), 'средний потолок выше экономного');
+assert.equal(dailyCapUsd('high'), Infinity, 'у премиума потолка нет');
+assert.ok(overBudget(30, 'low'), 'тридцать долларов за день не влезают в экономный бюджет');
+assert.ok(!overBudget(30, 'mid'), 'в средний влезают');
+assert.ok(!overBudget(500, undefined), 'бюджет не выбран — предупреждать не о чем');
+
+// Поправка решает споры равных, но главное не выкидывает: Регистан за $5
+// обязан остаться в маршруте даже у экономного туриста.
+assert.ok(budgetScoreBonus(0, 'low') > 0, 'бесплатный объект экономному в плюс');
+assert.ok(budgetScoreBonus(5, 'low') < 0, 'платный — в минус');
+assert.ok(budgetScoreBonus(5, 'low') > -2, 'но поправка мала: интерес весит больше');
+assert.equal(budgetScoreBonus(5, undefined), 0, 'без бюджета поправки нет');
+
+const cheap = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3, budget: 'low' });
+assert.ok(
+  cheap.days.flatMap((d) => d.items).some((i) => i.placeId === 'registan'),
+  'бюджет не должен выкидывать главный объект города',
+);
+assert.ok(
+  (cheap.cost?.perDayUsd ?? []).length === cheap.days.length,
+  'траты считаются по каждому дню — иначе не сказать, какой день вылез',
+);
+assert.ok(usdToUzsLabel(24, 'ru').includes('сум'), 'сумма показывается в сумах');
+
+// --- языки общения туриста ---
+// Узбек может искать англоязычного гида: подбор идёт по выбранным языкам,
+// а не по языку интерфейса.
+const uzUi: TripContext = { ...family, lang: 'uz', travelType: 'solo' };
+const guideQuery = { ...uzUi, gender: 'any' as const, needTransport: false };
+const wantEnglish = matchGuides(GUIDES, { ...guideQuery, languages: ['en'] });
+const wantUzbek = matchGuides(GUIDES, { ...guideQuery, languages: ['uz'] });
+assert.ok(wantEnglish.length > 0 && wantUzbek.length > 0, 'гиды находятся в обоих случаях');
+assert.ok(
+  wantEnglish[0].guide.languages.includes('en'),
+  'первым при запросе английского идёт англоговорящий гид',
+);
+assert.notDeepEqual(
+  wantEnglish.map((g) => g.guide.id),
+  wantUzbek.map((g) => g.guide.id),
+  'выбор языка обязан менять выдачу, иначе поле бесполезно',
+);
+
+// --- фотографии объектов ---
+assert.ok(Object.keys(PHOTOS).length >= 25, 'у большинства объектов есть снимок');
+for (const [id, photo] of Object.entries(PHOTOS)) {
+  assert.ok(PLACES.some((p) => p.id === id), `снимок ${id} привязан к несуществующему объекту`);
+  assert.ok(photo.url.startsWith('/photos/'), `${id}: снимок обязан лежать у нас, а не на чужом хосте`);
+  assert.ok(photo.author.length > 0 && photo.license.length > 0, `${id}: автор и лицензия обязательны`);
+  assert.ok(photo.page.includes('commons.wikimedia.org'), `${id}: ссылка на страницу файла`);
+}
+
 // --- маршрут по дорогам ---
 const registan = { lat: 39.6547, lng: 66.9749 };
 const bibiKhanym = { lat: 39.6606, lng: 66.9797 };
@@ -1334,13 +1419,13 @@ for (const id of FEATURED_IDS) {
 
   const photo = PHOTOS[id];
   assert.ok(photo, `у объекта витрины ${id} есть фотография`);
-  assert.equal(photo.src, `/places/${id}.jpg`, `путь к фото ${id} совпадает с id`);
+  assert.equal(photo.url, `/photos/${id}.jpg`, `путь к фото ${id} совпадает с id`);
 
   // Лицензия CC BY-SA требует указать автора: пустое поле — это нарушение,
   // а не косметика, и на витрине проекта про достоверность особенно.
   assert.ok(photo.author.trim().length > 0, `у фото ${id} указан автор`);
   assert.ok(photo.license.trim().length > 0, `у фото ${id} указана лицензия`);
-  assert.ok(photo.sourceUrl.startsWith('https://'), `у фото ${id} есть ссылка на источник`);
+  assert.ok(photo.page.startsWith('https://'), `у фото ${id} есть ссылка на источник`);
 }
 
 // Подряд идущие объекты одного региона создают впечатление, что больше

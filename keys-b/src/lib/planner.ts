@@ -15,6 +15,7 @@ import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 import { adviceFor } from './weather.ts';
 import { seasonBudgetFactor, seasonNote } from './calendar.ts';
+import { budgetScoreBonus } from './budget.ts';
 import { tripDates } from './weather.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
@@ -168,6 +169,8 @@ export function scorePlace(place: Place, ctx: TripContext): number {
     if (place.interests.includes('photo')) score += 0.5;
     if (place.outdoor) score += 0.5;
   }
+  // Бюджет решает споры равных, но не выкидывает главное: см. budget.ts
+  score += budgetScoreBonus(place.ticketUsd, ctx.budget);
   return score;
 }
 
@@ -393,10 +396,16 @@ function estimateCost(days: ItineraryDay[], byId: Map<string, Place>): TripCost 
     const cheapest = Math.min(...day.transfer.options.map((o) => o.priceUsd));
     return sum + cheapest;
   }, 0);
+  const perDayUsd = days.map((day) => {
+    const tickets = day.items.reduce((sum, i) => sum + (byId.get(i.placeId)?.ticketUsd ?? 0), 0);
+    const transfer = day.transfer ? Math.min(...day.transfer.options.map((o) => o.priceUsd)) : 0;
+    return Math.round(tickets + transfer);
+  });
   return {
     ticketsUsd: Math.round(ticketsUsd),
     transferUsd: Math.round(transferUsd),
     totalUsd: Math.round(ticketsUsd + transferUsd),
+    perDayUsd,
   };
 }
 

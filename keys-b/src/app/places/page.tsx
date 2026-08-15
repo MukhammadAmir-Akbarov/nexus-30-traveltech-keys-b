@@ -1,12 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Suspense, useMemo, useState } from 'react';
+import { PlacePhoto } from '@/components/PlacePhoto';
+import { SaveButton } from '@/components/SaveButton';
+import { officialFactsFor } from '@/lib/sources';
+import { CORPUS } from '@/data/corpus';
+import { useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
-import { photoOf } from '@/data/photos';
 import { PLACES } from '@/data/places';
 import { INTEREST_LABEL, REGIONS, REGION_LABEL, t, tr } from '@/lib/i18n';
 import { normalize } from '@/lib/retrieval';
@@ -17,24 +18,9 @@ import type { Region } from '@/lib/types';
 // посмотреть. Поиск использует ту же нормализацию, что и фактчек, поэтому
 // «Регистан», «registon» и «REGISTAN» находят одно и то же.
 
-/**
- * useSearchParams требует Suspense: без него страница уходит в динамический
- * рендер целиком и теряет пререндер. Оболочка ниже — ровно для этого.
- */
 export default function PlacesPage() {
-  return (
-    <Suspense fallback={<div className="skeleton" style={{ height: 320 }} />}>
-      <PlacesCatalog />
-    </Suspense>
-  );
-}
-
-function PlacesCatalog() {
   const { lang } = useTrip();
-  // с главной приходят как /places?q=..., поэтому строка поиска стартует
-  // не пустой: иначе поле на главной выглядело бы работающим, но теряло ввод
-  const initialQuery = useSearchParams().get('q') ?? '';
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState('');
   const [region, setRegion] = useState<Region | 'all'>('all');
 
   const found = useMemo(() => {
@@ -82,24 +68,9 @@ function PlacesCatalog() {
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite">
         {found.length === 0 && <div className="card muted text-sm">{t('placesEmpty', lang)}</div>}
 
-        {found.map((place) => {
-          // Фотография есть не у всех объектов — витринные пришли с Викисклада
-          // с автором и лицензией. Карточка без фото не ломается, а просто
-          // остаётся текстовой: пустая серая рамка выглядит хуже её отсутствия.
-          const photo = photoOf(place.id);
-          return (
+        {found.map((place) => (
           <Link key={place.id} href={`/place/${place.id}`} className="card card-link flex flex-col gap-2">
-            {photo && (
-              <div className="relative -mx-4 -mt-4 mb-1 aspect-[3/2] overflow-hidden rounded-t-[inherit]">
-                <Image
-                  src={photo.src}
-                  alt={tr(place.name, lang)}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-              </div>
-            )}
+            <PlacePhoto placeId={place.id} alt={tr(place.name, lang)} lang={lang} />
             <div className="text-[15px] font-semibold">{tr(place.name, lang)}</div>
             <p className="muted text-[13px]">{tr(place.summary, lang)}</p>
 
@@ -113,15 +84,28 @@ function PlacesCatalog() {
               {place.accessible && (
                 <span className="tag tag-ok">{t('placesAccessible', lang)}</span>
               )}
+              {officialFactsFor(CORPUS, place.id).official > 0 && (
+                <span className="tag tag-ok" title={t('officialHint', lang)}>
+                  <Icon name="shield" size={12} />
+                  {t('officialShort', lang)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <SaveButton placeId={place.id} compact />
             </div>
 
             <div className="muted text-[12px]">
               {place.interests.map((i) => tr(INTEREST_LABEL[i], lang)).join(', ')}
             </div>
           </Link>
-          );
-        })}
+        ))}
       </section>
+
+      {/* Права на снимки называем один раз внизу списка: у каждой карточки
+          подпись заслоняла бы сам объект, а не сказать нельзя. */}
+      <p className="muted text-[12px]">{t('photoLicense', lang)}</p>
     </div>
   );
 }
