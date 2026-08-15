@@ -6,6 +6,7 @@ import { hasAI, isMockAI, MODEL } from '@/lib/model';
 import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
 import { climateNorm, forecastFor, tripDates } from '@/lib/weather';
 import type { DayWeather, Itinerary, Lang, Mode, TripContext } from '@/lib/types';
+import { parseBody, tripContextSchema } from '../_schema';
 
 const itinerarySchema = z.object({
   summary: z.string().describe('1–2 предложения: чем этот маршрут подходит путешественнику'),
@@ -74,7 +75,16 @@ async function weatherForDraft(ctx: TripContext, lang: Lang): Promise<DayWeather
 }
 
 export async function POST(req: Request) {
-  const ctx = (await req.json()) as TripContext;
+  /*
+   * Схема пропускает незнакомые поля насквозь (`looseObject`) — весь ctx
+   * уходит в `buildItinerary`, и выброшенное здесь поле молча выключило бы
+   * чужую логику. Так, `startRegion` (город старта) появился недавно:
+   * строгая схема убрала бы его, маршрут снова начинался бы из Ташкента,
+   * и найти причину по симптому было бы почти невозможно.
+   */
+  const parsed = await parseBody(req, tripContextSchema);
+  if (!parsed.ok) return parsed.response;
+  const ctx = parsed.data as TripContext;
   const lang = ctx.lang ?? 'ru';
 
   const weather = await weatherForDraft(ctx, lang);
