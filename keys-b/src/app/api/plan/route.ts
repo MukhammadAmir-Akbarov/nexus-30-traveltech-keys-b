@@ -2,7 +2,7 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { PLACES, PLACE_BY_ID } from '@/data/places';
 import { buildItinerary } from '@/lib/planner';
-import { hasAI, MODEL } from '@/lib/model';
+import { hasAI, isMockAI, MODEL } from '@/lib/model';
 import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
 import { climateNorm, forecastFor, tripDates } from '@/lib/weather';
 import type { DayWeather, Itinerary, Lang, Mode, TripContext } from '@/lib/types';
@@ -37,7 +37,8 @@ function sanitize(raw: Itinerary): Itinerary {
     }))
     .filter((day) => day.items.length > 0)
     .map((day, index) => ({ ...day, day: index + 1 }));
-  return { summary: raw.summary, days };
+  // cost сохраняем: иначе в ветке модели бюджет поездки молча исчезал бы
+  return { summary: raw.summary, days, cost: raw.cost };
 }
 
 /**
@@ -85,6 +86,20 @@ export async function POST(req: Request) {
     });
 
   if (!hasAI()) return offline();
+
+  // Репетиция ветки модели без ключа: ответ подставляем, а дальше он проходит
+  // ровно тот же путь — санитайзинг id, сборка ответа, метка «составлено моделью».
+  if (isMockAI()) {
+    const draft = buildItinerary(PLACES, { ...ctx, lang }, weather);
+    return Response.json({
+      itinerary: sanitize({
+        summary: `[MOCK] ${draft.summary}`,
+        days: draft.days,
+        cost: draft.cost,
+      }),
+      mode: 'ai' satisfies Mode,
+    });
+  }
 
   const candidates = PLACES.filter((p) => ctx.region === 'all' || p.region === ctx.region).map(
     (p) => ({

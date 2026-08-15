@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
-import { hasAI, MODEL } from '@/lib/model';
+import { hasAI, isMockAI, MODEL } from '@/lib/model';
 import { LANG_LABEL, tr } from '@/lib/i18n';
 import { retrieve } from '@/lib/retrieval';
 import type { CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
@@ -98,6 +98,20 @@ export async function POST(req: Request) {
         sources: disputed.positions.map((p) => ({ title: p.title, url: p.url })),
       },
       'offline',
+    );
+  }
+
+  // Репетиция ветки модели без ключа: путь тот же, метка та же, ответ подставлен.
+  if (isMockAI()) {
+    if (cached) return respond({ ...cached, explanation: `[MOCK] ${cached.explanation}` }, 'ai');
+    return respond(
+      {
+        claim,
+        status: hits.length ? 'confirmed' : 'unclear',
+        explanation: `[MOCK] ${hits[0]?.item.text ?? OFFLINE_TEXT.noHits[lang]}`,
+        sources,
+      },
+      'ai',
     );
   }
 

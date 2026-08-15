@@ -19,7 +19,7 @@ const STOPWORDS = new Set([
  * расширять по мере роста корпуса.
  */
 const ALIASES: Record<string, string> = {
-  registon: 'регистан', registan: 'регистан',
+  registon: 'регистан', registan: 'регистан', registonda: 'регистан',
   samarqand: 'самарканд', samarkand: 'самарканд',
   buxoro: 'бухара', bukhara: 'бухара',
   xiva: 'хива', khiva: 'хива',
@@ -38,6 +38,10 @@ const ALIASES: Record<string, string> = {
   // без этой пары «первый объект ЮНЕСКО» находился только по-русски,
   // а на узбекском и английском тот же пример отвечал «нет данных»
   birinchi: 'первый', first: 'первый',
+  // возраст города и имена, по которым ищутся спорные темы
+  yosh: 'лет', yoshda: 'лет', age: 'лет', old: 'лет', years: 'лет', yil: 'лет',
+  bibixonim: 'биби', bibi: 'биби', bibixonym: 'биби',
+  qurdirgan: 'построен', built: 'построен', qurilgan: 'построен',
   bozor: 'базар', bazaar: 'базар',
   somoniylar: 'саманиды', samanid: 'саманиды',
   oqsaroy: 'сарай', saray: 'сарай',

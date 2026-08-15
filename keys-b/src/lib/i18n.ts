@@ -152,7 +152,7 @@ export function yearsLabel(n: number, lang: Lang): string {
 }
 
 /** Словарь интерфейса. Ключ -> три языка. */
-const UI = {
+export const UI = {
   brandSuffix: { uz: 'Hamroh', ru: 'Hamroh', en: 'Hamroh' },
 
   tabTrip: { uz: 'Sayohat', ru: 'Поездка', en: 'Trip' },
