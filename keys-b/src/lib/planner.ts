@@ -99,6 +99,13 @@ const TEXT = {
     ru: 'Короткий световой день (+{t}) — время осмотра урезано.',
     en: 'Short daylight (+{t} °C) — sightseeing time is trimmed.',
   },
+  // Объект, который закрывается раньше остальных, обязан идти раньше.
+  // Причина перестановки называется вслух, как и у погоды.
+  hoursOrder: {
+    uz: 'Tartib ish vaqtiga moslandi: {name} soat {time} da yopiladi.',
+    ru: 'Порядок изменён под часы работы: {name} закрывается в {time}.',
+    en: 'Order adjusted to opening hours: {name} closes at {time}.',
+  },
   more: { uz: 'yana', ru: 'ещё', en: 'plus' },
   empty: {
     uz: 'Tanlangan filtrlarga mos obyekt topilmadi — qiziqishlar sonini kamaytiring.',
@@ -158,6 +165,16 @@ const RULE: Record<string, I18nText> = {
     uz: 'Ob-havo kunlar ichidagi tartibni o‘zgartirdi, tarkibni emas.',
     ru: 'Погода изменила порядок внутри дней, но не состав.',
     en: 'Weather changed the order within days, not the selection.',
+  },
+  hours: {
+    uz: 'Obyektlarning ish vaqti hisobga olindi: erta yopiladigani oldinga chiqdi.',
+    ru: 'Учтены часы работы: объект, закрывающийся раньше, поставлен раньше.',
+    en: 'Opening hours applied: sites that close earlier were moved up.',
+  },
+  travelers: {
+    uz: 'Xarajatlar {n} kishiga hisoblangan.',
+    ru: 'Расходы посчитаны на {n} человек.',
+    en: 'Costs calculated for {n} travellers.',
   },
   season: {
     uz: 'Bayram kunlari: kunlik ko‘rish vaqti qisqartirildi.',
@@ -341,6 +358,47 @@ function schedule(
   });
 }
 
+/**
+ * Расписание дня с поправкой на часы работы.
+ *
+ * Порядок по близости хорош ровно до тех пор, пока не упирается в расписание:
+ * объект, который закрывается в 17:00, должен идти раньше того, что открыт
+ * до 19:00, даже если он на километр дальше. Раньше маршрут просто ставил
+ * рядом с ним метку «закрыт» — это диагноз, а не помощь.
+ *
+ * Пробуем один альтернативный порядок — по времени закрытия — и берём его,
+ * только если закрытых объектов стало меньше. Перебирать все перестановки
+ * незачем: в дне их пять-шесть, а правило должно читаться словами.
+ */
+function scheduleDay(
+  items: ItineraryItem[],
+  byId: Map<string, Place>,
+  transferMinutes: number,
+  lang: Lang,
+): { items: ItineraryItem[]; hoursNote?: string } {
+  const asIs = schedule(items, byId, transferMinutes);
+  const closed = asIs.filter((item) => item.closed).length;
+  if (closed === 0 || items.length < 2) return { items: asIs };
+
+  const LATE = 24 * 60; // площадям и открытым пространствам закрытия нет
+  const byHours = [...items].sort(
+    (a, b) => (byId.get(a.placeId)?.closes ?? LATE) - (byId.get(b.placeId)?.closes ?? LATE),
+  );
+  const fixed = schedule(byHours, byId, transferMinutes);
+  if (fixed.filter((item) => item.closed).length >= closed) return { items: asIs };
+
+  const earliest = byId.get(byHours[0].placeId);
+  return {
+    items: fixed,
+    hoursNote:
+      earliest?.closes === undefined
+        ? undefined
+        : TEXT.hoursOrder[lang]
+            .replace('{name}', earliest.name[lang])
+            .replace('{time}', clock(earliest.closes)),
+  };
+}
+
 function makeDay(
   dayNumber: number,
   picked: Place[],
@@ -350,38 +408,59 @@ function makeDay(
 ): ItineraryDay {
   const ordered = orderByProximity(picked);
   const transferMinutes = transfer ? Math.round(transferHours(transfer) * 60) : 0;
+  const scheduled = scheduleDay(
+    ordered.map((p, index) => ({ placeId: p.id, note: noteFor(p, ctx, lang, index === 0) })),
+    new Map(ordered.map((p) => [p.id, p])),
+    transferMinutes,
+    lang,
+  );
+  // порядок мог измениться под часы работы — заголовок собираем по нему,
+  // иначе день назван по объекту, который стоит уже не первым
+  const byId = new Map(picked.map((p) => [p.id, p]));
+  const finalOrder = scheduled.items.flatMap((item) => {
+    const place = byId.get(item.placeId);
+    return place ? [place] : [];
+  });
   return {
     day: dayNumber,
-    title: dayTitle(ordered, lang),
+    title: dayTitle(finalOrder.length ? finalOrder : ordered, lang),
     transfer,
-    items: schedule(
-      ordered.map((p, index) => ({ placeId: p.id, note: noteFor(p, ctx, lang, index === 0) })),
-      new Map(ordered.map((p) => [p.id, p])),
-      transferMinutes,
-    ),
+    items: scheduled.items,
+    hoursNote: scheduled.hoursNote,
   };
 }
 
-/** Ориентировочная стоимость: билеты плюс самый дешёвый вариант каждого переезда. */
-function estimateCost(days: ItineraryDay[], byId: Map<string, Place>): TripCost {
+/**
+ * Ориентировочная стоимость: билеты плюс самый дешёвый вариант каждого переезда.
+ *
+ * Всё умножается на число путешественников: и билет, и место в поезде продаются
+ * на человека. Раньше считалось на одного при любом формате, и семья из четверых
+ * видела сумму вчетверо меньше настоящей — хуже, чем не считать вовсе.
+ */
+function estimateCost(days: ItineraryDay[], byId: Map<string, Place>, travelers = 1): TripCost {
+  const people = Math.max(1, Math.round(travelers));
   const ticketsUsd = days
     .flatMap((d) => d.items)
-    .reduce((sum, item) => sum + (byId.get(item.placeId)?.ticketUsd ?? 0), 0);
-  const transferUsd = days.reduce((sum, day) => {
-    if (!day.transfer) return sum;
-    const cheapest = Math.min(...day.transfer.options.map((o) => o.priceUsd));
-    return sum + cheapest;
-  }, 0);
+    .reduce((sum, item) => sum + (byId.get(item.placeId)?.ticketUsd ?? 0), 0) * people;
+  const transferUsd =
+    days.reduce((sum, day) => {
+      if (!day.transfer) return sum;
+      const cheapest = Math.min(...day.transfer.options.map((o) => o.priceUsd));
+      return sum + cheapest;
+    }, 0) * people;
   const perDayUsd = days.map((day) => {
     const tickets = day.items.reduce((sum, i) => sum + (byId.get(i.placeId)?.ticketUsd ?? 0), 0);
     const transfer = day.transfer ? Math.min(...day.transfer.options.map((o) => o.priceUsd)) : 0;
-    return Math.round(tickets + transfer);
+    return Math.round((tickets + transfer) * people);
   });
+  const totalUsd = Math.round(ticketsUsd + transferUsd);
   return {
     ticketsUsd: Math.round(ticketsUsd),
     transferUsd: Math.round(transferUsd),
-    totalUsd: Math.round(ticketsUsd + transferUsd),
+    totalUsd,
     perDayUsd,
+    travelers: people,
+    perPersonUsd: Math.round(totalUsd / people),
   };
 }
 
@@ -411,13 +490,17 @@ function applyWeather(day: ItineraryDay, weather: DayWeather, byId: Map<string, 
   // оба считались по прежнему порядку. Пересобираем ровно теми же функциями,
   // что и при сборке дня, иначе два места разъезжаются.
   let title = day.title;
+  let hoursNote = day.hoursNote;
   if (items !== day.items) {
+    const transferMinutes = day.transfer ? Math.round(transferHours(day.transfer) * 60) : 0;
+    // часы работы важнее погоды: закрытая дверь портит день сильнее жары
+    const scheduled = scheduleDay(items, byId, transferMinutes, lang);
+    items = scheduled.items;
+    hoursNote = scheduled.hoursNote;
     const places = items.flatMap((item) => {
       const place = byId.get(item.placeId);
       return place ? [place] : [];
     });
-    const transferMinutes = day.transfer ? Math.round(transferHours(day.transfer) * 60) : 0;
-    items = schedule(items, byId, transferMinutes);
     if (places.length > 0) title = dayTitle(places, lang);
   }
 
@@ -427,6 +510,7 @@ function applyWeather(day: ItineraryDay, weather: DayWeather, byId: Map<string, 
     ...day,
     title,
     items,
+    hoursNote,
     weather,
     weatherNote: note,
     seasonNote: seasonNote(weather.date, lang) ?? undefined,
@@ -572,11 +656,18 @@ export function buildItinerary(
   if (ctx.accessibleOnly) fill('accessible');
   if (ctx.budget === 'low') fill('budget');
   if (weatherByDay?.length) fill('weather');
+  if (withWeather.some((d) => d.hoursNote)) fill('hours');
+  if ((ctx.travelers ?? 1) > 1) fill('travelers', ctx.travelers);
   if (withWeather.some((d) => d.seasonNote)) fill('season');
   if ((ctx.pinned ?? []).length) fill('pinned', (ctx.pinned ?? []).length);
   if ((ctx.excluded ?? []).length) fill('excluded', (ctx.excluded ?? []).length);
   const transferCount = withWeather.filter((d) => d.transfer).length;
   if (transferCount) fill('transfers', transferCount);
 
-  return { summary, days: withWeather, cost: estimateCost(withWeather, byId), rules };
+  return {
+    summary,
+    days: withWeather,
+    cost: estimateCost(withWeather, byId, ctx.travelers),
+    rules,
+  };
 }

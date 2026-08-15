@@ -45,7 +45,7 @@ console.log(`\nСквозной прогон: ${BASE}\n`);
 
 // --- страницы ---
 console.log('Страницы');
-for (const path of ['/', '/plan', '/compare', '/check', '/guides', '/how', '/qr', '/login']) {
+for (const path of ['/', '/plan', '/compare', '/check', '/guides', '/places', '/profile', '/how', '/qr', '/login']) {
   await check(`${path} отвечает 200`, async () => {
     const res = await fetch(`${BASE}${path}`);
     assert.equal(res.status, 200);
@@ -234,6 +234,68 @@ await check('заявка с объекта принимается', async () =>
 await check('пустая заявка отклоняется', async () => {
   const { res } = await json('/api/requests', { kind: 'place-problem', targetId: 'registan' });
   assert.equal(res.status, 400);
+});
+
+// --- страницы объекта и каталог ---
+console.log('\nОбъекты');
+await check('карточка объекта отдаётся по QR-ссылке', async () => {
+  const res = await fetch(`${BASE}/place/registan`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  // заголовок свой у каждого объекта, а не общий на приложение
+  assert.ok(/<title>[^<]*Registon/i.test(html), 'в заголовке страницы должно быть имя объекта');
+  // разметка для поисковика опирается на те же данные, что видит человек
+  assert.ok(html.includes('TouristAttraction'), 'на странице объекта должна быть разметка schema.org');
+});
+
+await check('несуществующий объект даёт 404, а не пустоту', async () => {
+  const res = await fetch(`${BASE}/place/no-such-place`);
+  assert.equal(res.status, 404);
+  const html = await res.text();
+  // своя страница внутри оболочки приложения, а не служебная заглушка Next
+  assert.ok(html.includes('Turizm'), 'на странице «не нашлось» должна остаться шапка приложения');
+});
+
+// --- служебное ---
+console.log('\nСлужебное');
+await check('состояние приложения отвечает и база связна', async () => {
+  const res = await fetch(`${BASE}/api/health`);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.ok, true, 'база должна быть связна');
+  assert.equal(data.dangling, 0, 'висячих ссылок быть не должно');
+  assert.ok(data.places > 0 && data.guides > 0);
+});
+
+await check('карта сайта содержит объекты', async () => {
+  const res = await fetch(`${BASE}/sitemap.xml`);
+  assert.equal(res.status, 200);
+  const xml = await res.text();
+  assert.ok(xml.includes('/place/registan'), 'объекты должны быть видны поисковику');
+});
+
+await check('служебные разделы закрыты от индексации', async () => {
+  const text = await (await fetch(`${BASE}/robots.txt`)).text();
+  for (const path of ['/admin', '/guide', '/api']) {
+    assert.ok(text.includes(`Disallow: ${path}`), `${path} обязан быть закрыт`);
+  }
+});
+
+await check('заголовки безопасности стоят на всех страницах', async () => {
+  const res = await fetch(`${BASE}/`);
+  assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(res.headers.get('x-frame-options'), 'SAMEORIGIN');
+  assert.ok(res.headers.get('referrer-policy'));
+});
+
+await check('проверка принимает источник утверждения', async () => {
+  const { res, data } = await json('/api/check', {
+    claim: 'Регистан построен в XV веке',
+    lang: 'ru',
+    source: 'sign',
+  });
+  assert.equal(res.status, 200);
+  assert.ok(data.verdict, 'вердикт должен вернуться и с указанным источником');
 });
 
 console.log(`\nИтог: ${passed} проверок пройдено, ${failures.length} упало.\n`);

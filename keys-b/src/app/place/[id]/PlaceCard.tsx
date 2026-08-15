@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
+import { OpenNow } from '@/components/OpenNow';
+import { PinButton } from '@/components/PinButton';
 import { PlacePhoto } from '@/components/PlacePhoto';
 import { SaveButton } from '@/components/SaveButton';
 import { officialFactsFor } from '@/lib/sources';
 import { RequestForm } from '@/components/RequestForm';
 import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
+import { usdToUzsLabel } from '@/lib/budget';
+import { navigatorUrl } from '@/lib/route';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
 import type { CorpusItem, Place } from '@/lib/types';
 
@@ -48,11 +52,42 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
           );
         })()}
 
+        {/* Часы работы и цена билета лежали в данных и не показывались тут
+            вовсе: человек у входа видел всё, кроме того, что ему нужно
+            в эту минуту. */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
+          <OpenNow place={place} />
+          <span className="tag">
+            {t('placeTicket', lang)}:{' '}
+            {place.ticketUsd ? (
+              <>
+                ${place.ticketUsd} <span className="muted">· {usdToUzsLabel(place.ticketUsd, lang)}</span>
+              </>
+            ) : (
+              t('placeFree', lang)
+            )}
+          </span>
+          {place.accessible && <span className="tag tag-ok">{t('placesAccessible', lang)}</span>}
+        </div>
+
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <SaveButton placeId={place.id} />
+          {/* Закрепить объект можно было только изнутри готового маршрута —
+              то есть тот, которого в маршруте нет, закрепить было нельзя. */}
+          <PinButton placeId={place.id} />
           <SpeakButton
             text={[tr(place.name, lang), tr(place.summary, lang), ...facts.map((f) => f.text)].join('. ')}
           />
+          {/* Карточка отвечала на «что это», но не на «как сюда дойти». */}
+          <a
+            className="btn"
+            href={navigatorUrl([{ lat: place.lat, lng: place.lng }])}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Icon name="route" size={16} />
+            {t('placeNavigator', lang)}
+          </a>
         </div>
       </section>
 

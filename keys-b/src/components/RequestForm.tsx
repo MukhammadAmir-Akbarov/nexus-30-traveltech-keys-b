@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { Icon, type IconName } from './Icon';
 import { useTrip } from './TripProvider';
-import { t } from '@/lib/i18n';
+import { GUIDE_LANG_LABEL, REGION_LABEL, t, tr } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
-import type { RequestKind } from '@/lib/types';
+import type { Lang, RequestKind, TripContext } from '@/lib/types';
 
 // Одна форма на оба сценария: «проблема на объекте» и «запросить гида».
 // Разные они только заголовком и адресатом, поэтому двух компонентов не нужно.
@@ -18,8 +18,32 @@ const UI: Record<RequestKind, { title: UiKey; hint: UiKey; icon: IconName }> = {
 /** Коды отправленных заявок. Аккаунта у туриста нет — статус ищем по ним. */
 export const CODES_KEY = 'nexus30.requests';
 
+/**
+ * Черновик заявки гиду из контекста поездки.
+ *
+ * Даты, города, языки и число человек турист уже назвал на главной, а в форме
+ * заявки набирал их заново руками — и обычно не набирал: гид получал «нужен
+ * гид» без единой подробности и не мог ответить ничего осмысленного.
+ * Текст остаётся черновиком: его видно и его можно переписать.
+ */
+function draftFor(trip: TripContext, lang: Lang): string {
+  const parts: string[] = [];
+  const dates =
+    trip.startDate && trip.endDate
+      ? `${trip.startDate} — ${trip.endDate}`
+      : trip.startDate ?? `${trip.days} ${t('daysShort', lang)}`;
+  parts.push(`${t('draftDates', lang)}: ${dates}`);
+  if (trip.regions.length) {
+    parts.push(`${t('draftCities', lang)}: ${trip.regions.map((r) => tr(REGION_LABEL[r], lang)).join(', ')}`);
+  }
+  const langs = trip.guideLangs?.length ? trip.guideLangs : [lang];
+  parts.push(`${t('draftLangs', lang)}: ${langs.map((l) => tr(GUIDE_LANG_LABEL[l], lang)).join(', ')}`);
+  parts.push(`${t('draftPeople', lang)}: ${trip.travelers ?? 1}`);
+  return parts.join('. ') + '.';
+}
+
 export function RequestForm({ kind, targetId }: { kind: RequestKind; targetId: string }) {
-  const { lang } = useTrip();
+  const { lang, trip } = useTrip();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [contact, setContact] = useState('');
@@ -74,7 +98,15 @@ export function RequestForm({ kind, targetId }: { kind: RequestKind; targetId: s
 
   if (!open) {
     return (
-      <button className="chip" onClick={() => setOpen(true)}>
+      <button
+        className="chip"
+        onClick={() => {
+          // черновик собираем в момент открытия: к этому времени контекст
+          // поездки уже прочитан из localStorage, а на первом рендере — ещё нет
+          if (kind === 'guide-booking' && !message) setMessage(draftFor(trip, lang));
+          setOpen(true);
+        }}
+      >
         <Icon name={UI[kind].icon} size={14} />
         {t(UI[kind].title, lang)}
       </button>

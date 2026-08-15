@@ -3,7 +3,8 @@
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
-import type { I18nText, Region } from '@/lib/types';
+import type { UiKey } from '@/lib/i18n';
+import type { ClaimSource, I18nText, Region } from '@/lib/types';
 
 type Row = {
   placeId: string;
@@ -15,7 +16,24 @@ type Row = {
 
 type Gap = { claim: string; count: number; placeId?: string; at: string; name: I18nText | null };
 
-export function AdminReport({ rows, gaps = [] }: { rows: Row[]; gaps?: Gap[] }) {
+type SourceRow = { source: ClaimSource; total: number; refuted: number };
+
+const SOURCE_KEY: Record<ClaimSource, UiKey> = {
+  guide: 'srcGuide',
+  sign: 'srcSign',
+  internet: 'srcInternet',
+  other: 'srcOther',
+};
+
+export function AdminReport({
+  rows,
+  gaps = [],
+  sources = [],
+}: {
+  rows: Row[];
+  gaps?: Gap[];
+  sources?: SourceRow[];
+}) {
   const { lang } = useTrip();
 
   const totalChecks = rows.reduce((sum, r) => sum + r.confirmed + r.refuted, 0);
@@ -168,6 +186,49 @@ export function AdminReport({ rows, gaps = [] }: { rows: Row[]; gaps?: Gap[] }) 
           </ul>
         )}
       </section>
+
+      {/* Откуда приходит недостоверное. Отчёт по объектам отвечает на «где»,
+          этот блок — на «через что»: гид, табличка у входа или первая ссылка
+          в поиске. Без него весь механизм выглядит как претензия к гидам. */}
+      {sources.length > 0 && (
+        <section className="card flex flex-col gap-3">
+          <b className="text-sm">{t('reportSourcesTitle', lang)}</b>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="w-full text-[13px]" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr className="muted text-start">
+                  <th className="py-2 text-start">{t('reportColSource', lang)}</th>
+                  <th className="py-2 text-start">{t('reportColChecks', lang)}</th>
+                  <th className="py-2 text-start">{t('reportColRefuted', lang)}</th>
+                  <th className="py-2 text-start">{t('reportColShare', lang)}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((row) => {
+                  const share = Math.round((row.refuted / row.total) * 100);
+                  return (
+                    <tr key={row.source} style={{ borderTop: '1px solid var(--border)' }}>
+                      <td className="py-2 font-semibold">{t(SOURCE_KEY[row.source], lang)}</td>
+                      <td className="py-2">{row.total}</td>
+                      <td className="py-2">{row.refuted}</td>
+                      <td className="py-2">
+                        <span
+                          className={
+                            share >= 50 ? 'tag tag-danger' : share > 0 ? 'tag tag-warn' : 'tag tag-ok'
+                          }
+                        >
+                          {share}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="muted prose-measure text-[12px]">{t('reportSourcesNote', lang)}</p>
+        </section>
+      )}
     </div>
   );
 }

@@ -92,6 +92,37 @@ export function prayerTimes(region: Region, date: string): Record<Prayer, string
   };
 }
 
+/**
+ * Восход, закат и золотой час.
+ *
+ * Считается тем же солнцем, что и намаз, — сеть не нужна. Нужно это тем, кто
+ * выбрал интерес «фото»: Регистан в полдень и Регистан за полчаса до заката —
+ * это два разных снимка, и знать об этом надо до, а не после поездки.
+ */
+export function sunTimes(
+  region: Region,
+  date: string,
+): { sunrise: string; sunset: string; goldenMorning: string; goldenEvening: string } {
+  const { lat, lng } = REGION_CENTER[region];
+  const when = new Date(`${date}T12:00:00Z`);
+  const { declination, equationOfTime } = sunPosition(when);
+  const noon = 720 - 4 * lng - equationOfTime + 5 * 60;
+
+  const cosH =
+    (Math.sin(rad(-0.833)) - Math.sin(rad(lat)) * Math.sin(declination)) /
+    (Math.cos(rad(lat)) * Math.cos(declination));
+  // на широтах Узбекистана солнце восходит всегда; защита — от деления, не от полярной ночи
+  const half = cosH < -1 || cosH > 1 ? 360 : 4 * deg(Math.acos(cosH));
+
+  return {
+    sunrise: clock(noon - half),
+    sunset: clock(noon + half),
+    // золотой час: первый час после восхода и последний перед закатом
+    goldenMorning: clock(noon - half + 60),
+    goldenEvening: clock(noon + half - 60),
+  };
+}
+
 /** Намазы, которые попадают внутрь осмотра объекта, — их и показываем в дне. */
 export function prayersDuring(
   times: Record<Prayer, string>,

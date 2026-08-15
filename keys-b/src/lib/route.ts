@@ -190,6 +190,19 @@ export function dayDuration(
   return { total: visit + travel, visit, travel };
 }
 
+/**
+ * Дальше этого дня не бывает отдыха: осмотр плюс дорога.
+ *
+ * Десять часов на ногах в Самарканде летом — это не насыщенная программа,
+ * а испорченный день и брошенный маршрут к обеду. Сказать об этом должна
+ * система, пока человек ещё дома и может что-то убрать.
+ */
+export const LONG_DAY_MINUTES = 600;
+
+export function isLongDay(totalMinutes: number): boolean {
+  return totalMinutes > LONG_DAY_MINUTES;
+}
+
 /** «6 ч 40 мин» — часы и минуты, потому что «400 мин» никто не читает. */
 export function hoursLabel(minutes: number, lang: 'uz' | 'ru' | 'en'): string {
   const h = Math.floor(minutes / 60);
