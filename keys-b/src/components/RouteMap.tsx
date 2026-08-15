@@ -13,7 +13,8 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
-import { tr } from '@/lib/i18n';
+import { t, tr } from '@/lib/i18n';
+import { dayColor, type DayRoute } from '@/lib/route';
 import type { Lang, Place } from '@/lib/types';
 
 // Карта маршрута на MapLibre GL.
@@ -59,24 +60,44 @@ const RASTER_STYLE: StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-/** Цвета дней: маршрут читается с одного взгляда, без легенды. */
-const DAY_COLORS = ['#0d7a75', '#c2610a', '#5b53c4', '#a3123f', '#2f7d1f', '#8a6d00', '#0f6ea8'];
-
 export type RoutePoint = { place: Place; day: number };
 
-export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang: Lang }) {
+/** Каждый день — отдельная линия своего цвета: маршрут читается без легенды. */
+function toFeatures(routes: DayRoute[]): GeoJSON.FeatureCollection<GeoJSON.LineString> {
+  return {
+    type: 'FeatureCollection',
+    features: routes.map((route) => ({
+      type: 'Feature',
+      properties: { color: dayColor(route.day), direct: route.source === 'direct' },
+      geometry: { type: 'LineString', coordinates: route.line },
+    })),
+  };
+}
+
+export default function RouteMap({
+  points,
+  routes,
+  lang,
+}: {
+  points: RoutePoint[];
+  routes: DayRoute[];
+  lang: Lang;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
 
   // Данные читаем через ref, а эффект держим на строковом ключе.
   // Иначе массив точек — новый объект на каждый рендер, эффект перезапускается,
   // карта успевает только создаться и тут же уничтожиться: маркеры не появляются.
-  const data = useRef({ points, lang });
+  const data = useRef({ points, routes, lang });
   const key = `${points.map((p) => `${p.place.id}:${p.day}`).join(',')}|${lang}`;
+  // геометрия приходит позже точек: сначала прямые, потом дороги
+  const shapeKey = routes.map((r) => `${r.day}:${r.source}:${r.line.length}`).join(',');
+  const redraw = useRef<() => void>(() => {});
 
   // ref обновляем в эффекте, а не во время рендера: рендер должен быть чистым
   useEffect(() => {
-    data.current = { points, lang };
+    data.current = { points, routes, lang };
   });
 
   useEffect(() => {
@@ -109,28 +130,45 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-left');
 
     const draw = () => {
-      // линия маршрута отдельным слоем под маркерами
-      const line: GeoJSON.Feature<GeoJSON.LineString> = {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: points.map((p) => [p.place.lng, p.place.lat]),
-        },
-      };
+      const shape = toFeatures(data.current.routes);
 
       if (instance.getSource('route')) {
-        (instance.getSource('route') as GeoJSONSource).setData(line);
-      } else {
-        instance.addSource('route', { type: 'geojson', data: line });
-        instance.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#0d7a75', 'line-width': 3, 'line-opacity': 0.75 },
-        });
+        (instance.getSource('route') as GeoJSONSource).setData(shape);
+        return;
       }
+
+      instance.addSource('route', { type: 'geojson', data: shape });
+      // Белая подложка под линией: без неё маршрут теряется среди дорог,
+      // которые на векторной карте тоже цветные.
+      instance.addLayer({
+        id: 'route-casing',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.9 },
+      });
+      instance.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        filter: ['!', ['get', 'direct']],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': ['get', 'color'], 'line-width': 4.5 },
+      });
+      // Прямая линия — не дорога, и выглядеть она должна иначе: пунктир
+      // честно говорит «маршрутизатор недоступен, это направление, не путь».
+      instance.addLayer({
+        id: 'route-direct',
+        type: 'line',
+        source: 'route',
+        filter: ['get', 'direct'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 3.5,
+          'line-dasharray': [1.5, 1.5],
+        },
+      });
     };
 
     // Маркеры ставим сразу, не дожидаясь события load: оно наступает только
@@ -142,7 +180,7 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
       points.forEach((point, index) => {
         const el = document.createElement('div');
         el.className = 'map-pin';
-        el.style.background = DAY_COLORS[(point.day - 1) % DAY_COLORS.length];
+        el.style.background = dayColor(point.day);
         el.textContent = String(index + 1);
         el.title = `${index + 1}. ${tr(point.place.name, lang)}`;
 
@@ -176,7 +214,6 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
     // (доугружаются шрифты и спрайты), а слой добавляется и без них.
     // Поэтому пробуем на каждом styledata и глушим ошибку «стиль ещё не готов».
     const tryDraw = () => {
-      if (instance.getSource('route')) return;
       try {
         draw();
         if (container.current) container.current.dataset.ready = '1';
@@ -184,18 +221,28 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
         // стиль ещё не разобран — попробуем на следующем событии
       }
     };
+    redraw.current = tryDraw;
     instance.on('styledata', tryDraw);
     instance.on('idle', tryDraw);
     tryDraw();
 
     return () => {
+      redraw.current = () => {};
       instance.remove();
       map.current = null;
     };
     // перерисовываем только на смену состава маршрута или языка подписей
   }, [key]);
 
+  // Дороги приходят с сети позже: обновляем линию, не пересоздавая карту.
+  useEffect(() => {
+    redraw.current();
+  }, [shapeKey]);
+
   if (points.length === 0) return null;
+
+  const days = [...new Set(points.map((p) => p.day))];
+  const direct = routes.length > 0 && routes.every((r) => r.source === 'direct');
 
   return (
     <>
@@ -214,6 +261,20 @@ export default function RouteMap({ points, lang }: { points: RoutePoint[]; lang:
 
       <div aria-hidden="true">
         <div ref={container} className="route-map" />
+
+        {/* Что означают цвета линий и точек. Один день — легенда не нужна. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+          {days.length > 1 &&
+            days.map((day) => (
+              <span key={day} className="inline-flex items-center gap-1.5">
+                <i className="legend-dot" style={{ background: dayColor(day) }} />
+                {t('planDay', lang)} {day}
+              </span>
+            ))}
+          <span className="muted">
+            {t(direct ? 'routeDirectNote' : 'routeRoadsNote', lang)}
+          </span>
+        </div>
       </div>
     </>
   );

@@ -353,6 +353,22 @@ h2 {
    не слепила рядом с тёмным интерфейсом. */
 .route-map canvas { filter: var(--map-filter); }
 
+/* Кружок легенды: тот же цвет, что у линии и точек этого дня. */
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Переход между объектами: короткая строка со сдвигом влево, чтобы читалась
+   как связка между шагами, а не как ещё одно свойство объекта. */
+.leg-hop {
+  border-left: 2px dotted var(--border);
+  margin-left: -1.5rem;
+  padding-left: 1.4rem;
+}
+
 /* Нумерованная точка маршрута. Цвет задаётся из кода — по дню. */
 .map-pin {
   width: 26px;

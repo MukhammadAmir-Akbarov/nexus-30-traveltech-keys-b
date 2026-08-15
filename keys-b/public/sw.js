@@ -28,6 +28,9 @@ const TILE_CACHE = 'hamroh-tiles-v1';
 const TILE_HOSTS = [
   // векторный источник по умолчанию
   'tiles.openfreemap.org',
+  // маршрутизатор: один и тот же маршрут запрашивается тем же адресом,
+  // поэтому кэш-первым он и работает офлайн, и не ходит в сеть повторно
+  'router.project-osrm.org',
   // растровый запасной
   'tile.openstreetmap.org',
   'a.tile.openstreetmap.org',

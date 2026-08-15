@@ -3,6 +3,7 @@ import type {
   I18nText,
   Itinerary,
   ItineraryDay,
+  ItineraryItem,
   Lang,
   Place,
   Region,
@@ -243,6 +244,44 @@ function fillDay(pool: Place[], budgetMinutes: number): Place[] {
   return picked;
 }
 
+/**
+ * Заголовок дня: город и первый объект. Порядок объектов может поменяться
+ * от погоды, поэтому заголовок собирается отдельной функцией — чтобы его
+ * можно было пересобрать вместе с порядком, а не оставить от прежнего.
+ */
+function dayTitle(places: Place[], lang: Lang): string {
+  const city = REGION_NAME[places[0].region][lang];
+  return places.length > 1
+    ? `${city}: ${places[0].name[lang]} + ${TEXT.more[lang]} ${places.length - 1}`
+    : `${city}: ${places[0].name[lang]}`;
+}
+
+/**
+ * Проставляет время осмотра по текущему порядку объектов.
+ *
+ * Считается один раз на порядок, а не один раз на день: погода объекты
+ * переставляет, и без пересчёта маршрут читался «10:30, 09:00, 12:15» —
+ * время от прежнего порядка при новом составе строк.
+ */
+function schedule(
+  items: ItineraryItem[],
+  byId: Map<string, Place>,
+  transferMinutes: number,
+): ItineraryItem[] {
+  // день с переездом начинается позже: сначала доехали, потом смотрим
+  let startedAt = DAY_START + transferMinutes;
+  return items.map((item) => {
+    const place = byId.get(item.placeId);
+    const at = clock(startedAt);
+    // закрыт, если приходим после закрытия или до открытия
+    const closed =
+      place?.closes !== undefined &&
+      (startedAt >= place.closes || (place.opens !== undefined && startedAt < place.opens));
+    startedAt += (place?.visitMinutes ?? 0) + HOP_MINUTES;
+    return { ...item, at, closed };
+  });
+}
+
 function makeDay(
   dayNumber: number,
   picked: Place[],
@@ -251,34 +290,16 @@ function makeDay(
   transfer?: Transfer,
 ): ItineraryDay {
   const ordered = orderByProximity(picked);
-  // день с переездом начинается позже: сначала доехали, потом смотрим
   const transferMinutes = transfer ? Math.round(transferHours(transfer) * 60) : 0;
-  const cityTitle = REGION_NAME[ordered[0].region][lang];
   return {
     day: dayNumber,
-    title:
-      ordered.length > 1
-        ? `${cityTitle}: ${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
-        : `${cityTitle}: ${ordered[0].name[lang]}`,
+    title: dayTitle(ordered, lang),
     transfer,
-    items: ordered.map((p, index) => {
-      // время накапливаем от начала дня: осмотр + переход до следующего объекта
-      const startedAt =
-        DAY_START +
-        transferMinutes +
-        ordered
-          .slice(0, index)
-          .reduce((sum, prev) => sum + prev.visitMinutes + HOP_MINUTES, 0);
-      return {
-        placeId: p.id,
-        note: noteFor(p, ctx, lang, index === 0),
-        at: clock(startedAt),
-        // закрыт, если приходим после закрытия или до открытия
-        closed:
-          p.closes !== undefined &&
-          (startedAt >= p.closes || (p.opens !== undefined && startedAt < p.opens)),
-      };
-    }),
+    items: schedule(
+      ordered.map((p, index) => ({ placeId: p.id, note: noteFor(p, ctx, lang, index === 0) })),
+      new Map(ordered.map((p) => [p.id, p])),
+      transferMinutes,
+    ),
   };
 }
 
@@ -321,9 +342,30 @@ function applyWeather(day: ItineraryDay, weather: DayWeather, byId: Map<string, 
     note = TEXT.weatherShortDay[lang].replace('{t}', String(weather.tMaxC));
   }
 
+  // Порядок изменился — значит устарели и время осмотра, и заголовок дня:
+  // оба считались по прежнему порядку. Пересобираем ровно теми же функциями,
+  // что и при сборке дня, иначе два места разъезжаются.
+  let title = day.title;
+  if (items !== day.items) {
+    const places = items.flatMap((item) => {
+      const place = byId.get(item.placeId);
+      return place ? [place] : [];
+    });
+    const transferMinutes = day.transfer ? Math.round(transferHours(day.transfer) * 60) : 0;
+    items = schedule(items, byId, transferMinutes);
+    if (places.length > 0) title = dayTitle(places, lang);
+  }
+
   // Сезон известен из даты погоды: Рамадан и Навруз меняют часы работы
   // и людность сильнее любого дождя, а для зиёрат-туризма — важнее всего.
-  return { ...day, items, weather, weatherNote: note, seasonNote: seasonNote(weather.date, lang) ?? undefined };
+  return {
+    ...day,
+    title,
+    items,
+    weather,
+    weatherNote: note,
+    seasonNote: seasonNote(weather.date, lang) ?? undefined,
+  };
 }
 
 export function buildItinerary(
