@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
+import type { TouristRequest } from '@/lib/types';
 import { MIN_CHECKS } from '@/lib/match';
 import { t, tr } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
@@ -23,16 +24,20 @@ export function GuidePanel({
   accuracy,
   byPlace,
   verdicts,
+  requests,
 }: {
   name: string;
   email: string;
   accuracy: GuideAccuracy;
   byPlace: GuideAccuracyByPlace;
   verdicts: Row[];
+  /** Входящие заявки туристов именно к этому гиду. */
+  requests: TouristRequest[];
 }) {
   const { lang } = useTrip();
   const router = useRouter();
   const [rows, setRows] = useState(verdicts);
+  const [inbox, setInbox] = useState(requests);
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState('');
 
@@ -43,6 +48,23 @@ export function GuidePanel({
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/');
     router.refresh();
+  };
+
+  /**
+   * Ответ на заявку. Отказ — тоже ответ: раньше заявка падала в общий ящик
+   * и умирала там, турист не знал, ждать ему или искать другого.
+   */
+  const answer = async (requestId: string, status: 'taken' | 'busy') => {
+    const res = await fetch('/api/guide/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId, status }),
+    });
+    if (res.ok) {
+      setInbox((prev) =>
+        prev.map((r) => (r.id === requestId ? { ...r, status, reply: { at: '—' } } : r)),
+      );
+    }
   };
 
   const dispute = async (id: string) => {
@@ -69,6 +91,62 @@ export function GuidePanel({
         <button className="chip" onClick={logout}>
           {t('authLogout', lang)}
         </button>
+      </section>
+
+      {/* Входящие: раньше гид не видел своих заявок вовсе — они падали
+          в общий ящик Комитета. Это то, ради чего он заходит каждый день. */}
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <b className="text-sm">{t('guideInbox', lang)}</b>
+          <span className="muted text-[12.5px]">
+            {t('guideInboxNew', lang)}: {inbox.filter((r) => (r.status ?? 'new') === 'new').length}
+          </span>
+        </div>
+
+        {inbox.length === 0 && <p className="muted text-[13px]">{t('guideInboxEmpty', lang)}</p>}
+
+        {inbox.map((item) => {
+          const status = item.status ?? 'new';
+          return (
+            <div
+              key={item.id}
+              className="flex flex-col gap-2 rounded-xl p-3"
+              style={{ background: 'var(--bg)' }}
+            >
+              <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="tag">{item.code ?? item.id}</span>
+                <span className="muted">{item.at}</span>
+                <span
+                  className={
+                    status === 'taken' ? 'tag tag-ok' : status === 'busy' ? 'tag tag-warn' : 'tag'
+                  }
+                >
+                  {t(
+                    status === 'taken'
+                      ? 'requestTaken'
+                      : status === 'busy'
+                        ? 'requestBusy'
+                        : 'requestNew',
+                    lang,
+                  )}
+                </span>
+              </div>
+              <p className="prose-measure text-[13.5px]">{item.message}</p>
+              <div className="muted text-[12.5px]">{item.contact}</div>
+              {status === 'new' && (
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn btn-primary" onClick={() => answer(item.id, 'taken')}>
+                    <Icon name="check" size={16} />
+                    {t('guideTake', lang)}
+                  </button>
+                  <button className="btn" onClick={() => answer(item.id, 'busy')}>
+                    {t('guideBusy', lang)}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       <section className="card flex flex-col gap-2">

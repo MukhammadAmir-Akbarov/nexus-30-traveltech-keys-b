@@ -203,6 +203,19 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Доступность: поле у объектов было и не использовалось нигде,
+              кроме значка. Для Комитета инклюзивный туризм — приоритет. */}
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={trip.accessibleOnly ?? false}
+              onChange={(e) => update({ accessibleOnly: e.target.checked })}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {t('fieldAccessible', lang)}
+            <span className="muted">· {t('accessibleHint', lang)}</span>
+          </label>
+
           {/* Бюджет: тот же вопрос, что задаёт мобильное приложение. Он не
               косметический — меняет очки объектов, порядок вариантов переезда
               и предупреждение о превышении дневного потолка. */}

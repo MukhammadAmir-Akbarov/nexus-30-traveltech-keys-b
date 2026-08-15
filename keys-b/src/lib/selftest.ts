@@ -24,6 +24,7 @@ import {
 } from './budget.ts';
 import { PHOTOS } from '../data/photos.ts';
 import { officialFactsFor } from './sources.ts';
+import { danglingRefs, factsFor, photo as dbPhoto, place as dbPlace, places as dbPlaces } from './db.ts';
 import { WINDY_KMH, isWindy } from './weather.ts';
 import {
   directRoute,
@@ -934,6 +935,58 @@ assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а �
     );
   }
 }
+
+// --- целостность базы ---
+// Одна связная база, а не восемь файлов рядом: ни одной висячей ссылки.
+assert.deepEqual(danglingRefs(), [], 'в базе не должно быть ссылок в никуда');
+assert.equal(dbPlaces().length, PLACES.length, 'единая точка входа отдаёт те же объекты');
+assert.ok(dbPlace('registan'), 'объект достаётся по идентификатору');
+assert.equal(dbPlace('нет-такого'), undefined, 'неизвестный объект — undefined, а не падение');
+assert.ok(factsFor('registan').length > 0, 'факты объекта достаются через базу');
+assert.ok(dbPhoto('registan'), 'снимок объекта достаётся через базу');
+assert.ok(
+  factsFor('registan').every((f) => f.placeId === 'registan'),
+  'выборка фактов не подмешивает чужие объекты',
+);
+
+// --- доступность влияет на маршрут, а не только на значок ---
+const accessiblePlan = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  days: 3,
+  accessibleOnly: true,
+});
+assert.ok(
+  accessiblePlan.days
+    .flatMap((d) => d.items)
+    .every((i) => PLACES.find((p) => p.id === i.placeId)?.accessible === true),
+  'при выборе «только доступные» в маршрут не попадают недоступные объекты',
+);
+const pinnedInaccessible = PLACES.find((p) => !p.accessible && p.region === 'samarkand')!;
+const withPinned = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  days: 3,
+  accessibleOnly: true,
+  pinned: [pinnedInaccessible.id],
+});
+assert.ok(
+  withPinned.days.flatMap((d) => d.items).some((i) => i.placeId === pinnedInaccessible.id),
+  'закреплённый вручную объект остаётся: это осознанный выбор человека',
+);
+
+// --- правила маршрута называются вслух ---
+assert.ok((accessiblePlan.rules ?? []).length > 0, 'маршрут обязан объяснить, как он собран');
+assert.ok(
+  (accessiblePlan.rules ?? []).some((r) => /коляск|aravacha|wheelchair/i.test(r)),
+  'выбранный фильтр доступности должен быть назван в правилах',
+);
+assert.ok(
+  (buildItinerary(PLACES, { ...family, travelType: 'solo', days: 2 }).rules ?? []).every(
+    (r) => !/коляск/i.test(r),
+  ),
+  'невыбранное правило не называется — иначе список превращается в шум',
+);
 
 // --- ветер ---
 // Порядок объектов ветер не меняет: это сведение, а не правило.

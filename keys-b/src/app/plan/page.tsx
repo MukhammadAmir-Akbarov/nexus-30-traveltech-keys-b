@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
+import { EmergencyCard } from '@/components/EmergencyCard';
 import { OfflinePack } from '@/components/OfflinePack';
 import { PlacePhoto } from '@/components/PlacePhoto';
 import { ShareTrip } from '@/components/ShareTrip';
@@ -504,6 +505,27 @@ export default function PlanPage() {
               {t('planPrint', lang)}
             </button>
           </section>
+
+          {/* Как собран маршрут: правила, сработавшие именно здесь. Тезис
+              «не чёрный ящик» должен доказывать сам маршрут, а не презентация. */}
+          {itinerary.rules && itinerary.rules.length > 0 && (
+            <section className="card flex flex-col gap-2">
+              <details>
+                <summary>{t('planRules', lang)}</summary>
+                <ul className="mt-3 flex flex-col gap-1.5 text-[13px]">
+                  {itinerary.rules.map((rule) => (
+                    <li key={rule} className="flex gap-2">
+                      <span style={{ color: 'var(--accent)' }}>•</span>
+                      <span className="prose-measure">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="muted mt-2 prose-measure text-[12px]">{t('planRulesNote', lang)}</p>
+              </details>
+            </section>
+          )}
+
+          <EmergencyCard />
 
           <OfflinePack />
 

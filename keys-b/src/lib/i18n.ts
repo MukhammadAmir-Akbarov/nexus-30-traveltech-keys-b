@@ -535,6 +535,93 @@ export const UI = {
   profileCheckMore: { uz: 'faktni tekshirish', ru: 'проверить факт', en: 'check a fact' },
   planDaysShort: { uz: 'kun', ru: 'дн.', en: 'days' },
 
+  emergencyTitle: { uz: 'Favqulodda raqamlar', ru: 'Экстренные номера', en: 'Emergency numbers' },
+  emergencyLead: {
+    uz: 'Internetsiz ham ishlaydi. Bosing — telefon o‘zi teradi.',
+    ru: 'Работают и без интернета. Нажмите — телефон наберёт сам.',
+    en: 'Work without the internet. Tap and the phone dials.',
+  },
+  emergencySource: {
+    uz: 'Raqamlar korpusdagi rasmiy ma’lumotdan olingan.',
+    ru: 'Номера взяты из официального абзаца корпуса, не выдуманы.',
+    en: 'The numbers come from the official corpus entry, not invented.',
+  },
+
+  unclearWhatNow: { uz: 'Endi nima qilish kerak?', ru: 'Что делать дальше?', en: 'What now?' },
+  unclearNote: {
+    uz: 'Manbalarda javob topilmadi. Bu «yolg‘on» degani emas — shunchaki rasmiy manbalarda bu haqda yozilmagan. Savolingiz Qo‘mita hisobotiga tushdi.',
+    ru: 'В источниках ответа нет. Это не значит «неправда» — просто в официальных источниках об этом не написано. Ваш вопрос попал в отчёт Комитету.',
+    en: 'No answer in the sources. That does not mean “false” — it means official sources do not cover it. Your question went into the Committee report.',
+  },
+  unclearAskGuide: { uz: 'Gidga bering', ru: 'Спросить у гида', en: 'Ask a guide' },
+  unclearWhatKnown: {
+    uz: 'Obyekt haqida nima ma’lum',
+    ru: 'Что известно об объекте',
+    en: 'What is known about the place',
+  },
+
+  reportGapsTitle: {
+    uz: 'So‘rashadi, javob esa yo‘q',
+    ru: 'Спрашивают, а ответа нет',
+    en: 'Asked, but unanswered',
+  },
+  reportGapsLead: {
+    uz: 'Manbalarda javobi topilmagan savollar, so‘ralish chastotasi bo‘yicha. Birinchi navbatda shu mavzularni e’lon qilish kerak.',
+    ru: 'Вопросы, на которые в источниках ответа не нашлось, по частоте. Именно эти темы стоит опубликовать первыми.',
+    en: 'Questions with no answer in the sources, by frequency. These are the topics to publish first.',
+  },
+  reportGapsEmpty: {
+    uz: 'Javobsiz savollar hozircha yo‘q.',
+    ru: 'Вопросов без ответа пока не было.',
+    en: 'No unanswered questions yet.',
+  },
+
+  planRules: {
+    uz: 'Bu marshrut qanday yig‘ildi',
+    ru: 'Как собран этот маршрут',
+    en: 'How this itinerary was built',
+  },
+  planRulesNote: {
+    uz: 'Har bir qoida — kodda yozilgan shart, sehr emas.',
+    ru: 'Каждое правило — записанное в коде условие, а не магия.',
+    en: 'Every rule is a condition written in the code, not magic.',
+  },
+  fieldAccessible: {
+    uz: 'Faqat aravacha uchun qulay joylar',
+    ru: 'Только доступные для коляски',
+    en: 'Wheelchair-accessible places only',
+  },
+  accessibleHint: {
+    uz: 'pandus yoki lift bor, aravacha o‘tadi',
+    ru: 'есть пандус или лифт, коляска проезжает',
+    en: 'ramp or lift, a wheelchair fits',
+  },
+
+  guideInbox: { uz: 'Kelib tushgan so‘rovlar', ru: 'Входящие заявки', en: 'Incoming requests' },
+  guideInboxNew: { uz: 'yangi', ru: 'новых', en: 'new' },
+  guideInboxEmpty: {
+    uz: 'Hozircha so‘rov yo‘q.',
+    ru: 'Пока заявок нет.',
+    en: 'No requests yet.',
+  },
+  guideTake: { uz: 'Olaman', ru: 'Беру', en: 'I’ll take it' },
+  guideBusy: { uz: 'Bandman', ru: 'Занят', en: 'I’m busy' },
+  requestNew: { uz: 'yangi', ru: 'новая', en: 'new' },
+  requestTaken: { uz: 'gid oldi', ru: 'гид взял', en: 'guide accepted' },
+  requestBusy: { uz: 'gid band', ru: 'гид занят', en: 'guide is busy' },
+  requestCode: { uz: 'So‘rov kodi', ru: 'Код заявки', en: 'Request code' },
+  requestCodeHint: {
+    uz: 'Shu kod bo‘yicha so‘rovingiz holatini profilda ko‘rasiz.',
+    ru: 'По этому коду вы увидите статус заявки в профиле.',
+    en: 'Use this code to check the request status in your profile.',
+  },
+  myRequests: { uz: 'Mening so‘rovlarim', ru: 'Мои заявки', en: 'My requests' },
+  myRequestsEmpty: {
+    uz: 'Hali so‘rov yuborilmagan.',
+    ru: 'Заявок пока не было.',
+    en: 'No requests sent yet.',
+  },
+
   mapPois: { uz: 'Infratuzilma', ru: 'Инфраструктура', en: 'Amenities' },
   mapPoisHint: {
     uz: 'Zapravka, hojatxona, namozxona, tibbiy punkt va kafe — xaritada.',
