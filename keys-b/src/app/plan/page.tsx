@@ -6,12 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
+import { OfflinePack } from '@/components/OfflinePack';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
 import { itineraryToIcs } from '@/lib/ics';
+import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
+import type { UiKey } from '@/lib/i18n';
 import type { Itinerary, Mode, Place } from '@/lib/types';
 
 // Leaflet трогает window — грузим только на клиенте.
@@ -19,6 +22,14 @@ const RouteMap = dynamic(() => import('@/components/RouteMap'), {
   ssr: false,
   loading: () => <div className="card muted text-sm">…</div>,
 });
+
+const PRAYER_KEY: Record<Prayer, UiKey> = {
+  fajr: 'prayerFajr',
+  dhuhr: 'prayerDhuhr',
+  asr: 'prayerAsr',
+  maghrib: 'prayerMaghrib',
+  isha: 'prayerIsha',
+};
 
 export default function PlanPage() {
   const { trip, lang, update } = useTrip();
@@ -161,7 +172,37 @@ export default function PlanPage() {
                     {t('planDay', lang)} {day.day}
                   </span>
                   <span className="muted text-[13px]">{day.title}</span>
+
+                  {/* Погода дня с подписью источника: прогноз и норма — разные вещи,
+                      и выдавать одно за другое приложение не имеет права. */}
+                  {day.weather && (
+                    <span className="tag" title={t(day.weather.source === 'forecast' ? 'weatherForecastHint' : 'weatherNormHint', lang)}>
+                      <Icon name={day.weather.precipMm >= 2 ? 'alert' : 'sun'} size={13} />
+                      +{day.weather.tMaxC}° ·{' '}
+                      {t(day.weather.source === 'forecast' ? 'weatherForecast' : 'weatherNorm', lang)}
+                    </span>
+                  )}
                 </div>
+
+                {day.weatherNote && (
+                  <p className="muted mb-2 prose-measure text-[13px]">{day.weatherNote}</p>
+                )}
+
+                {/* Время намаза показываем только тем, кто выбрал «святыни»:
+                    для зиёрат-туризма это важнее прочего, остальным — шум. */}
+                {trip.interests.includes('religion') && day.weather && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="muted">{t('prayerTitle', lang)}</span>
+                    {Object.entries(prayerTimes(day.weather.region, day.weather.date)).map(
+                      ([name, at]) => (
+                        <span key={name} className="tag">
+                          {t(PRAYER_KEY[name as Prayer], lang)} {at}
+                        </span>
+                      ),
+                    )}
+                    <span className="muted">· {t('prayerNote', lang)}</span>
+                  </div>
+                )}
                 {day.transfer && <TransferCard transfer={day.transfer} />}
                 <ol className="timeline flex flex-col gap-4">
                   {day.items.map((item, index) => {
@@ -220,6 +261,8 @@ export default function PlanPage() {
               {t('planIcs', lang)}
             </button>
           </section>
+
+          <OfflinePack />
 
           <ShareTrip />
         </>
