@@ -19,6 +19,7 @@ export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
   { href: '/', key: 'tabTrip', icon: 'pin' },
   { href: '/check', key: 'tabCheck', icon: 'shield' },
   { href: '/plan', key: 'tabPlan', icon: 'route' },
+  { href: '/compare', key: 'tabCompare', icon: 'search' },
   { href: '/guides', key: 'tabGuides', icon: 'user' },
 ];
 
