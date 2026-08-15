@@ -50,10 +50,16 @@ const TEXT = {
     ru: 'Маршрут на {days} дн.: {n} объектов, подобранных под формат «{type}».',
     en: 'A {days}-day itinerary: {n} places selected for the “{type}” format.',
   },
+  // Выбрано несколько регионов: это ещё не «по стране» и старт не обязательно в Ташкенте.
+  summaryCities: {
+    uz: '{days} kunlik marshrut — shaharlar: {cities}, obyektlar: {n}. Boshlanish: {start}.',
+    ru: 'Маршрут на {days} дн. — городов: {cities}, объектов: {n}. Старт: {start}.',
+    en: 'A {days}-day itinerary — cities: {cities}, places: {n}. Starts in {start}.',
+  },
   summaryMultiCity: {
-    uz: 'Mamlakat bo‘ylab {days} kunlik marshrut — shaharlar: {cities}, obyektlar: {n}. Boshlanish: Toshkent.',
-    ru: 'Маршрут по стране на {days} дн. — городов: {cities}, объектов: {n}. Старт: Ташкент.',
-    en: 'A {days}-day countrywide itinerary — cities: {cities}, places: {n}. Starts in Tashkent.',
+    uz: 'Mamlakat bo‘ylab {days} kunlik marshrut — shaharlar: {cities}, obyektlar: {n}. Boshlanish: {start}.',
+    ru: 'Маршрут по стране на {days} дн. — городов: {cities}, объектов: {n}. Старт: {start}.',
+    en: 'A {days}-day countrywide itinerary — cities: {cities}, places: {n}. Starts in {start}.',
   },
 } satisfies Record<string, I18nText>;
 
@@ -271,13 +277,24 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
 
   const total = days.reduce((sum, d) => sum + d.items.length, 0);
   const cities = new Set(days.flatMap((d) => d.items.map((i) => pool.find((p) => p.id === i.placeId)!.region)));
-  const template = cities.size > 1 ? TEXT.summaryMultiCity : TEXT.summaryOneCity;
+  // «По стране» — это когда страна и выбрана. Два выбранных региона дают маршрут
+  // по двум городам, и стартует он там, где реально начинается, а не в Ташкенте.
+  const countrywide = selectedRegions(ctx).length === 0;
+  const template = countrywide
+    ? TEXT.summaryMultiCity
+    : cities.size > 1
+      ? TEXT.summaryCities
+      : TEXT.summaryOneCity;
+  const startRegion = days.length
+    ? pool.find((p) => p.id === days[0].items[0].placeId)!.region
+    : ENTRY_REGION;
 
   return {
     summary: template[lang]
       .replace('{days}', String(days.length))
       .replace('{n}', String(total))
       .replace('{cities}', String(cities.size))
+      .replace('{start}', REGION_NAME[startRegion][lang])
       .replace('{type}', ctx.travelType),
     days,
   };
