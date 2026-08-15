@@ -15,9 +15,10 @@ import { itineraryToIcs } from '@/lib/ics';
 import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
-import type { Itinerary, Mode, Place } from '@/lib/types';
+import type { RoutePoint } from '@/components/RouteMap';
+import type { Itinerary, Mode } from '@/lib/types';
 
-// Leaflet трогает window — грузим только на клиенте.
+// MapLibre трогает window и WebGL — грузим только на клиенте.
 const RouteMap = dynamic(() => import('@/components/RouteMap'), {
   ssr: false,
   loading: () => <div className="card muted text-sm">…</div>,
@@ -92,11 +93,14 @@ export default function PlanPage() {
     URL.revokeObjectURL(url);
   };
 
-  const orderedPlaces: Place[] =
-    itinerary?.days
-      .flatMap((day) => day.items)
-      .map((item) => PLACE_BY_ID[item.placeId])
-      .filter(Boolean) ?? [];
+  // точки маршрута с номером дня: карта красит их по дням, легенда не нужна
+  const routePoints: RoutePoint[] =
+    itinerary?.days.flatMap((day) =>
+      day.items
+        .map((item) => PLACE_BY_ID[item.placeId])
+        .filter(Boolean)
+        .map((place) => ({ place, day: day.day })),
+    ) ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -158,7 +162,7 @@ export default function PlanPage() {
             )}
           </section>
 
-          {orderedPlaces.length > 0 && <RouteMap places={orderedPlaces} lang={lang} />}
+          {routePoints.length > 0 && <RouteMap points={routePoints} lang={lang} />}
 
           <section className="flex flex-col gap-3">
             {itinerary.days.map((day) => (
