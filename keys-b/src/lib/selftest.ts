@@ -41,7 +41,7 @@ import {
   verifyPassword,
   verifySession,
 } from './auth.ts';
-import type { Lang, ScoredGuide, TripContext } from './types.ts';
+import type { Interest, Lang, ScoredGuide, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
 
@@ -1015,6 +1015,58 @@ assert.equal(
 assert.ok(
   navigatorUrl([registan, bibiKhanym]).includes('39.65470,66.97490~39.66060,66.97970'),
   'ссылка в навигатор ведёт по тем же точкам и в том же порядке',
+);
+
+// --- интересы влияют на СОСТАВ маршрута, а не только на порядок --------------
+// Раньше scorePlace() давал +3 за попадание в выбранный регион, а фильтр стоял
+// на score > 0. Стоило выбрать Самарканд — и все семь самаркандских объектов
+// проходили отбор при любых интересах. «ziyorat», «tabiat» и «taom» давали
+// один и тот же список, отличавшийся только порядком: персонализация была
+// заявлена в README, но не работала.
+
+const interestCtx = (interests: Interest[], days = 2): TripContext => ({
+  regions: ['samarkand'],
+  region: 'samarkand',
+  interests,
+  travelType: 'solo',
+  days,
+  lang: 'uz',
+  summer: false,
+});
+
+const placesOfTrip = (interests: Interest[], days = 2) =>
+  buildItinerary(PLACES, interestCtx(interests, days)).days.flatMap((day) =>
+    day.items.map((item) => item.placeId),
+  );
+
+const religionTrip = placesOfTrip(['religion']);
+const natureTrip = placesOfTrip(['nature']);
+const foodTrip = placesOfTrip(['food']);
+
+assert.notDeepEqual(religionTrip, natureTrip, 'святыни и природа дают разные маршруты');
+assert.notDeepEqual(religionTrip, foodTrip, 'святыни и еда дают разные маршруты');
+
+// Первым в дне стоит то, ради чего человек едет, а не просто самый крупный объект.
+const firstReligious = PLACES.find((place) => place.id === religionTrip[0]);
+assert.ok(
+  firstReligious?.interests.includes('religion'),
+  'маршрут по святыням начинается со святыни',
+);
+const firstFood = PLACES.find((place) => place.id === foodTrip[0]);
+assert.ok(firstFood?.interests.includes('food'), 'гастрономический маршрут начинается с еды');
+
+// Узкий интерес не должен оставлять пустые дни: свободное время добирается
+// тем, что интересам не отвечает, но только до минимума в два объекта.
+const narrow = buildItinerary(PLACES, interestCtx(['food'], 3));
+for (const day of narrow.days) {
+  assert.ok(day.items.length >= 2, `день ${day.day} не должен быть пустым при узком интересе`);
+}
+
+// Закреплённый объект остаётся, даже если интересам не отвечает.
+const pinnedTrip = buildItinerary(PLACES, { ...interestCtx(['food']), pinned: ['registan'] });
+assert.ok(
+  pinnedTrip.days.flatMap((day) => day.items.map((item) => item.placeId)).includes('registan'),
+  'закреплённый вручную объект не выбрасывается фильтром интересов',
 );
 
 // --- вердикт по правилам (работает без ключа модели) -------------------------

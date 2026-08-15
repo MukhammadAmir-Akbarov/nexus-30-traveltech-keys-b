@@ -210,12 +210,30 @@ export function selectedRegions(ctx: TripContext): Region[] {
   return ctx.region && ctx.region !== 'all' ? [ctx.region] : [];
 }
 
+/**
+ * Пул объектов для маршрута, разложенный на два эшелона.
+ *
+ * ПОЧЕМУ ДВА, А НЕ ОДИН ОТФИЛЬТРОВАННЫЙ СПИСОК. Раньше здесь стоял
+ * `.filter(p => p.score > 0)`, а scorePlace() даёт +3 за попадание в выбранный
+ * регион. То есть стоило туристу выбрать Самарканд — и любой самаркандский
+ * объект получал score >= 3 и проходил фильтр. Интересы влияли только на
+ * ПОРЯДОК, а состав оставался одинаковым: «ziyorat», «tabiat» и «taom» давали
+ * ровно те же семь объектов, переставленные местами. Персонализация была
+ * заявлена, но не работала.
+ *
+ * Жёстко выбрасывать несовпадающие объекты тоже нельзя: турист, выбравший
+ * только «еду», получил бы на три дня в Самарканде один базар и пустые дни.
+ * Поэтому совпавшие по интересам идут ПЕРВЫМ эшелоном, остальные — вторым,
+ * и fillDay() добирает из второго только тогда, когда в дне ещё остался
+ * бюджет времени. Состав меняется, дыр в маршруте не возникает.
+ */
 function eligible(places: Place[], ctx: TripContext): Place[] {
   const regions = selectedRegions(ctx);
   const excluded = new Set(ctx.excluded ?? []);
   const pinned = new Set(ctx.pinned ?? []);
+  const wanted = new Set(ctx.interests ?? []);
 
-  return places
+  const scored = places
     .filter((p) => regions.length === 0 || regions.includes(p.region))
     // турист убрал объект руками — уважаем, даже если он идеально подходит
     .filter((p) => !excluded.has(p.id))
@@ -224,22 +242,74 @@ function eligible(places: Place[], ctx: TripContext): Place[] {
     .filter((p) => ctx.travelType !== 'family' || p.familyFriendly || pinned.has(p.id))
     .map((p) => ({ place: p, score: scorePlace(p, ctx) + (pinned.has(p.id) ? 100 : 0) }))
     .filter((p) => p.score > 0)
-    .sort((a, b) => b.score - a.score || a.place.visitMinutes - b.place.visitMinutes)
-    .map((p) => p.place);
+    .sort((a, b) => b.score - a.score || a.place.visitMinutes - b.place.visitMinutes);
+
+  // интересы не выбраны — эшелонировать нечего, порядок и есть ответ
+  if (wanted.size === 0) return scored.map((s) => s.place);
+
+  return [
+    ...scored.filter((s) => matchesInterests(s.place, ctx)),
+    ...scored.filter((s) => !matchesInterests(s.place, ctx)),
+  ].map((s) => s.place);
+}
+
+/**
+ * Отвечает ли объект тому, ради чего человек едет.
+ *
+ * Закреплённый вручную объект считается подходящим всегда: человек уже сказал,
+ * что хочет именно его, и спорить с этим система не должна.
+ */
+export function matchesInterests(place: Place, ctx: TripContext): boolean {
+  if (!ctx.interests?.length) return true;
+  if ((ctx.pinned ?? []).includes(place.id)) return true;
+  return place.interests.some((interest) => ctx.interests.includes(interest));
 }
 
 /**
  * Набивает один день объектами одного города по бюджету времени.
  * Именно здесь чинится жалоба «объекты рядом, а система дала им по отдельному дню».
  */
-function fillDay(pool: Place[], budgetMinutes: number): Place[] {
+/**
+ * Сколько объектов в дне считается днём, а не пустым слотом. Ниже двух
+ * маршрут перестаёт быть маршрутом, поэтому до двух добираем даже тем,
+ * что интересам не отвечает.
+ */
+const MIN_STOPS_PER_DAY = 2;
+
+function fillDay(
+  pool: Place[],
+  budgetMinutes: number,
+  /** Отвечает ли объект интересам поездки. Без предиката день набивается как раньше. */
+  relevant?: (place: Place) => boolean,
+): Place[] {
   const picked: Place[] = [];
   let minutes = 0;
-  for (const place of pool) {
-    if (minutes + place.visitMinutes > budgetMinutes) continue;
+
+  const take = (place: Place) => {
     picked.push(place);
     minutes += place.visitMinutes;
+  };
+
+  // Сначала — только то, ради чего человек едет. Раньше день набивался
+  // по времени чем угодно из региона, и «ziyorat», «tabiat» и «taom» давали
+  // один и тот же список объектов, отличавшийся только порядком.
+  for (const place of pool) {
+    if (relevant && !relevant(place)) continue;
+    if (minutes + place.visitMinutes > budgetMinutes) continue;
+    take(place);
   }
+
+  // Затем добираем до минимума: свободное время само по себе не повод
+  // ставить в план то, что человеку неинтересно, но пустой день — хуже.
+  if (relevant) {
+    for (const place of pool) {
+      if (picked.length >= MIN_STOPS_PER_DAY) break;
+      if (relevant(place)) continue;
+      if (minutes + place.visitMinutes > budgetMinutes) continue;
+      take(place);
+    }
+  }
+
   if (picked.length === 0 && pool.length) picked.push(pool[0]);
   return picked;
 }
@@ -428,7 +498,7 @@ export function buildItinerary(
       }
       firstDayInCity = false;
 
-      let picked = fillDay(cityPool, budget);
+      let picked = fillDay(cityPool, budget, (place) => matchesInterests(place, ctx));
       // летом открытые объекты ставим в начало дня — на утреннюю прохладу
       if (ctx.summer) {
         picked = [...picked].sort((a, b) => Number(b.outdoor) - Number(a.outdoor));
@@ -460,6 +530,7 @@ export function buildItinerary(
       const picked = fillDay(
         leftovers,
         Math.max(120, dayBudget(ctx, days.length) - transferHours(transfer) * 60),
+        (place) => matchesInterests(place, ctx),
       );
       days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
     }
