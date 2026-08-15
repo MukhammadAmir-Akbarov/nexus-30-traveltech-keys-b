@@ -76,13 +76,31 @@ export const corpus = (): CorpusItem[] => CORPUS;
 // ── Целостность ───────────────────────────────────────────────────────────
 
 /**
+ * Накопленное при работе. Приходит снаружи, а не импортируется здесь:
+ * `store.ts` тянет `node:fs` и алиасы `@/`, а этот модуль обязан оставаться
+ * чистым — его грузит `npm run check` без сборщика.
+ */
+export type RuntimeRefs = {
+  guideIds: string[];
+  verdicts: { id: string; guideId: string; placeId?: string }[];
+  requests: { id: string; kind: string; targetId: string }[];
+  users: { email: string; guideId?: string }[];
+  /** Ключи счётчиков репутации: `guideId` и `guideId|placeId`. */
+  accuracyKeys: string[];
+};
+
+/**
  * Все висячие ссылки между таблицами. Пусто — база связна.
  *
- * Зовётся из самопроверки: добавили факт про несуществующий объект или
- * фотографию неизвестно чего — узнаём об этом на `npm run check`, а не
- * на пустой странице во время показа.
+ * Без аргумента проверяется только то, что лежит в коде. С аргументом —
+ * ещё и накопленное: вердикт про удалённого гида, заявка на несуществующий
+ * объект, аккаунт, привязанный в никуда. Раньше это было слепое пятно:
+ * администратор удаляет гида, а его вердикты и счётчики остаются висеть.
+ *
+ * Зовётся из самопроверки и со страницы «Схема данных» в админке — там
+ * результат видно глазами, а не только в консоли.
  */
-export function danglingRefs(): string[] {
+export function danglingRefs(runtime?: RuntimeRefs): string[] {
   const problems: string[] = [];
   const knownPlace = (id: string) => PLACE_INDEX.has(id);
 
@@ -101,5 +119,45 @@ export function danglingRefs(): string[] {
       }
     }
   }
+
+  if (!runtime) return problems;
+
+  const knownGuide = new Set(runtime.guideIds);
+  for (const verdict of runtime.verdicts) {
+    if (!knownGuide.has(verdict.guideId)) {
+      problems.push(`вердикт ${verdict.id}: нет гида ${verdict.guideId}`);
+    }
+    if (verdict.placeId && !knownPlace(verdict.placeId)) {
+      problems.push(`вердикт ${verdict.id}: нет объекта ${verdict.placeId}`);
+    }
+  }
+  for (const request of runtime.requests) {
+    const ok =
+      request.kind === 'guide-booking'
+        ? knownGuide.has(request.targetId)
+        : knownPlace(request.targetId);
+    if (!ok) problems.push(`заявка ${request.id}: нет цели ${request.targetId}`);
+  }
+  for (const user of runtime.users) {
+    if (user.guideId && !knownGuide.has(user.guideId)) {
+      problems.push(`аккаунт ${user.email}: нет гида ${user.guideId}`);
+    }
+  }
+  for (const key of runtime.accuracyKeys) {
+    const [guideId, placeId] = key.split('|');
+    if (!knownGuide.has(guideId)) problems.push(`счётчик ${key}: нет гида ${guideId}`);
+    if (placeId && !knownPlace(placeId)) problems.push(`счётчик ${key}: нет объекта ${placeId}`);
+  }
   return problems;
+}
+
+/** Сводка по таблицам для страницы «Схема данных»: что есть и сколько строк. */
+export function tableSummary(): { table: string; rows: number; source: 'код' | 'накопленное' }[] {
+  return [
+    { table: 'places', rows: PLACES.length, source: 'код' },
+    { table: 'corpus', rows: CORPUS.length, source: 'код' },
+    { table: 'photos', rows: Object.keys(PHOTOS).length, source: 'код' },
+    { table: 'pois', rows: POIS.length, source: 'код' },
+    { table: 'guides (посев)', rows: GUIDES.length, source: 'код' },
+  ];
 }
