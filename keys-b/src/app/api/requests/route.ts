@@ -1,5 +1,6 @@
 import { addRequest, requestsAllowed } from '@/lib/store';
 import type { RequestKind } from '@/lib/types';
+import { readJson } from '../_schema';
 
 const KINDS: RequestKind[] = ['place-problem', 'guide-booking'];
 
@@ -7,7 +8,12 @@ const KINDS: RequestKind[] = ['place-problem', 'guide-booking'];
 // Обе падают в один входящий ящик админки — это и есть замыкание сценария:
 // приложение не только советует, но и передаёт обратную связь тому, кто решает.
 export async function POST(req: Request) {
-  const { kind, targetId, message, contact } = (await req.json()) as {
+  // Проверка полей ниже уже была и работает — здесь только защита разбора:
+  // битое тело уходило пятисоткой, не дойдя до неё.
+  const body = await readJson(req);
+  if (!body.ok) return body.response;
+
+  const { kind, targetId, message, contact } = body.data as {
     kind?: RequestKind;
     targetId?: string;
     message?: string;

@@ -1,9 +1,13 @@
 import { cookies } from 'next/headers';
 import { SESSION_COOKIE, signSession } from '@/lib/auth';
 import { createUser } from '@/lib/store';
+import { readJson } from '../../_schema';
 
 export async function POST(req: Request) {
-  const { email, password } = (await req.json()) as { email?: string; password?: string };
+  const body = await readJson(req);
+  if (!body.ok) return body.response;
+
+  const { email, password } = body.data as { email?: string; password?: string };
   if (!email || !password) {
     return Response.json({ error: 'missing_fields' }, { status: 400 });
   }

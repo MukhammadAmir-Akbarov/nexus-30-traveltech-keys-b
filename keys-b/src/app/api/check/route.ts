@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { readJson } from '../_schema';
 import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
@@ -77,7 +78,19 @@ function clientIdFrom(req: Request): { id: string; isNew: boolean } {
 }
 
 export async function POST(req: Request) {
-  const { claim, lang = 'ru', guideId, placeId } = (await req.json()) as {
+  // Разбор отдельно от проверки полей: проверка ниже написана и работает,
+  // переписывать её накануне защиты — лишний риск. Битое тело до неё
+  // не доходило и уходило пятисоткой.
+  const body = await readJson(req);
+  if (!body.ok) return body.response;
+
+  /*
+   * guideId и placeId читаются здесь и дальше идут в recordFactCheck —
+   * это и есть связка «проверка факта → репутация гида», ради которой
+   * весь продукт и строится. Схему для этой ручки писать не стали именно
+   * поэтому: любой недосмотр в списке полей тихо разорвал бы эту цепочку.
+   */
+  const { claim, lang = 'ru', guideId, placeId } = body.data as {
     claim: string;
     lang?: Lang;
     guideId?: string;

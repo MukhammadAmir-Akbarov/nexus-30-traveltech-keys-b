@@ -1,5 +1,6 @@
 import { currentSession } from '@/lib/session';
 import { disputeVerdict } from '@/lib/store';
+import { readJson } from '../../_schema';
 
 // Гид оспаривает вердикт. Счётчики не меняем: решение принимает Комитет,
 // иначе оспаривание превратилось бы в кнопку «стереть плохую оценку».
@@ -9,7 +10,12 @@ export async function POST(req: Request) {
     return Response.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const { verdictId, note } = (await req.json()) as { verdictId?: string; note?: string };
+  // Порядок сохранён: сначала сессия, потом тело. Чужой запрос отсекается
+  // раньше, чем мы вообще смотрим, что в нём прислали.
+  const body = await readJson(req);
+  if (!body.ok) return body.response;
+
+  const { verdictId, note } = body.data as { verdictId?: string; note?: string };
   if (!verdictId || !note || note.trim().length < 5) {
     return Response.json({ error: 'missing_fields' }, { status: 400 });
   }

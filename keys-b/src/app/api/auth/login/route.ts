@@ -8,9 +8,19 @@ import {
   signSession,
 } from '@/lib/auth';
 import { authenticate } from '@/lib/store';
+import { readJson } from '../../_schema';
 
 export async function POST(req: Request) {
-  const { email, password } = (await req.json()) as { email?: string; password?: string };
+  /*
+   * Только защита разбора. Ответы намеренно не трогаем: пустое тело
+   * по-прежнему даёт 401 «invalid_credentials», а не 400 с указанием
+   * недостающего поля. Одна формулировка на все случаи не подсказывает,
+   * существует ли аккаунт, — это защита от перебора почт.
+   */
+  const body = await readJson(req);
+  if (!body.ok) return body.response;
+
+  const { email, password } = body.data as { email?: string; password?: string };
 
   // за туннелем и за прокси реальный адрес приходит заголовком
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'local';
