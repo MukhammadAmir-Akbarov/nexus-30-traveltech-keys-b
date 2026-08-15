@@ -17,17 +17,31 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
 
   return (
     <div className="flex flex-col gap-4">
-      <PlacePhoto
-        placeId={place.id}
-        alt={tr(place.name, lang)}
-        lang={lang}
-        ratio={21 / 9}
-        credit
-        priority
-        sizes="(max-width: 900px) 100vw, 900px"
-      />
+      {/*
+        Раскладка «во весь экран фото, поверх него карточка» — из макета
+        мобильного приложения. На телефоне снимок выходит за поля страницы
+        (-mx-4 гасит padding у main) и занимает всю ширину, как в приложении;
+        на широком экране поля возвращаются, потому что фотография во весь
+        монитор выглядит как заставка, а не как карточка объекта.
 
-      <section>
+        Карточка заходит на фото снизу (-mt-8) и скругляется сверху: так
+        макет отделяет «место» от «рассказа о месте». Заголовок остаётся
+        внутри карточки, а не поверх снимка: поверх фото текст читается
+        по-разному на каждой картинке, и контраст обещать нельзя.
+      */}
+      <div className="-mx-4 sm:mx-0">
+        <PlacePhoto
+          placeId={place.id}
+          alt={tr(place.name, lang)}
+          lang={lang}
+          ratio={4 / 3}
+          credit
+          priority
+          sizes="(max-width: 900px) 100vw, 900px"
+        />
+      </div>
+
+      <section className="card -mt-8 rounded-t-[var(--radius-lg)] sm:mt-0">
         <div className="muted text-[13px]">
           {tr(REGION_LABEL[place.region], lang)} · {place.visitMinutes} {t('planMinutes', lang)}
         </div>
