@@ -23,6 +23,8 @@ import {
   usdToUzsLabel,
 } from './budget.ts';
 import { PHOTOS } from '../data/photos.ts';
+import { officialFactsFor } from './sources.ts';
+import { WINDY_KMH, isWindy } from './weather.ts';
 import {
   directRoute,
   distanceLabel,
@@ -932,6 +934,30 @@ assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а �
     );
   }
 }
+
+// --- ветер ---
+// Порядок объектов ветер не меняет: это сведение, а не правило.
+const windy: DayWeather = { date: '2026-04-10', region: 'bukhara', tMaxC: 24, precipMm: 0, windKmh: 34, source: 'forecast' };
+const calm: DayWeather = { ...windy, windKmh: 8 };
+assert.ok(isWindy(windy), `${WINDY_KMH} км/ч и выше — это уже ветрено`);
+assert.ok(!isWindy(calm), 'восемь километров в час ветром не считаются');
+assert.ok(!isWindy({ ...calm, windKmh: undefined }), 'нет данных о ветре — не выдумываем');
+assert.equal(adviceFor(windy), adviceFor(calm), 'ветер не меняет решение по дню');
+
+// --- значок официальных источников ---
+// Он обязан опираться на счёт, а не на желание показать галочку.
+const regFacts = officialFactsFor(CORPUS, 'registan');
+assert.ok(regFacts.total > 0, 'у Регистана есть факты в корпусе');
+assert.ok(regFacts.official > 0 && regFacts.official <= regFacts.total, 'официальных не больше, чем всего');
+assert.deepEqual(
+  officialFactsFor(CORPUS, 'нет-такого-объекта'),
+  { official: 0, total: 0 },
+  'у неизвестного объекта значка быть не должно',
+);
+assert.ok(
+  PLACES.some((p) => officialFactsFor(CORPUS, p.id).official === 0),
+  'значок стоит не у всех подряд — иначе он ничего не означает',
+);
 
 // --- бюджет ---
 assert.equal(dailyCapUsd('low'), 24, '300 тысяч сум — это примерно 24 доллара в день');

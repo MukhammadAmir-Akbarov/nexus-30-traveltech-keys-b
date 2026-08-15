@@ -22,6 +22,7 @@ export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
   { href: '/places', key: 'tabPlaces', icon: 'pin' },
   { href: '/compare', key: 'tabCompare', icon: 'search' },
   { href: '/guides', key: 'tabGuides', icon: 'user' },
+  { href: '/profile', key: 'tabProfile', icon: 'user' },
 ];
 
 /** Для нижней панели на телефоне: только то, чем пользуются на ходу. */

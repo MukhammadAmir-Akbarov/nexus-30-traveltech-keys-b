@@ -16,6 +16,7 @@ import { itineraryToIcs } from '@/lib/ics';
 import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
 import { overBudget, usdToUzsLabel } from '@/lib/budget';
+import { isWindy } from '@/lib/weather';
 import { distanceLabel, navigatorUrl, routeTotals } from '@/lib/route';
 import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
@@ -205,6 +206,18 @@ export default function PlanPage() {
                       <Icon name={day.weather.precipMm >= 2 ? 'alert' : 'sun'} size={13} />
                       +{day.weather.tMaxC}° ·{' '}
                       {t(day.weather.source === 'forecast' ? 'weatherForecast' : 'weatherNorm', lang)}
+                    </span>
+                  )}
+
+                  {/* Ветер: при той же температуре день переносится иначе,
+                      а весной с ветром на площадях поднимается пыль. */}
+                  {day.weather?.windKmh !== undefined && (
+                    <span
+                      className={isWindy(day.weather) ? 'tag tag-warn' : 'tag'}
+                      title={isWindy(day.weather) ? t('windDustHint', lang) : undefined}
+                    >
+                      {t('windLabel', lang)} {day.weather.windKmh} {t('windUnit', lang)}
+                      {isWindy(day.weather) && ` · ${t('windDust', lang)}`}
                     </span>
                   )}
                 </div>

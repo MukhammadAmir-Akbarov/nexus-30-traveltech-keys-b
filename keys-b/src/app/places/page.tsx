@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { PlacePhoto } from '@/components/PlacePhoto';
+import { SaveButton } from '@/components/SaveButton';
+import { officialFactsFor } from '@/lib/sources';
+import { CORPUS } from '@/data/corpus';
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
@@ -81,6 +84,16 @@ export default function PlacesPage() {
               {place.accessible && (
                 <span className="tag tag-ok">{t('placesAccessible', lang)}</span>
               )}
+              {officialFactsFor(CORPUS, place.id).official > 0 && (
+                <span className="tag tag-ok" title={t('officialHint', lang)}>
+                  <Icon name="shield" size={12} />
+                  {t('officialShort', lang)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <SaveButton placeId={place.id} compact />
             </div>
 
             <div className="muted text-[12px]">

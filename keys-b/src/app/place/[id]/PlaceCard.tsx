@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
 import { PlacePhoto } from '@/components/PlacePhoto';
+import { SaveButton } from '@/components/SaveButton';
+import { officialFactsFor } from '@/lib/sources';
 import { RequestForm } from '@/components/RequestForm';
 import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
@@ -30,7 +33,23 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
         </div>
         <h1 className="text-xl font-bold">{tr(place.name, lang)}</h1>
         <p className="muted mt-1 text-sm">{tr(place.summary, lang)}</p>
-        <div className="mt-2">
+        {/* Значок опирается на счёт, а не на желание показать галочку:
+            сколько фактов об этом объекте пришло из официальных источников. */}
+        {(() => {
+          const { official, total } = officialFactsFor(facts, place.id);
+          if (official === 0) return null;
+          return (
+            <div className="mt-2">
+              <span className="tag tag-ok" title={t('officialHint', lang)}>
+                <Icon name="shield" size={13} />
+                {t('officialFacts', lang)}: {official} {t('officialOf', lang)} {total}
+              </span>
+            </div>
+          );
+        })()}
+
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <SaveButton placeId={place.id} />
           <SpeakButton
             text={[tr(place.name, lang), tr(place.summary, lang), ...facts.map((f) => f.text)].join('. ')}
           />
