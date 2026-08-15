@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
 import { OfflineReady } from '@/components/OfflineReady';
 import { Onboarding } from '@/components/Onboarding';
+import { SkipLink } from '@/components/SkipLink';
 import { TabBar } from '@/components/TabBar';
 import { TripProvider } from '@/components/TripProvider';
 
@@ -31,8 +32,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TripProvider>
           <OfflineReady />
           <Onboarding />
+          {/* с клавиатуры первым делом предлагаем перепрыгнуть навигацию,
+              иначе до содержимого приходится проходить всю шапку каждый раз */}
+          <SkipLink />
           <Nav />
-          <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:pb-6">{children}</main>
+          <main id="main" className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:pb-6">
+            {children}
+          </main>
           <Footer />
           <TabBar />
         </TripProvider>
