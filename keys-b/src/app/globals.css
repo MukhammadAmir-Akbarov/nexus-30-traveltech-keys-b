@@ -307,6 +307,9 @@ h2 {
 
 /* ── Нижняя навигация: на телефоне вкладки должны быть под пальцем ── */
 
+/* Нижняя навигация только на телефоне. Прячем здесь же, а не утилитой
+   sm:hidden: та объявлена раньше в файле, и `display: flex` отсюда её
+   перебивал — на десктопе рядом висели обе навигации. */
 .tabbar {
   position: fixed;
   inset: auto 0 0 0;
@@ -316,6 +319,10 @@ h2 {
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 640px) {
+  .tabbar { display: none; }
 }
 
 .tabbar a {
