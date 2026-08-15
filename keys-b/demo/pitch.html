@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turizm hamroh — NEXUS30</title>
+<!--
+  Питч-дек, 8 слайдов. Открывается двойным щелчком, без сервера.
+
+  ПОЧЕМУ ЗДЕСЬ НЕТ НИ ОДНОЙ ВНЕШНЕЙ ССЫЛКИ:
+  на площадке сеть падала дважды. Ни шрифтов с CDN, ни Chart.js, ни картинок
+  с чужого домена — иначе на сцене вместо слайда будет пустой прямоугольник.
+  Шрифты системные, графики не нужны: все данные помещаются в таблицы.
+
+  ФОН СВЕТЛЫЙ — намеренно. Тёмная тема на проекторе теряет контраст, и с
+  задних рядов текст не читается.
+
+  Управление: → ← пробел, N — заметки докладчика, F — во весь экран.
+-->
+<style>
+:root{
+  --bg:#faf9f6; --surface:#fff; --line:#e4e0d6; --line-2:#cfc9ba;
+  --text:#15181d; --muted:#4a5260;
+  --accent:#0e7c86;        /* бирюзовый из мобильного макета */
+  --accent-2:#8a5a00;      /* золото наследия, затемнено до AA */
+  --ok:#15803d; --bad:#b91c1c; --warn:#b45309;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  overflow:hidden;
+}
+.deck{position:absolute;inset:0;margin:auto;width:100vw;height:100vh;overflow:hidden}
+@media(min-width:769px){.deck{max-width:calc(100vh*16/9);max-height:calc(100vw*9/16)}}
+
+.slide{
+  position:absolute;inset:0;padding:clamp(28px,4.5vw,64px);
+  display:flex;flex-direction:column;justify-content:center;
+  opacity:0;visibility:hidden;transition:opacity .35s;background:var(--bg);
+  overflow:hidden;
+}
+.slide.active{opacity:1;visibility:visible}
+.inner{width:100%;max-width:1100px;margin:0 auto}
+
+.eyebrow{
+  font-size:clamp(11px,1.3vw,14px);font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent-2);margin-bottom:.6em
+}
+h1{font-size:clamp(30px,5.2vw,60px);line-height:1.08;letter-spacing:-.02em;font-weight:700}
+h2{font-size:clamp(22px,3.4vw,40px);line-height:1.15;letter-spacing:-.01em;font-weight:700}
+.lead{font-size:clamp(16px,2vw,24px);color:var(--muted);margin-top:.7em;max-width:46ch}
+.big{font-size:clamp(20px,2.9vw,34px);line-height:1.3;font-weight:600}
+
+.quote{
+  border-left:5px solid var(--accent);padding:.7em 0 .7em 1em;margin-top:1em;
+  font-size:clamp(19px,2.8vw,34px);line-height:1.3;font-weight:600
+}
+.scene{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:clamp(16px,2.2vw,26px);margin-top:1.1em;
+  font-size:clamp(15px,1.8vw,21px);line-height:1.5
+}
+.scene b{color:var(--bad)}
+
+table{border-collapse:collapse;width:100%;margin-top:1em;font-size:clamp(13px,1.55vw,19px)}
+th,td{text-align:left;padding:.5em .7em;border-bottom:1px solid var(--line)}
+th{font-size:.82em;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.good{color:var(--ok);font-weight:700}
+.weak{color:var(--bad);font-weight:700}
+tr.hi td{background:#fff7ed}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,30px);margin-top:1em}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(14px,1.9vw,22px)}
+.card h3{font-size:clamp(15px,1.75vw,21px);margin-bottom:.35em}
+.card p{font-size:clamp(13px,1.5vw,17px);color:var(--muted)}
+
+.layers{margin-top:1em;display:flex;flex-direction:column;gap:10px}
+.layer{border:1px solid var(--line-2);border-radius:12px;padding:clamp(12px,1.7vw,20px);background:var(--surface)}
+.layer .tag{font-size:.78em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.layer.rule{border-color:var(--accent);border-width:2px}
+.layer .txt{font-size:clamp(15px,1.85vw,22px);margin-top:.25em}
+
+ul{margin-top:.8em;padding-left:1.1em}
+li{margin:.4em 0;font-size:clamp(14px,1.7vw,20px)}
+li::marker{color:var(--accent)}
+
+.stats{display:flex;flex-wrap:wrap;gap:clamp(10px,1.6vw,22px);margin-top:1.1em}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.7em 1em;min-width:140px}
+.stat .n{font-size:clamp(22px,3.2vw,40px);font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+.stat .l{font-size:clamp(11px,1.25vw,14px);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+.demo-steps{counter-reset:s;margin-top:.8em}
+.demo-steps li{counter-increment:s;list-style:none;position:relative;padding-left:2.1em;margin:.55em 0}
+.demo-steps li::before{
+  content:counter(s);position:absolute;left:0;top:.05em;
+  width:1.5em;height:1.5em;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:.78em;font-weight:700;display:grid;place-items:center
+}
+.t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.85em}
+
+.bar{position:fixed;top:0;left:0;height:4px;background:var(--accent);transition:width .3s;z-index:50}
+.nav{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;z-index:50}
+.nav button{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);
+  background:var(--surface);color:var(--text);font-size:17px;cursor:pointer
+}
+.nav button:hover{background:var(--bg)}
+.count{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+
+#notes{
+  position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;
+  background:#15181d;color:#f2f4f7;padding:18px 22px;font-size:15px;line-height:1.5;
+  display:none;z-index:60;border-top:3px solid var(--accent)
+}
+#notes.on{display:block}
+#notes b{color:#7dd3fc}
+.hint{position:fixed;top:10px;right:14px;font-size:11px;color:var(--muted);z-index:50}
+
+@media print{.nav,.bar,.hint,#notes{display:none}.slide{position:relative;opacity:1;visibility:visible;page-break-after:always;height:100vh}}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="hint">→ ← слайды · N заметки · F экран</div>
+
+<div class="deck">
+
+<!-- 1 -->
+<section class="slide active" data-notes="Начать с паузы. Сцена важнее цифр: жюри должно узнать себя. Не называть продукт до второго слайда.">
+  <div class="inner">
+    <div class="eyebrow">NEXUS30 · TravelTech · кейс B</div>
+    <h1>Турист не может проверить то, что ему говорят</h1>
+    <div class="scene">
+      Вы стоите у Регистана. Гид: «Это построено в <b>XII веке</b>».<br>
+      Что вы сделаете? Откроете телефон — десять источников, три противоречат
+      друг другу, ни один не официальный. А гид уже перешёл к следующему объекту.
+    </div>
+    <p class="lead">Три боли одного человека в одной поездке: проверить факт,
+      собрать маршрут, найти гида.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-notes="Это главное предложение питча. Сказать медленно, сделать паузу после. Всё остальное — следствие.">
+  <div class="inner">
+    <div class="eyebrow">Наш поворот</div>
+    <div class="quote">«Мы не проверяем гида — мы готовим туриста.<br>
+      Проверка получается сама собой.»</div>
+    <div class="cols">
+      <div class="card"><h3>Турист приходит к объекту</h3>
+        <p>Приложение рассказывает <b>до первого слова гида</b>: что это, что внутри, на что смотреть.</p></div>
+      <div class="card"><h3>Дальше выбор у туриста</h3>
+        <p>Гид не показал — можно <b>попросить</b>. Сказал иначе — <b>расхождение видно сразу</b>.</p></div>
+    </div>
+    <p class="lead">Координаты не покидают устройство: их отдаёт браузер, наружу мы их не отправляем.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-notes="Живое демо. Если сеть упала — demo/demo-reel.mp4, 42 секунды. Войти администратором ДО выхода на сцену: /admin закрыт сессией. Язык переключить первым действием — приложение стартует по-узбекски.">
+  <div class="inner">
+    <div class="eyebrow">Живое демо · 100 секунд</div>
+    <h2>Проверенный путь</h2>
+    <ol class="demo-steps">
+      <li><span class="t">0:00</span> <b>/nearby</b> — «я на месте»: карточка объекта до слова гида</li>
+      <li><span class="t">0:30</span> <b>/check</b> — «Регистан построен в XII веке» → <span class="weak">Опровергнуто</span>,
+        XV–XVII вв. с датами трёх медресе и ссылкой на ЮНЕСКО</li>
+      <li><span class="t">1:00</span> <b>/plan</b> — маршрут на карте; формат «семья» меняет состав, а не порядок</li>
+      <li><span class="t">1:20</span> <b>UZ → RU → EN</b> — три языка мгновенно</li>
+      <li><span class="t">1:30</span> <b>/guides</b> — вердикт превратился в репутацию гида</li>
+    </ol>
+    <p class="lead">Запасной план на слайде 4 файла: видео 42 с и 12 кадров лежат в репозитории.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-notes="Ключ: правило НИКОГДА не подтверждает. Совпавший год не доказывает остальную фразу — поэтому confirmed мы не возвращаем. Это архитектурное решение, оно закомментировано в verdict.ts. Вопрос «а если нет ключа модели» — ответ: продукт работает, демо шло в этом режиме.">
+  <div class="inner">
+    <div class="eyebrow">Архитектура</div>
+    <h2>Два слоя доверия</h2>
+    <div class="layers">
+      <div class="layer"><div class="tag">Слой языка — модель</div>
+        <div class="txt">Объясняет человеческим языком, сверяет формулировку с отрывками.</div></div>
+      <div class="layer rule"><div class="tag">Слой правил — без модели и без сети</div>
+        <div class="txt"><b>Никогда не подтверждает ложь.</b> Умеет только опровергать:
+          перепутанный век и год.</div></div>
+    </div>
+    <p class="lead">Совпавший год не доказывает остальную часть фразы — поэтому
+      «подтверждено» по числу мы не выдаём. Нет данных в источниках — система так и говорит.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-notes="Сильнейший слайд. Числа живые, взяты из /api/guides 16 августа. Суть: по общему баллу g5 лучше, но если в вашем маршруте Регистан — правильный выбор g1. Общей звёздочкой такое не покажешь.">
+  <div class="inner">
+    <div class="eyebrow">Чего нет у конкурентов</div>
+    <h2>Репутация гида — в разрезе объектов</h2>
+    <p class="lead">Не звёздочки, а доля утверждений, подтверждённых официальным источником.</p>
+    <table>
+      <tr><th>Гид</th><th>Общий счёт</th><th>Регистан</th><th>Шахи-Зинда</th><th>Хазрати Имам</th></tr>
+      <tr class="hi"><td><b>g5</b></td><td class="num good">21/22</td><td class="num weak">4/7</td><td class="num">—</td><td class="num">11/11</td></tr>
+      <tr><td><b>g1</b></td><td class="num">12/12</td><td class="num good">9/9</td><td class="num">3/3</td><td class="num">—</td></tr>
+    </table>
+    <div class="quote" style="font-size:clamp(16px,2.1vw,26px)">По общему баллу лучше g5.
+      Но если в вашем маршруте Регистан — вам нужен g1.</div>
+    <p class="lead">Счёт по нижней границе Уилсона: один отзыв не перебивает двадцать проверок.
+      У гида есть право возразить — кабинет <b>/guide</b>. Это процесс, а не приговор.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-notes="Ограничения называем сами, до вопроса жюри. Если скажем первыми — это зрелость; если найдут они — это сокрытие. Гиды синтетические, потому что организаторы не давали базу: это правило хакатона, и оно написано на экране приложения.">
+  <div class="inner">
+    <div class="eyebrow">Честность — это наша сила, а не оправдание</div>
+    <h2>Что здесь настоящее, а что демонстрационное</h2>
+    <table>
+      <tr><th>Данные</th><th>Состояние</th></tr>
+      <tr><td>Корпус фактов</td><td><b>88 абзацев</b>, у каждого источник (ЮНЕСКО и др.)</td></tr>
+      <tr><td>Объекты</td><td><b>31</b></td></tr>
+      <tr><td>Фотографии</td><td><b>29</b> — автор, лицензия и страница файла у каждой</td></tr>
+      <tr><td>Спорные темы</td><td><b>7</b> — показываем обе позиции, «ложью» не называем</td></tr>
+      <tr class="hi"><td>Гиды</td><td><b>10, синтетические</b> — базу не предоставляли, помечено в интерфейсе</td></tr>
+      <tr><td>Ключ модели</td><td><b>не нужен</b> — продукт работает и говорит об этом</td></tr>
+    </table>
+    <p class="lead">Там, где материала мало, приложение так и пишет — а не дописывает за источник.</p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-notes="Показать живой адрес на экране: жюри может открыть сам, прямо сейчас. Это сильнее любой архитектурной схемы.">
+  <div class="inner">
+    <div class="eyebrow">Путь к внедрению</div>
+    <h2>Что меняется при подключении Комитета</h2>
+    <ul>
+      <li><b>Уже работает в проде</b> — адрес на экране, жюри может открыть сам</li>
+      <li>Демо-отметка <b>verified</b> → реестр Комитета: поля
+        <code>verification: {license, registry, identity, checkedAt}</code> уже есть</li>
+      <li>Корпус вырастет за ~500 абзацев → Postgres + pgvector,
+        интерфейс <code>retrieve()</code> <b>не меняется</b></li>
+      <li>Приватность — свойство кода, а не обещание: координаты остаются на устройстве</li>
+    </ul>
+    <p class="lead">Меняется источник данных. Логика проверки, планировщик и репутация остаются те же.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-notes="20 секунд, для tie-break: при равенстве баллов организаторы смотрят код. Не зачитывать список — показать и перейти к вопросам.">
+  <div class="inner">
+    <div class="eyebrow">Качество</div>
+    <h2>Прототип, который можно открыть и прочитать</h2>
+    <div class="stats">
+      <div class="stat"><div class="n">15 781</div><div class="l">строк TS/TSX</div></div>
+      <div class="stat"><div class="n">31/31</div><div class="l">сквозных проверок</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">языка полностью</div></div>
+      <div class="stat"><div class="n">4/4</div><div class="l">ворот зелёные</div></div>
+    </div>
+    <ul>
+      <li>lint · самопроверка логики · сборка · e2e — все зелёные на каждом коммите</li>
+      <li>Контраст AA посчитан, не «на глаз»; работает офлайн</li>
+      <li>Комментарии объясняют <b>почему</b>, а не что: каждое решение можно защитить</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<div class="nav">
+  <button onclick="go(cur-1)" aria-label="Назад">←</button>
+  <span class="count"><span id="c">1</span> / <span id="t">8</span></span>
+  <button onclick="go(cur+1)" aria-label="Вперёд">→</button>
+</div>
+
+<div id="notes"></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let cur=1; document.getElementById('t').textContent=slides.length;
+
+function go(n){
+  cur=Math.min(Math.max(n,1),slides.length);
+  slides.forEach((s,i)=>s.classList.toggle('active',i===cur-1));
+  document.getElementById('c').textContent=cur;
+  document.getElementById('bar').style.width=(cur/slides.length*100)+'%';
+  const box=document.getElementById('notes');
+  box.innerHTML='<b>Слайд '+cur+'.</b> '+(slides[cur-1].dataset.notes||'');
+}
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1)}
+  if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1)}
+  if(e.key==='n'||e.key==='N'||e.key==='т'||e.key==='Т'){document.getElementById('notes').classList.toggle('on')}
+  if(e.key==='f'||e.key==='F'||e.key==='а'||e.key==='А'){
+    document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()
+  }
+});
+go(1);
+</script>
+</body>
+</html>
