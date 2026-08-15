@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
+import { RequestForm } from '@/components/RequestForm';
 import { useTrip } from '@/components/TripProvider';
 import {
   GENDER_LABEL,
@@ -256,6 +257,11 @@ export default function GuidesPage() {
                 </p>
               )}
             </details>
+
+            {/* найти гида было можно, а позвать — нет; заявка замыкает сценарий */}
+            <div className="flex flex-wrap items-start gap-2">
+              <RequestForm kind="guide-booking" targetId={guide.id} />
+            </div>
 
             <details className="text-[13px]">
               <summary className="muted cursor-pointer">

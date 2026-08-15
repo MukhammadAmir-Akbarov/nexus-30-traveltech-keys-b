@@ -15,3 +15,11 @@ export async function requireAdmin(): Promise<Session> {
   if (session.role !== 'admin') redirect('/login?error=forbidden');
   return session;
 }
+
+/** Гид видит только свою карточку — и никогда чужую. */
+export async function requireGuide(): Promise<Session & { guideId: string }> {
+  const session = await currentSession();
+  if (!session) redirect('/login?next=/guide');
+  if (session.role !== 'guide' || !session.guideId) redirect('/login?error=forbidden');
+  return session as Session & { guideId: string };
+}

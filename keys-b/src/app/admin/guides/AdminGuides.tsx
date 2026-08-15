@@ -26,7 +26,19 @@ export function AdminGuides({ initial }: { initial: Row[] }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return res.json() as Promise<{ ok?: boolean; verified?: boolean }>;
+    return res.json() as Promise<{ ok?: boolean; verified?: boolean; email?: string; password?: string }>;
+  };
+
+  // Доступ гида к своей карточке: логин и пароль отдаёт администратор.
+  // Пароль показывается один раз — второй раз его взять неоткуда.
+  const [access, setAccess] = useState<Record<string, string>>({});
+  const grantAccess = async (id: string) => {
+    setBusy(id);
+    const data = await call({ type: 'guideAccount', id });
+    if (data.email && data.password) {
+      setAccess((prev) => ({ ...prev, [id]: `${data.email} / ${data.password}` }));
+    }
+    setBusy(null);
   };
 
   const toggle = async (id: string) => {
@@ -65,6 +77,9 @@ export function AdminGuides({ initial }: { initial: Row[] }) {
           <button className="chip" disabled={busy === row.id} onClick={() => toggle(row.id)}>
             {row.verified ? t('adminVerifyOff', lang) : t('adminVerifyOn', lang)}
           </button>
+          <button className="chip" disabled={busy === row.id} onClick={() => grantAccess(row.id)}>
+            {t('adminGuideAccess', lang)}
+          </button>
           <button
             className="chip"
             disabled={busy === row.id}
@@ -73,6 +88,13 @@ export function AdminGuides({ initial }: { initial: Row[] }) {
           >
             {t('adminDelete', lang)}
           </button>
+
+          {access[row.id] && (
+            <div className="w-full text-[12px]">
+              <span className="muted">{t('adminGuideAccessDone', lang)} </span>
+              <code>{access[row.id]}</code>
+            </div>
+          )}
         </article>
       ))}
     </div>

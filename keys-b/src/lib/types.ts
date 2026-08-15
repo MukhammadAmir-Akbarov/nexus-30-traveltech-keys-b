@@ -199,6 +199,35 @@ export type GuideAccuracy = {
 /** Точность гида в разрезе объектов: ключ — placeId, значение — счётчики вердиктов. */
 export type GuideAccuracyByPlace = Record<string, GuideAccuracy>;
 
+/**
+ * Отдельная запись проверки — нужна, чтобы гид видел не только цифру,
+ * но и какие именно утверждения ему засчитали, и мог их оспорить.
+ */
+export type FactRecord = {
+  id: string;
+  guideId: string;
+  placeId?: string;
+  claim: string;
+  status: CheckStatus;
+  at: string;
+  /** Гид не согласен: пояснение уходит в разбор Комитету. */
+  dispute?: { note: string; at: string; resolved?: 'upheld' | 'rejected' };
+};
+
+/** Заявка от туриста: проблема на объекте или запрос гида. */
+export type RequestKind = 'place-problem' | 'guide-booking';
+
+export type TouristRequest = {
+  id: string;
+  kind: RequestKind;
+  /** Объект или гид, к которому относится заявка. */
+  targetId: string;
+  message: string;
+  contact: string;
+  at: string;
+  done?: boolean;
+};
+
 export type ScoredGuide = {
   guide: Guide;
   score: number;

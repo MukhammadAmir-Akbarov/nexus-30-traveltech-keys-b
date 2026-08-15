@@ -4,8 +4,9 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 // сессия — подписанная HMAC cookie. Для прототипа этого достаточно,
 // в проде здесь будет провайдер identity.
 
-export type Role = 'admin' | 'user';
-export type Session = { email: string; role: Role; exp: number };
+export type Role = 'admin' | 'user' | 'guide';
+/** guideId есть только у роли guide — по нему открывается его собственная страница. */
+export type Session = { email: string; role: Role; guideId?: string; exp: number };
 
 export const SESSION_COOKIE = 'nexus30_session';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -36,6 +37,34 @@ export function verifyPassword(password: string, stored: string): boolean {
   const actual = scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length);
   // постоянное по времени сравнение, чтобы не подбирать хэш по задержке
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+// --- защита входа от перебора ---
+// Публичная ссылка плюс восьмизначный пароль подбираются скриптом за часы.
+// Полноценный rate-limit здесь не нужен, нужен потолок попыток по ключу.
+
+const MAX_ATTEMPTS = 8;
+const LOCKOUT_MS = 15 * 60 * 1000;
+const attempts = new Map<string, number[]>();
+
+/** Ключ — почта плюс адрес: чтобы чужой перебор не запирал владельцу его же аккаунт. */
+export function loginKey(email: string, ip: string): string {
+  return `${email.trim().toLowerCase()}|${ip}`;
+}
+
+export function isLockedOut(key: string, now = Date.now()): boolean {
+  const recent = (attempts.get(key) ?? []).filter((t) => now - t < LOCKOUT_MS);
+  attempts.set(key, recent);
+  return recent.length >= MAX_ATTEMPTS;
+}
+
+export function noteFailedLogin(key: string, now = Date.now()): void {
+  const recent = (attempts.get(key) ?? []).filter((t) => now - t < LOCKOUT_MS);
+  attempts.set(key, [...recent, now]);
+}
+
+export function clearLoginAttempts(key: string): void {
+  attempts.delete(key);
 }
 
 // --- сессии ---

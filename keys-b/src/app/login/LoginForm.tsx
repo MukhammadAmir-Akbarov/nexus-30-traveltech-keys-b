@@ -7,6 +7,7 @@ import type { UiKey } from '@/lib/i18n';
 
 const ERROR_KEY: Record<string, UiKey> = {
   invalid_credentials: 'authInvalid',
+  too_many_attempts: 'authTooMany',
   taken_or_invalid: 'authTaken',
   weak_password: 'authWeak',
   forbidden: 'authForbidden',

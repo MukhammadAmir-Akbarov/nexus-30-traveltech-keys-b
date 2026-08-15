@@ -1,7 +1,16 @@
 import { CORPUS } from '@/data/corpus';
 import { GUIDES } from '@/data/guides';
 import { hashPassword, verifyPassword, type Role } from './auth';
-import type { CheckStatus, CorpusItem, Guide, GuideAccuracy, GuideAccuracyByPlace } from './types';
+import type {
+  CheckStatus,
+  CorpusItem,
+  FactRecord,
+  Guide,
+  GuideAccuracy,
+  GuideAccuracyByPlace,
+  RequestKind,
+  TouristRequest,
+} from './types';
 
 // Серверное хранилище прототипа.
 // ponytail: всё в памяти процесса — правки админа живут до перезапуска,
@@ -14,6 +23,8 @@ export type User = {
   passwordHash: string;
   role: Role;
   createdAt: string;
+  /** Только для роли guide: к какой карточке гида привязан аккаунт. */
+  guideId?: string;
 };
 
 type Store = {
@@ -36,6 +47,10 @@ type Store = {
    * и не знать Регистана — общая оценка это скрывает.
    */
   accuracyByPlace: Map<string, GuideAccuracy>;
+  /** Отдельные проверки: гид должен видеть не цифру, а конкретные утверждения. */
+  verdicts: FactRecord[];
+  /** Входящие от туристов: проблема на объекте и запрос гида. */
+  requests: TouristRequest[];
 };
 
 const globalStore = globalThis as unknown as { __nexus30?: Store };
@@ -73,6 +88,8 @@ function seed(): Store {
     accuracyByPlace,
     countedChecks: new Set<string>(),
     checkTimes: new Map<string, number[]>(),
+    verdicts: [],
+    requests: [],
   };
 }
 
@@ -110,6 +127,7 @@ export function authenticate(email: string, password: string): User | null {
   if (!user || !verifyPassword(password, user.passwordHash)) return null;
   return user;
 }
+
 
 // --- контент ---
 
@@ -178,6 +196,16 @@ export function recordFactCheck(
   current[status] += 1;
   store().accuracy.set(guideId, current);
 
+  // сохраняем саму проверку: гид должен видеть, за что именно ему поставили минус
+  store().verdicts.push({
+    id: `v${store().verdicts.length + 1}`,
+    guideId,
+    placeId,
+    claim: claim.trim(),
+    status,
+    at: new Date(now).toISOString().slice(0, 16).replace('T', ' '),
+  });
+
   // и отдельно по объекту, если известно, где именно это прозвучало
   if (placeId) {
     const placeKey = `${guideId}|${placeId}`;
@@ -228,6 +256,91 @@ export function getAccuracyByPlace(): Record<string, GuideAccuracyByPlace> {
     result[guideId][placeId] = stats;
   }
   return result;
+}
+
+// --- сторона гида ---
+
+/**
+ * Доступ гида к своей карточке. Логин и пароль отдаёт администратор:
+ * в проде здесь будет реестр Комитета, в прототипе — одна кнопка в админке.
+ */
+export function createGuideAccount(guideId: string, password: string): User | null {
+  const guide = store().guides.find((g) => g.id === guideId);
+  if (!guide || password.length < 6) return null;
+  const email = `${guideId}@gid.nexus30.uz`;
+  if (store().users.has(email)) return null;
+  const user: User = {
+    email,
+    passwordHash: hashPassword(password),
+    role: 'guide',
+    guideId,
+    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+  };
+  store().users.set(email, user);
+  return user;
+}
+
+export function listVerdictsForGuide(guideId: string): FactRecord[] {
+  return store().verdicts.filter((v) => v.guideId === guideId).reverse();
+}
+
+/** Гид не согласен с вердиктом. Счётчики не трогаем — решение за Комитетом. */
+export function disputeVerdict(verdictId: string, guideId: string, note: string): boolean {
+  const record = store().verdicts.find((v) => v.id === verdictId && v.guideId === guideId);
+  if (!record || record.dispute) return false;
+  record.dispute = { note: note.trim().slice(0, 500), at: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+  return true;
+}
+
+export function listDisputes(): FactRecord[] {
+  return store().verdicts.filter((v) => v.dispute).reverse();
+}
+
+export function resolveDispute(verdictId: string, outcome: 'upheld' | 'rejected'): boolean {
+  const record = store().verdicts.find((v) => v.id === verdictId);
+  if (!record?.dispute) return false;
+  record.dispute.resolved = outcome;
+  // жалоба удовлетворена — снимаем вердикт из счётчиков, иначе он висит вечно
+  if (outcome === 'upheld') {
+    const stats = store().accuracy.get(record.guideId);
+    if (stats && stats[record.status] > 0) stats[record.status] -= 1;
+    if (record.placeId) {
+      const perPlace = store().accuracyByPlace.get(`${record.guideId}|${record.placeId}`);
+      if (perPlace && perPlace[record.status] > 0) perPlace[record.status] -= 1;
+    }
+  }
+  return true;
+}
+
+// --- заявки от туристов ---
+
+export function addRequest(
+  kind: RequestKind,
+  targetId: string,
+  message: string,
+  contact: string,
+): TouristRequest {
+  const item: TouristRequest = {
+    id: `r${store().requests.length + 1}`,
+    kind,
+    targetId,
+    message: message.trim().slice(0, 500),
+    contact: contact.trim().slice(0, 120),
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+  };
+  store().requests.push(item);
+  return item;
+}
+
+export function listRequests(): TouristRequest[] {
+  return [...store().requests].reverse();
+}
+
+export function markRequestDone(id: string): boolean {
+  const item = store().requests.find((r) => r.id === id);
+  if (!item) return false;
+  item.done = true;
+  return true;
 }
 
 export function addCorpusItem(item: CorpusItem): CorpusItem {

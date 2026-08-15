@@ -11,7 +11,16 @@ import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
-import { hashPassword, signSession, verifyPassword, verifySession } from './auth.ts';
+import {
+  clearLoginAttempts,
+  hashPassword,
+  isLockedOut,
+  loginKey,
+  noteFailedLogin,
+  signSession,
+  verifyPassword,
+  verifySession,
+} from './auth.ts';
 import type { Lang, ScoredGuide, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
@@ -546,6 +555,21 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- защита входа от перебора ---
+const attackKey = loginKey('admin@nexus30.uz', '10.0.0.1');
+assert.ok(!isLockedOut(attackKey), 'до попыток замок открыт');
+for (let i = 0; i < 8; i++) noteFailedLogin(attackKey);
+assert.ok(isLockedOut(attackKey), 'после восьми неудач вход запирается');
+assert.ok(
+  !isLockedOut(loginKey('admin@nexus30.uz', '10.0.0.2')),
+  'чужой адрес не должен запирать аккаунт целиком',
+);
+clearLoginAttempts(attackKey);
+assert.ok(!isLockedOut(attackKey), 'удачный вход сбрасывает счётчик');
+// окно скользящее: старые попытки не держат замок вечно
+for (let i = 0; i < 8; i++) noteFailedLogin(attackKey, Date.now() - 20 * 60 * 1000);
+assert.ok(!isLockedOut(attackKey), 'попытки двадцатиминутной давности замок не держат');
 
 // --- склонение числительных ---
 assert.equal(reviewsLabel(1, 'ru'), 'отзыв');
