@@ -2,7 +2,10 @@
 // планировщик, подбор гида и трёхъязычность. Запуск: npm run check
 // (Node 22 сам снимает типы, поэтому импорты — с расширением .ts.)
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { CORPUS } from '../data/corpus.ts';
+import { VISION_DEMO } from '../data/vision-demo.ts';
 import { FEATURED_IDS, HOME_FEATURED_COUNT } from '../data/featured.ts';
 import { GUIDES } from '../data/guides.ts';
 import { PHOTOS } from '../data/photos.ts';
@@ -12,6 +15,7 @@ import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { BRIEFING_FACTS, BRIEFING_THIN, briefingFor } from './briefing.ts';
+import { identifyFromDemo } from './vision.ts';
 import { AT_PLACE_LIMIT_M, NEAR_LIMIT_KM, nearestPlace, nearestRegion } from './geo.ts';
 import { retrieve, tokenize } from './retrieval.ts';
 import { ruleVerdict, toRoman } from './verdict.ts';
@@ -1318,6 +1322,33 @@ assert.ok(
   'в двух километрах от объекта брифинг не срабатывает',
 );
 assert.ok(AT_PLACE_LIMIT_M >= 200 && AT_PLACE_LIMIT_M <= 800, 'радиус объекта в разумных пределах');
+
+// --- узнавание по фотографии ---------------------------------------------------
+// Ключа зрения сегодня нет, но ветка написана целиком, а демо-набор — честный
+// запасной путь. Проверяем именно его: он и работает на защите.
+
+const knownPlaceIds = new Set(PLACES.map((place) => place.id));
+const demoPhoto = readFileSync(resolve(import.meta.dirname, '../../public/photos/registan.jpg'));
+const demoMatch = identifyFromDemo(demoPhoto);
+assert.equal(demoMatch?.place.id, 'registan', 'подготовленный снимок Регистана узнаётся');
+assert.equal(demoMatch?.mode, 'demo', 'режим назван своим именем, а не выдан за модель');
+assert.equal(demoMatch?.confidence, 1, 'совпадение по файлу точное');
+
+// Чужой файл не должен «почти совпасть»: узнавание идёт по точному хэшу
+assert.equal(identifyFromDemo(Buffer.from('не картинка')), null, 'посторонний файл не узнаётся');
+// один изменённый байт — уже другой снимок, и это правильно
+const tampered = Buffer.from(demoPhoto);
+tampered[tampered.length - 1] ^= 0xff;
+assert.equal(identifyFromDemo(tampered), null, 'изменённый файл не выдаётся за оригинал');
+
+// Каждый id демо-набора обязан существовать: опечатка дала бы «узнал, но нечего показать»
+for (const [hash, placeId] of Object.entries(VISION_DEMO)) {
+  assert.equal(hash.length, 64, `хэш ${hash.slice(0, 8)} похож на sha256`);
+  assert.ok(knownPlaceIds.has(placeId), `объект демо-набора ${placeId} есть в PLACES`);
+  // у объекта должен быть материал: узнать и показать пустую карточку — плохо
+  assert.ok(briefingFor(placeId, 'uz'), `у ${placeId} есть брифинг после узнавания`);
+}
+assert.ok(Object.keys(VISION_DEMO).length >= 5, 'демо-набора хватает на показ');
 
 // --- брифинг собирается из корпуса, а не сочиняется ----------------------------
 

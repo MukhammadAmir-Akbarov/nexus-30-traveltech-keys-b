@@ -434,6 +434,26 @@ export const UI = {
   modeAi: { uz: 'model javobi', ru: 'ответ модели', en: 'model answer' },
   // «офлайн-режим» читалось как «у вас нет интернета»; на деле это ответ по правилам
   modeOffline: { uz: 'modelsiz, qoidalar bo‘yicha', ru: 'без модели, по правилам', en: 'rule-based, no model' },
+
+  // Распознавание по фото. Метка обязательна: мы не выдаём демо-набор
+  // за работу модели — это тот же принцип, что и у modeOffline выше.
+  visionModeDemo: {
+    uz: 'demo to‘plamdan tanildi',
+    ru: 'узнано по демо-набору',
+    en: 'matched from the demo set',
+  },
+  visionModeDemoHint: {
+    uz: 'Ko‘rish modeli kaliti ulanmagan. Kod tayyor: kalit qo‘yilsa, o‘sha yo‘l istalgan surat bilan ishlaydi. Bugun oldindan tayyorlangan olti surat tanidi.',
+    ru: 'Ключ модели зрения не подключён. Код готов: с ключом тот же путь работает с любым снимком. Сегодня узнаются шесть заранее подготовленных фотографий.',
+    en: 'No vision model key connected. The code is ready: with a key the same path works on any photo. Today it recognises six prepared images.',
+  },
+  visionModeAi: { uz: 'model tanidi', ru: 'узнала модель', en: 'recognised by the model' },
+  visionUnknown: {
+    uz: 'Bu suratda bizga ma’lum obyekt topilmadi. Tizim taxmin qilmaydi — noto‘g‘ri nom aytishdan ko‘ra javob bermaslik afzal.',
+    ru: 'На снимке не найден объект из нашей базы. Система не гадает: назвать чужой объект хуже, чем не ответить.',
+    en: 'No known place found in this photo. The system does not guess: naming the wrong object is worse than no answer.',
+  },
+  visionUpload: { uz: 'Suratdan aniqlash', ru: 'Узнать по фото', en: 'Identify from a photo' },
   modeOfflineHint: {
     uz: 'Model ulanmagan: javob rasmiy manbalar va qoidalar asosida. Internet bilan bog‘liq emas.',
     ru: 'Модель не подключена: ответ собран по официальным источникам и правилам. С интернетом это не связано.',
