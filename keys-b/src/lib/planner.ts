@@ -240,7 +240,11 @@ function eligible(places: Place[], ctx: TripContext): Place[] {
   const wanted = new Set(ctx.interests ?? []);
 
   const scored = places
-    .filter((p) => regions.length === 0 || regions.includes(p.region))
+    // Регион не выбран — берём всю страну. Закреплённый вручную объект проходит
+    // и мимо регионального фильтра: раньше он молча исчезал, если турист сначала
+    // приколол объект, а потом сузил выбор до другого города, — и человек видел
+    // план без того единственного места, ради которого всё затевал.
+    .filter((p) => regions.length === 0 || regions.includes(p.region) || pinned.has(p.id))
     // турист убрал объект руками — уважаем, даже если он идеально подходит
     .filter((p) => !excluded.has(p.id))
     // формат «семья» — объекты без familyFriendly не предлагаем вовсе,

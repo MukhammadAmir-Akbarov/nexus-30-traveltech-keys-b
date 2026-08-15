@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { useTrip } from './TripProvider';
 import { POIS } from '@/data/poi';
 import { FUEL_LABEL, POI_ICON, POI_KINDS, POI_LABEL, nearestPois } from '@/lib/poi';
+import { distanceLabel } from '@/lib/route';
 import { t, tr } from '@/lib/i18n';
 import type { Place, PoiKind } from '@/lib/types';
 
@@ -45,8 +46,12 @@ export function NearbyPois({ place }: { place: Place }) {
             <Icon name={POI_ICON[poi.kind]} size={15} />
             <span>{tr(poi.name, lang)}</span>
             {poi.fuel && <span className="tag">{tr(FUEL_LABEL[poi.fuel], lang)}</span>}
+            {/* единицы из словаря: «км» кириллицей стояло и в узбекском,
+                и в английском интерфейсе. Формат берём тот же, что в маршруте,
+                чтобы «800 м» на карточке и в плане дня выглядели одинаково. */}
             <span className="muted">
-              {km < 1 ? `${Math.round(km * 1000)} м` : `${km.toFixed(1)} км`}
+              {distanceLabel(km).value}{' '}
+              {t(distanceLabel(km).unit === 'm' ? 'legM' : 'legKm', lang)}
             </span>
           </li>
         ))}

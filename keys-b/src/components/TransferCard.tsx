@@ -31,7 +31,11 @@ export function TransferCard({ transfer }: { transfer: Transfer }) {
       <div className="text-[13px] font-semibold">
         {t('transferTitle', lang)}: {tr(REGION_LABEL[transfer.fromRegion], lang)} →{' '}
         {tr(REGION_LABEL[transfer.toRegion], lang)}
-        <span className="muted font-normal"> · ~{transfer.km} км</span>
+        {/* «км» кириллицей стояло и в узбекском, и в английском интерфейсе */}
+        <span className="muted font-normal">
+          {' '}
+          · ~{transfer.km} {t('legKm', lang)}
+        </span>
       </div>
 
       <div className="flex flex-wrap gap-2">

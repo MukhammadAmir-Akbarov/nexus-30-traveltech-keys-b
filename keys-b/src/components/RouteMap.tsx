@@ -60,7 +60,14 @@ const RASTER_STYLE: StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export type RoutePoint = { place: Place; day: number };
+/**
+ * `label` — номер объекта ВНУТРИ своего дня, тот же, что стоит в таймлайне.
+ *
+ * Раньше маркер подписывался порядковым номером в общем списке точек, а список
+ * дня — своим. Один и тот же объект оказывался «4» на карте и «1» в плане дня,
+ * и турист, сверяя их глазами, видел два разных маршрута.
+ */
+export type RoutePoint = { place: Place; day: number; label: number };
 
 /** Каждый день — отдельная линия своего цвета: маршрут читается без легенды. */
 function toFeatures(routes: DayRoute[]): GeoJSON.FeatureCollection<GeoJSON.LineString> {
@@ -177,18 +184,19 @@ export default function RouteMap({
     {
       // маркеры — обычные DOM-элементы: их проще стилизовать и они видны
       // в дереве доступности, в отличие от нарисованных на canvas
-      points.forEach((point, index) => {
+      points.forEach((point) => {
         const el = document.createElement('div');
         el.className = 'map-pin';
         el.style.background = dayColor(point.day);
-        el.textContent = String(index + 1);
-        el.title = `${index + 1}. ${tr(point.place.name, lang)}`;
+        // номер внутри дня — тот же, что в таймлайне; цвет уже говорит, какой это день
+        el.textContent = String(point.label);
+        el.title = `${point.label}. ${tr(point.place.name, lang)}`;
 
         new Marker({ element: el })
           .setLngLat([point.place.lng, point.place.lat])
           .setPopup(
             new Popup({ offset: 18, closeButton: false }).setText(
-              `${index + 1}. ${tr(point.place.name, lang)}`,
+              `${point.label}. ${tr(point.place.name, lang)}`,
             ),
           )
           .addTo(instance);
@@ -252,9 +260,10 @@ export default function RouteMap({
         и находится поиском по странице.
       */}
       <ol className="sr-only">
-        {points.map((point, index) => (
-          <li key={point.place.id}>
-            {index + 1}. {tr(point.place.name, lang)}
+        {points.map((point) => (
+          <li key={`${point.day}:${point.place.id}`}>
+            {/* день называем словом: цвет маркера, различающий дни, скринридеру недоступен */}
+            {t('planDay', lang)} {point.day} · {point.label}. {tr(point.place.name, lang)}
           </li>
         ))}
       </ol>
