@@ -253,5 +253,22 @@ await check('пустая заявка отклоняется', async () => {
   assert.equal(res.status, 400);
 });
 
+// Документация привязана к прогону: README обещает конкретное число проверок,
+// и это число уже разъезжалось (30 против 31). Сверять его может только сам
+// прогон — в исходнике 22 вызова check(...), но часть стоит в циклах, и
+// статический подсчёт врал бы. Проверка идёт до итога: упавший тест и так
+// красный, а вот тихо устаревший README без этого не краснел никогда.
+{
+  const readmePath = new URL('../README.md', import.meta.url);
+  const readme = await import('node:fs/promises').then((fs) => fs.readFile(readmePath, 'utf8'));
+  const line = readme.split('\n').find((l) => /прогон/.test(l) && /провер/.test(l));
+  const claimed = Number(line?.match(/(\d+)\s+провер/)?.[1]);
+  const total = passed + failures.length;
+  if (claimed !== total) {
+    console.log(`\n✗ README обещает ${claimed} проверок, прогон выполнил ${total} — обновите README.`);
+    process.exit(1);
+  }
+}
+
 console.log(`\nИтог: ${passed} проверок пройдено, ${failures.length} упало.\n`);
 if (failures.length) process.exit(1);
