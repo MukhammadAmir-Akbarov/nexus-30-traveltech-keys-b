@@ -1,7 +1,9 @@
 import { generateObject } from 'ai';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { readJson } from '../_schema';
+import { imageCheckSchema, readJson } from '../_schema';
+import { identifyImage } from '@/lib/vision';
+import { briefingFor } from '@/lib/briefing';
 import { getCorpus, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
@@ -83,6 +85,46 @@ export async function POST(req: Request) {
   // не доходило и уходило пятисоткой.
   const body = await readJson(req);
   if (!body.ok) return body.response;
+
+  /*
+   * Фотография — третий вход в эту же ручку, рядом с текстом и голосом.
+   * Ветка стоит здесь, ДО требования непустого claim: у снимка своего
+   * утверждения нет, турист просто показывает, что перед ним.
+   *
+   * Если поля image нет, ничего не меняется — текстовый поток идёт дальше
+   * тем же путём, что и до этой правки.
+   */
+  if ((body.data as { image?: unknown }).image !== undefined) {
+    const parsed = imageCheckSchema.safeParse(body.data);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      return Response.json(
+        { error: 'bad_image', field: first?.path.join('.') || undefined, detail: first?.message },
+        { status: 400 },
+      );
+    }
+
+    const bytes = new Uint8Array(Buffer.from(parsed.data.image, 'base64'));
+    // base64 «разбирается» почти всегда, поэтому смотрим на результат:
+    // пустой массив значит, что прислали не изображение, а мусор.
+    if (bytes.length === 0) {
+      return Response.json({ error: 'bad_image' }, { status: 400 });
+    }
+
+    const match = await identifyImage(bytes, parsed.data.mime, parsed.data.lang);
+
+    // «Не узнал» — такой же честный ответ, как unclear у вердикта и null
+    // у nearestPlace. Пустая карточка вместо ответа была бы хуже: человек
+    // не поймёт, сломалось приложение или снимка нет в базе.
+    if (!match) return Response.json({ unknown: true });
+
+    return Response.json({
+      place: { id: match.place.id, name: match.place.name, region: match.place.region },
+      mode: match.mode,
+      confidence: match.confidence,
+      briefing: briefingFor(match.place.id, parsed.data.lang),
+    });
+  }
 
   /*
    * guideId и placeId читаются здесь и дальше идут в recordFactCheck —

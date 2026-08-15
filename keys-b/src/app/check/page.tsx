@@ -7,6 +7,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { QrScanner } from '@/components/QrScanner';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
+import { PhotoCheck } from '@/components/PhotoCheck';
 import { GUIDES } from '@/data/guides';
 import { PLACE_BY_ID } from '@/data/places';
 import { t, tr } from '@/lib/i18n';
@@ -256,6 +257,9 @@ function CheckPageInner() {
             {loading ? t('checkLoading', lang) : t('checkButton', lang)}
           </button>
           <VoiceInput lang={SPEECH_LOCALE[lang]} onText={(text) => check(text)} />
+          {/* третий вход рядом с текстом и голосом: кейс требует одной проверки,
+              а не трёх продуктов */}
+          <PhotoCheck />
           <QrScanner />
         </div>
 
