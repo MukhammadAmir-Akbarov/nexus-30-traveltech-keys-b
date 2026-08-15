@@ -110,7 +110,13 @@ export default function CheckPage() {
     }
   };
 
-  const status = result ? STATUS_UI[result.verdict.status] : null;
+  // При споре источников статус «нет данных» врёт: система знает больше обычного —
+  // она знает, что источники не сошлись, и показывает обе версии.
+  const status = result
+    ? result.disputed
+      ? { key: 'disputedTitle' as UiKey, color: 'var(--warn)', weak: 'var(--warn-weak)', icon: 'alert' as IconName }
+      : STATUS_UI[result.verdict.status]
+    : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -247,13 +253,9 @@ export default function CheckPage() {
                 className="flex flex-col gap-3 rounded-xl p-3"
                 style={{ background: 'var(--warn-weak)' }}
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="tag tag-warn">
-                    <Icon name="alert" size={13} />
-                    {t('disputedTitle', lang)}
-                  </span>
-                  <b className="text-[13px]">{result.disputed.question}</b>
-                </div>
+                {/* заголовок «источники расходятся» уже стоит в плашке статуса —
+                    здесь достаточно самого вопроса, без повтора */}
+                <b className="text-[13px]">{result.disputed.question}</b>
 
                 {result.disputed.positions.map((position, index) => (
                   <div key={position.url} className="text-[13px]">
