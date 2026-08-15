@@ -602,6 +602,23 @@ assert.ok(
   'подпись должна называть оба праздника, а не только первый',
 );
 
+// Поправка должна не просто существовать, а доезжать до маршрута: в праздник
+// учреждения работают короче, значит объектов в день влезает меньше.
+{
+  const base = { ...family, travelType: 'solo' as const, days: 1 };
+  const holiday = buildItinerary(PLACES, { ...base, startDate: '2026-03-21' });
+  const ordinary = buildItinerary(PLACES, { ...base, startDate: '2026-07-15' });
+  const minutes = (it: typeof holiday) =>
+    it.days[0].items.reduce(
+      (sum, i) => sum + PLACES.find((p) => p.id === i.placeId)!.visitMinutes,
+      0,
+    );
+  assert.ok(
+    minutes(holiday) < minutes(ordinary),
+    `в праздник осмотра должно быть меньше: ${minutes(holiday)} против ${minutes(ordinary)}`,
+  );
+}
+
 // --- голосовой ввод контекста ---
 {
   const ru = parseTripPhrase('хочу в Самарканд на три дня, интересует история');
