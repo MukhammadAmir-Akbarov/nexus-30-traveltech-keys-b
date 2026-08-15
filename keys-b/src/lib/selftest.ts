@@ -949,6 +949,35 @@ assert.ok(
   'выборка фактов не подмешивает чужие объекты',
 );
 
+// Накопленное проверяется тоже: удалили гида — его вердикты и счётчики
+// повиснут, и раньше это было слепым пятном.
+assert.deepEqual(
+  danglingRefs({
+    guideIds: GUIDES.map((g) => g.id),
+    verdicts: [{ id: 'v1', guideId: GUIDES[0].id, placeId: 'registan' }],
+    requests: [{ id: 'r1', kind: 'guide-booking', targetId: GUIDES[0].id }],
+    users: [{ email: 'a@b.uz', guideId: GUIDES[0].id }],
+    accuracyKeys: [GUIDES[0].id, `${GUIDES[0].id}|registan`],
+  }),
+  [],
+  'связные накопленные данные проблем не дают',
+);
+const broken = danglingRefs({
+  guideIds: ['g1'],
+  verdicts: [{ id: 'v9', guideId: 'удалённый', placeId: 'нет-объекта' }],
+  requests: [{ id: 'r9', kind: 'place-problem', targetId: 'нет-объекта' }],
+  users: [{ email: 'x@y.uz', guideId: 'удалённый' }],
+  accuracyKeys: ['удалённый|registan'],
+});
+assert.ok(broken.length >= 5, 'каждая висячая ссылка обязана быть названа отдельно');
+assert.ok(
+  broken.some((p) => p.includes('вердикт v9')) &&
+    broken.some((p) => p.includes('заявка r9')) &&
+    broken.some((p) => p.includes('аккаунт x@y.uz')) &&
+    broken.some((p) => p.includes('счётчик')),
+  'проверка обязана ловить все четыре вида ссылок, а не только вердикты',
+);
+
 // --- доступность влияет на маршрут, а не только на значок ---
 const accessiblePlan = buildItinerary(PLACES, {
   ...family,

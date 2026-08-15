@@ -560,6 +560,28 @@ export const UI = {
     en: 'What is known about the place',
   },
 
+  adminData: { uz: 'Ma’lumotlar', ru: 'Данные', en: 'Data' },
+  dataTitle: { uz: 'Ma’lumotlar sxemasi', ru: 'Схема данных', en: 'Data schema' },
+  dataLead: {
+    uz: 'Baza nimadan iborat, nechta yozuv bor va hozir bog‘lanishlar butunmi.',
+    ru: 'Из чего состоит база, сколько в ней строк и связна ли она прямо сейчас.',
+    en: 'What the database consists of, how many rows it holds and whether it is consistent right now.',
+  },
+  dataOk: { uz: 'Baza butun: uzilgan havolalar yo‘q', ru: 'База связна: висячих ссылок нет', en: 'Consistent: no dangling references' },
+  dataBroken: { uz: 'Uzilgan havolalar topildi', ru: 'Найдены висячие ссылки', en: 'Dangling references found' },
+  dataCheckNote: {
+    uz: 'Tekshiruv jonli ma’lumotlarda ishlaydi: kodda yozilganlarda ham, to‘plangan yozuvlarda ham.',
+    ru: 'Проверка идёт по живым данным: и по тому, что в коде, и по накопленному.',
+    en: 'The check runs on live data: both the seed in code and everything accumulated.',
+  },
+  dataTables: { uz: 'Jadvallar', ru: 'Таблицы', en: 'Tables' },
+  dataRelations: { uz: 'Bog‘lanishlar', ru: 'Связи', en: 'Relations' },
+  dataSourceNote: {
+    uz: '«Kod» — repozitoriydagi urug‘; «to‘plangan» — ishlash davomida yig‘ilgani, diskda saqlanadi.',
+    ru: '«Код» — посев из репозитория; «накопленное» — то, что собралось при работе, лежит на диске.',
+    en: '“Code” is the seed from the repository; “accumulated” is what the app collected, stored on disk.',
+  },
+
   reportGapsTitle: {
     uz: 'So‘rashadi, javob esa yo‘q',
     ru: 'Спрашивают, а ответа нет',
