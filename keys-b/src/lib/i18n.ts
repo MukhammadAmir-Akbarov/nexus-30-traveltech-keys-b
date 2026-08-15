@@ -157,6 +157,9 @@ export const UI = {
   brandSuffix: { uz: 'Hamroh', ru: 'Hamroh', en: 'Hamroh' },
 
   tabTrip: { uz: 'Sayohat', ru: 'Поездка', en: 'Trip' },
+  // «Рядом», а не «Брифинг»: подпись должна отвечать на вопрос туриста
+  // «я сейчас где?», а не называть внутренний термин продукта.
+  tabNearby: { uz: 'Yaqinda', ru: 'Рядом', en: 'Nearby' },
   tabCheck: { uz: 'Faktlarni tekshirish', ru: 'Проверка фактов', en: 'Fact check' },
   tabPlan: { uz: 'Marshrut', ru: 'Маршрут', en: 'Itinerary' },
   tabGuides: { uz: 'Gidlar', ru: 'Гиды', en: 'Guides' },

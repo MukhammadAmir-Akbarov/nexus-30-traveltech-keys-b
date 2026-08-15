@@ -17,6 +17,9 @@ import type { UiKey } from '@/lib/i18n';
 
 export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
   { href: '/', key: 'tabTrip', icon: 'pin' },
+  // Экран «я на месте» стоит вторым и попадает в нижнюю панель: им пользуются
+  // стоя у объекта, одной рукой, и искать его в меню там некогда.
+  { href: '/nearby', key: 'tabNearby', icon: 'pin' },
   { href: '/check', key: 'tabCheck', icon: 'shield' },
   { href: '/plan', key: 'tabPlan', icon: 'route' },
   { href: '/places', key: 'tabPlaces', icon: 'pin' },
@@ -27,7 +30,7 @@ export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
 
 /** Для нижней панели на телефоне: только то, чем пользуются на ходу. */
 export const MOBILE_TABS = TABS.filter((tab) =>
-  ['/', '/check', '/plan', '/guides'].includes(tab.href),
+  ['/', '/nearby', '/check', '/plan', '/guides'].includes(tab.href),
 );
 
 const THEME_NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'light' };
