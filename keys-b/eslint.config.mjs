@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Воркер карты скопирован из maplibre-gl как есть: это чужой минифицированный
+    // код, проверять его нашими правилами бессмысленно.
+    "public/maplibre/**",
   ]),
 ]);
 

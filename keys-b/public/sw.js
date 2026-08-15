@@ -9,15 +9,33 @@
 // ponytail: без Workbox — здесь тридцать строк, библиотека не окупается.
 
 const CACHE = 'hamroh-v2';
-const APP_SHELL = ['/', '/plan', '/check', '/guides', '/manifest.webmanifest', '/icon.svg'];
+const APP_SHELL = [
+  '/',
+  '/plan',
+  '/check',
+  '/guides',
+  '/manifest.webmanifest',
+  '/icon.svg',
+  // воркер карты и его общий чанк: без них векторная карта не рисуется вовсе
+  '/maplibre/maplibre-gl-worker.mjs',
+  '/maplibre/maplibre-gl-shared.mjs',
+];
 
 // Тайлы карты живут отдельно: их много, они не меняются и переживают
 // обновление приложения. Без этого офлайн-режим врал: интерфейс открывался,
 // а карта маршрута оставалась серым прямоугольником.
 const TILE_CACHE = 'hamroh-tiles-v1';
-const TILE_HOSTS = ['tile.openstreetmap.org', 'a.tile.openstreetmap.org', 'b.tile.openstreetmap.org', 'c.tile.openstreetmap.org'];
+const TILE_HOSTS = [
+  // векторный источник по умолчанию
+  'tiles.openfreemap.org',
+  // растровый запасной
+  'tile.openstreetmap.org',
+  'a.tile.openstreetmap.org',
+  'b.tile.openstreetmap.org',
+  'c.tile.openstreetmap.org',
+];
 /** Потолок, чтобы кэш не рос бесконечно: примерно два города на всех зумах. */
-const TILE_LIMIT = 600;
+const TILE_LIMIT = 900;
 
 async function cacheTile(request) {
   const cache = await caches.open(TILE_CACHE);
