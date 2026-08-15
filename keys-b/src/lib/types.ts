@@ -136,6 +136,18 @@ export type ItineraryItem = {
   closed?: boolean;
 };
 
+/** Погода одного дня маршрута. `source` показывается туристу: прогноз ≠ норма. */
+export type DayWeather = {
+  date: string;
+  region: Region;
+  tMaxC: number;
+  precipMm: number;
+  source: 'forecast' | 'norm';
+};
+
+/** Что делать с этим днём: жара, дождь, короткий световой день или обычный день. */
+export type WeatherAdvice = 'heat' | 'rain' | 'short-day' | 'fine';
+
 /** Ориентировочная стоимость поездки. Не тариф — оценка по демо-данным. */
 export type TripCost = {
   ticketsUsd: number;
@@ -165,6 +177,9 @@ export type ItineraryDay = {
   /** Заполняется, если день начинается с переезда между городами. */
   transfer?: Transfer;
   items: ItineraryItem[];
+  /** Погода дня и её причина — почему объекты стоят в таком порядке. */
+  weather?: DayWeather;
+  weatherNote?: string;
 };
 
 export type Itinerary = {

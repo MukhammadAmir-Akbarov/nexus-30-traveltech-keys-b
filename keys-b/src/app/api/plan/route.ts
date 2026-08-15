@@ -4,7 +4,8 @@ import { PLACES, PLACE_BY_ID } from '@/data/places';
 import { buildItinerary } from '@/lib/planner';
 import { hasAI, MODEL } from '@/lib/model';
 import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
-import type { Itinerary, Mode, TripContext } from '@/lib/types';
+import { climateNorm, forecastFor, tripDates } from '@/lib/weather';
+import type { DayWeather, Itinerary, Lang, Mode, TripContext } from '@/lib/types';
 
 const itinerarySchema = z.object({
   summary: z.string().describe('1–2 предложения: чем этот маршрут подходит путешественнику'),
@@ -39,12 +40,47 @@ function sanitize(raw: Itinerary): Itinerary {
   return { summary: raw.summary, days };
 }
 
+/**
+ * Погода запрашивается по тому городу, где турист окажется в этот день, а не по
+ * одному городу на всю поездку. Поэтому два прохода: сначала черновик маршрута,
+ * потом прогноз по его городам, потом пересборка уже с погодой.
+ */
+async function weatherForDraft(ctx: TripContext, lang: Lang): Promise<DayWeather[]> {
+  const draft = buildItinerary(PLACES, { ...ctx, lang });
+  const dates = tripDates(draft.days.length, ctx.startDate);
+
+  const regionOfDay = draft.days.map(
+    (day) => PLACE_BY_ID[day.items[0]?.placeId]?.region ?? 'tashkent',
+  );
+
+  // города спрашиваем параллельно: последовательно турист ждал бы секунды впустую
+  const unique = [...new Set(regionOfDay)];
+  const byRegion = new Map(
+    await Promise.all(
+      unique.map(async (region) => {
+        const days = dates.filter((_, i) => regionOfDay[i] === region);
+        return [region, await forecastFor(region, days)] as const;
+      }),
+    ),
+  );
+
+  const cursor = new Map<string, number>();
+  return regionOfDay.map((region) => {
+    const index = cursor.get(region) ?? 0;
+    cursor.set(region, index + 1);
+    return byRegion.get(region)?.[index] ?? climateNorm(region, dates[index] ?? dates[0]);
+  });
+}
+
 export async function POST(req: Request) {
   const ctx = (await req.json()) as TripContext;
   const lang = ctx.lang ?? 'ru';
+
+  const weather = await weatherForDraft(ctx, lang);
+
   const offline = (): Response =>
     Response.json({
-      itinerary: buildItinerary(PLACES, { ...ctx, lang }),
+      itinerary: buildItinerary(PLACES, { ...ctx, lang }, weather),
       mode: 'offline' satisfies Mode,
     });
 

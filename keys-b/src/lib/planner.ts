@@ -1,4 +1,5 @@
 import type {
+  DayWeather,
   I18nText,
   Itinerary,
   ItineraryDay,
@@ -11,6 +12,7 @@ import type {
 } from './types.ts';
 import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
+import { adviceFor } from './weather.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
@@ -50,6 +52,23 @@ const TEXT = {
     uz: 'Yozda kunduzi +38 dan oshadi — bu obyektni tongda yoki kechqurun ko‘ring.',
     ru: 'Летом днём выше +38 — этот объект лучше смотреть утром или вечером.',
     en: 'Summer days exceed +38 °C — visit this open-air site in the morning or evening.',
+  },
+  // Причина перестановки всегда называется вслух: без объяснения учёт погоды
+  // не виден и не проверяем — выглядит как случайный порядок.
+  weatherHeat: {
+    uz: 'Kunduzi +{t} — ochiq havodagi obyektlar tongga ko‘chirildi.',
+    ru: 'Днём +{t} — объекты под открытым небом перенесены на утро.',
+    en: '+{t} °C at midday — open-air sites moved to the morning.',
+  },
+  weatherRain: {
+    uz: 'Yomg‘ir ({mm} mm) — kun yopiq obyektlardan yig‘ildi.',
+    ru: 'Дождь ({mm} мм) — день собран из крытых объектов.',
+    en: 'Rain ({mm} mm) — the day is built from indoor sites.',
+  },
+  weatherShortDay: {
+    uz: 'Kun qisqa (+{t}) — ko‘rish vaqti qisqartirildi.',
+    ru: 'Короткий световой день (+{t}) — время осмотра урезано.',
+    en: 'Short daylight (+{t} °C) — sightseeing time is trimmed.',
   },
   more: { uz: 'yana', ru: 'ещё', en: 'plus' },
   empty: {
@@ -247,7 +266,37 @@ function estimateCost(days: ItineraryDay[], byId: Map<string, Place>): TripCost 
   };
 }
 
-export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
+/**
+ * Применяет погоду к уже собранному дню: меняет порядок объектов и называет
+ * причину. Состав дня НЕ трогает — иначе турист, приехавший ради Регистана,
+ * получит план без Регистана из-за двух миллиметров дождя.
+ */
+function applyWeather(day: ItineraryDay, weather: DayWeather, byId: Map<string, Place>, lang: Lang): ItineraryDay {
+  const advice = adviceFor(weather);
+  const outdoor = (id: string) => byId.get(id)?.outdoor ?? false;
+
+  let items = day.items;
+  let note: string | undefined;
+
+  if (advice === 'heat') {
+    items = [...items].sort((a, b) => Number(outdoor(b.placeId)) - Number(outdoor(a.placeId)));
+    note = TEXT.weatherHeat[lang].replace('{t}', String(weather.tMaxC));
+  } else if (advice === 'rain') {
+    items = [...items].sort((a, b) => Number(outdoor(a.placeId)) - Number(outdoor(b.placeId)));
+    note = TEXT.weatherRain[lang].replace('{mm}', String(weather.precipMm));
+  } else if (advice === 'short-day') {
+    note = TEXT.weatherShortDay[lang].replace('{t}', String(weather.tMaxC));
+  }
+
+  return { ...day, items, weather, weatherNote: note };
+}
+
+export function buildItinerary(
+  places: Place[],
+  ctx: TripContext,
+  /** Погода по дням: элемент i — день i+1. Нет погоды — работают прежние правила. */
+  weatherByDay?: DayWeather[],
+): Itinerary {
   const lang = ctx.lang;
   const pool = eligible(places, ctx);
   if (pool.length === 0) return { summary: TEXT.empty[lang], days: [] };
@@ -364,5 +413,11 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
     (days.length < ctx.days ? TEXT.shortened[lang].replace('{asked}', String(ctx.days)) : '');
 
   const byId = new Map(places.map((p) => [p.id, p]));
-  return { summary, days, cost: estimateCost(days, byId) };
+  const withWeather = weatherByDay?.length
+    ? days.map((day, index) =>
+        weatherByDay[index] ? applyWeather(day, weatherByDay[index], byId, lang) : day,
+      )
+    : days;
+
+  return { summary, days: withWeather, cost: estimateCost(withWeather, byId) };
 }

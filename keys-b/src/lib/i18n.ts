@@ -647,6 +647,42 @@ const UI = {
 
   skipToContent: { uz: 'Asosiy qismga o‘tish', ru: 'К содержимому', en: 'Skip to content' },
 
+  // Офлайн-пакет: прогреть карту, пока сеть есть, а не когда её уже нет
+  offlinePack: { uz: 'Xaritani oldindan yuklash', ru: 'Скачать карту заранее', en: 'Download the map' },
+  offlinePackBusy: { uz: 'Yuklanmoqda…', ru: 'Скачиваю…', en: 'Downloading…' },
+  offlinePackHint: {
+    uz: 'Tanlangan hudud xaritasi telefonda qoladi: internet yo‘qolsa ham marshrut ochiladi.',
+    ru: 'Карта выбранного региона останется на телефоне: маршрут откроется, даже если сеть пропадёт.',
+    en: 'The selected region’s map stays on your phone: the itinerary opens even without a connection.',
+  },
+
+  // Намаз: для зиёрат-туризма важно не только «где намазхона», но и «когда»
+  prayerTitle: { uz: 'Namoz vaqtlari', ru: 'Время намаза', en: 'Prayer times' },
+  prayerFajr: { uz: 'Bomdod', ru: 'Фаджр', en: 'Fajr' },
+  prayerDhuhr: { uz: 'Peshin', ru: 'Зухр', en: 'Dhuhr' },
+  prayerAsr: { uz: 'Asr', ru: 'Аср', en: 'Asr' },
+  prayerMaghrib: { uz: 'Shom', ru: 'Магриб', en: 'Maghrib' },
+  prayerIsha: { uz: 'Xufton', ru: 'Иша', en: 'Isha' },
+  prayerNote: {
+    uz: 'quyosh bo‘yicha hisoblangan, aniq vaqt — mahalliy masjid jadvalida',
+    ru: 'расчёт по солнцу, точное время — в расписании местной мечети',
+    en: 'computed from the sun; the local mosque schedule is authoritative',
+  },
+
+  // Погода: источник всегда подписан — прогноз и норма это разные вещи
+  weatherForecast: { uz: 'prognoz', ru: 'прогноз', en: 'forecast' },
+  weatherNorm: { uz: 'iqlim normasi', ru: 'норма', en: 'climate norm' },
+  weatherForecastHint: {
+    uz: 'Marshrut kunidagi shahar bo‘yicha haqiqiy prognoz.',
+    ru: 'Реальный прогноз по городу этого дня маршрута.',
+    en: 'A real forecast for the city of this day.',
+  },
+  weatherNormHint: {
+    uz: 'Prognoz olinmadi: oyning ko‘p yillik o‘rtachasi ko‘rsatilgan.',
+    ru: 'Прогноз получить не удалось: показана многолетняя норма месяца.',
+    en: 'No forecast available: showing the long-term monthly norm.',
+  },
+
   // Спорные темы: у части утверждений нет одного «верно»
   disputedTitle: {
     uz: 'Manbalar bir-biriga zid',

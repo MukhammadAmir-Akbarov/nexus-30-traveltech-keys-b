@@ -12,6 +12,9 @@ import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { itineraryToIcs } from './ics.ts';
 import { disputedForLang, findDisputed } from './disputed.ts';
+import { adviceFor, climateNorm, tripDates } from './weather.ts';
+import { prayerTimes, prayersDuring } from './prayer.ts';
+import type { DayWeather } from './types.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
   clearLoginAttempts,
@@ -557,6 +560,144 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- погода ---
+
+// норма считается для любой даты и без сети
+const julyNorm = climateNorm('bukhara', '2026-07-15');
+assert.equal(julyNorm.source, 'norm', 'без прогноза источник — норма');
+assert.ok(julyNorm.tMaxC >= 35, `в июле в Бухаре жарко, а получили ${julyNorm.tMaxC}`);
+assert.equal(
+  climateNorm('khiva', '2027-01-05').source,
+  'norm',
+  'дата за горизонтом прогноза тоже даёт норму, а не ошибку',
+);
+assert.equal(adviceFor(julyNorm), 'heat', 'июльская норма Бухары — это жара');
+assert.equal(
+  adviceFor({ date: '2026-03-01', region: 'tashkent', tMaxC: 16, precipMm: 5, source: 'norm' }),
+  'rain',
+  'осадки важнее температуры',
+);
+assert.equal(
+  adviceFor({ date: '2026-01-10', region: 'khiva', tMaxC: 3, precipMm: 0, source: 'norm' }),
+  'short-day',
+  'мороз — короткий световой день',
+);
+
+const bukharaCtx: TripContext = {
+  ...family,
+  travelType: 'solo',
+  region: 'bukhara',
+  regions: ['bukhara'],
+  days: 2,
+};
+const plain = buildItinerary(PLACES, bukharaCtx);
+const hotWeather: DayWeather[] = plain.days.map((_, i) => ({
+  date: `2026-07-1${i}`,
+  region: 'bukhara',
+  tMaxC: 41,
+  precipMm: 0,
+  source: 'forecast',
+}));
+const hot = buildItinerary(PLACES, bukharaCtx, hotWeather);
+
+const outdoorOf = (id: string) => PLACES.find((p) => p.id === id)!.outdoor;
+assert.ok(
+  outdoorOf(hot.days[0].items[0].placeId),
+  'в жару день начинается с объекта под открытым небом — по утренней прохладе',
+);
+assert.ok(hot.days[0].weatherNote?.includes('41'), 'причина перестановки называет температуру');
+assert.equal(hot.days[0].weather?.source, 'forecast', 'источник погоды виден в дне');
+
+// Дождь проверяем на Самарканде: там есть и крытые объекты, и открытые.
+// В Бухаре демо-датасет целиком под открытым небом, и переставлять там нечего —
+// это ограничение данных, а не правила.
+const samarkandCtx: TripContext = { ...family, travelType: 'solo', days: 2 };
+const dryPlan = buildItinerary(PLACES, samarkandCtx);
+const rainWeather: DayWeather[] = dryPlan.days.map((_, i) => ({
+  date: `2026-03-1${i}`,
+  region: 'samarkand',
+  tMaxC: 18,
+  precipMm: 6,
+  source: 'forecast',
+}));
+const rainy = buildItinerary(PLACES, samarkandCtx, rainWeather);
+assert.ok(
+  !outdoorOf(rainy.days[0].items[0].placeId),
+  'в дождь день начинается с крытого объекта',
+);
+assert.ok(rainy.days[0].weatherNote?.includes('6'), 'причина дождя называет миллиметры');
+
+// Город, где всё под открытым небом: дождь не должен оставить турист без плана.
+const rainInBukhara = buildItinerary(
+  PLACES,
+  bukharaCtx,
+  plain.days.map((_, i) => ({
+    date: `2026-03-1${i}`,
+    region: 'bukhara' as const,
+    tMaxC: 18,
+    precipMm: 6,
+    source: 'forecast' as const,
+  })),
+);
+assert.equal(
+  rainInBukhara.days.flatMap((d) => d.items).length,
+  plain.days.flatMap((d) => d.items).length,
+  'если крытых объектов в городе нет, дождь всё равно не выбрасывает открытые',
+);
+
+// ГЛАВНОЕ правило: погода меняет порядок и бюджет, но НЕ состав.
+// Иначе турист, приехавший ради Регистана, получит план без Регистана.
+const idsOf = (it: typeof plain) =>
+  new Set(it.days.flatMap((d) => d.items.map((i) => i.placeId)));
+assert.deepEqual(idsOf(hot), idsOf(plain), 'жара не должна выкидывать объекты из маршрута');
+assert.deepEqual(
+  idsOf(rainy),
+  idsOf(dryPlan),
+  'дождь не должен выкидывать объекты из маршрута',
+);
+assert.equal(
+  hot.days.length,
+  plain.days.length,
+  'число дней от погоды не меняется',
+);
+
+// даты поездки: обе включительно, считаются от старта
+const dates = tripDates(3, '2026-09-01');
+assert.deepEqual(dates, ['2026-09-01', '2026-09-02', '2026-09-03'], 'даты идут подряд от старта');
+assert.equal(tripDates(2).length, 2, 'без стартовой даты план всё равно получает даты');
+
+// --- время намаза ---
+const june = prayerTimes('tashkent', '2026-06-21');
+const december = prayerTimes('tashkent', '2026-12-21');
+const asMinutes = (v: string) => Number(v.slice(0, 2)) * 60 + Number(v.slice(3));
+for (const times of [june, december]) {
+  const order = [times.fajr, times.dhuhr, times.asr, times.maghrib, times.isha].map(asMinutes);
+  assert.ok(
+    order.every((m, i) => i === 0 || order[i - 1] < m),
+    `намазы должны идти по возрастанию: ${JSON.stringify(times)}`,
+  );
+  assert.ok(
+    order.every((m) => m >= 0 && m < 1440),
+    'время суток не может выходить за границы суток',
+  );
+}
+// в июне день длиннее: закат позже, чем в декабре
+assert.ok(
+  asMinutes(june.maghrib) > asMinutes(december.maghrib) + 120,
+  'летний закат должен быть заметно позже зимнего',
+);
+// зухр около солнечного полудня Ташкента (UTC+5, долгота 69°) — примерно 12:25
+assert.ok(
+  Math.abs(asMinutes(june.dhuhr) - 12 * 60 - 25) < 20,
+  `зухр должен быть около солнечного полудня, а получили ${june.dhuhr}`,
+);
+assert.deepEqual(
+  prayersDuring(june, '12:00', 60),
+  ['dhuhr'],
+  'осмотр с 12:00 на час накрывает зухр',
+);
+assert.deepEqual(prayersDuring(june, '09:00', 60), [], 'утренний осмотр намаз не задевает');
 
 // --- спорные темы ---
 // ловится на всех трёх языках, потому что идёт через ту же токенизацию
