@@ -11,9 +11,11 @@ Quick-туннель `cloudflared` живёт часами и умирает м�
 падал дважды, оба раза перед показом. На защите это лотерея.
 
 1. Render → **New → Blueprint**.
-2. Выбрать репозиторий `nexus-30-traveltech-keys-b`, ветку **cyber**.
-3. Render прочитает `traveltech/render.yaml` и покажет один сервис
-   `turizm-hamroh`. Нажать **Apply**.
+2. Выбрать репозиторий `nexus-30-traveltech-keys-b`, ветку **elbek**.
+   На 16 августа деплой идёт с неё: `cyber` и `elbek` разошлись, а публичный
+   адрес нужен раньше, чем закончится слияние. Причина записана в `render.yaml`.
+3. Render прочитает `render.yaml` в корне репозитория (не в `traveltech/` —
+   такой папки нет) и покажет один сервис `turizm-hamroh`. Нажать **Apply**.
 
 Что произойдёт само, без ручной настройки:
 
@@ -65,9 +67,10 @@ gh api -X PUT repos/MukhammadAmir-Akbarov/nexus-30-traveltech-keys-b/collaborato
 Локально:
 
 ```bash
-cd traveltech/keys-b
-cp .env.example .env.local
-# AI_GATEWAY_API_KEY=...
+cd keys-b
+# .env.example в репозитории нет — создать .env.local вручную:
+echo 'AI_GATEWAY_API_KEY=...' > .env.local
+# необязательно: AI_MODEL=... — по умолчанию anthropic/claude-sonnet-5 (src/lib/model.ts:3)
 npm run build && npx next start -p 3000
 ```
 
@@ -96,10 +99,12 @@ npm run build && npx next start -p 3000
 ## Перед выходом на сцену
 
 ```bash
-cd traveltech/keys-b
+cd keys-b
 npm run check              # логика: планировщик, погода, намаз, репутация
 npx next start -p 3000 &
-npm run e2e                # 30 проверок против живого сервера
+BASE=http://127.0.0.1:3000 npm run e2e   # 30 проверок против живого сервера
+# BASE обязателен и именно по IPv4: с `localhost` fetch в Node 22 сначала идёт
+# на ::1, сервер слушает IPv4, и все 30 проверок падают с «fetch failed».
 ```
 
 Оба должны быть зелёными. `npm run e2e` умеет работать и против публичного

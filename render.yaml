@@ -6,7 +6,14 @@ services:
     runtime: node
     plan: free
     region: frankfurt # ближайший к Узбекистану регион Render
-    branch: cyber
+
+    # Ветка деплоя — elbek, а не cyber. Почему так на 16 августа:
+    # cyber и elbek разошлись (у cyber 2 коммита с фотографиями и бюджетом,
+    # у elbek 13 — узбекский поиск, вердикт по правилам, startRegion, формат
+    # «пара», подбор гида, подпись сессии). Слияние даёт конфликты в шести
+    # файлах, а публичный адрес нужен раньше, чем закончится это слияние.
+    # После слияния вернуть сюда cyber — autoDeploy подхватит сам.
+    branch: elbek
     rootDir: keys-b
     buildCommand: npm ci && npm run build
     # Render передаёт порт в $PORT — next start по умолчанию слушает 3000, поэтому порт задаём явно
