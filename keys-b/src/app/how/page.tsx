@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
+import { CORPUS } from '@/data/corpus';
 import { FEATURED_IDS } from '@/data/featured';
+import { GUIDES } from '@/data/guides';
 import { PHOTOS } from '@/data/photos';
-import { PLACE_BY_ID } from '@/data/places';
+import { PLACES, PLACE_BY_ID } from '@/data/places';
 import { t, tr } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
 
@@ -22,6 +24,20 @@ const ROWS: { now: UiKey; prod: UiKey }[] = [
 ];
 
 const STEPS: UiKey[] = ['howStep1', 'howStep2', 'howStep3', 'howStep4'];
+
+/**
+ * Числа на этой странице берутся из данных, а не из словаря.
+ *
+ * В словаре стояло «40 абзацев», пока корпус вырос до 85 — вдвое. Страница
+ * про границы прототипа, занизившая собственный объём, обесценивает
+ * единственное, что мы про себя меряем. Теперь разойтись нечему.
+ */
+function withCounts(text: string): string {
+  return text
+    .replace('{n}', String(CORPUS.length))
+    .replace('{places}', String(PLACES.length))
+    .replace('{guides}', String(GUIDES.length));
+}
 
 export default function HowPage() {
   const { lang } = useTrip();
@@ -46,7 +62,7 @@ export default function HowPage() {
             <tbody>
               {ROWS.map((row) => (
                 <tr key={row.now} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td className="py-2 pe-4">{t(row.now, lang)}</td>
+                  <td className="py-2 pe-4">{withCounts(t(row.now, lang))}</td>
                   <td className="py-2">{t(row.prod, lang)}</td>
                 </tr>
               ))}

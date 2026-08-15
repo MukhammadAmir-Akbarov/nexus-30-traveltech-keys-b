@@ -941,7 +941,14 @@ export const UI = {
     ru: 'Реестр Комитета: лицензия, личность и проверка языков',
     en: 'The Committee registry: licence, identity and language checks',
   },
-  howFactsNow: { uz: '40 abzas rasmiy manbalardan', ru: '40 абзацев из официальных источников', en: '40 paragraphs from official sources' },
+  // {n} подставляется из CORPUS.length: число в словаре успело разойтись
+  // с корпусом вдвое (40 против 85), а на странице про границы прототипа
+  // соврать в меньшую сторону — значит обесценить единственное, что мы меряем.
+  howFactsNow: {
+    uz: '{n} abzas rasmiy manbalardan',
+    ru: '{n} абзацев из официальных источников',
+    en: '{n} paragraphs from official sources',
+  },
   howFactsProd: {
     uz: 'Muzeylar va arxivlarning rasmiy matnlari, versiyalari bilan',
     ru: 'Официальные тексты музеев и архивов с версионированием',
