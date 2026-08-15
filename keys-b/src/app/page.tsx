@@ -93,6 +93,32 @@ export default function Home() {
           что видел человек, — форма из восьми полей. */}
       <HomeShowcase />
 
+      {/* «Я на месте» — самый короткий путь к главной новой функции.
+          Турист открывает приложение, стоя у объекта, и брифинг должен быть
+          в одном нажатии от первого экрана: без этой карточки /nearby
+          находился только через навигацию, и жюри его не находило. */}
+      <Link
+        href="/nearby"
+        className="card card-link flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-pill)]"
+            style={{ background: 'var(--accent-weak)', color: 'var(--accent-ink)' }}
+            aria-hidden="true"
+          >
+            📍
+          </span>
+          <div>
+            <div className="text-[15px] font-semibold">{t('homeNearbyTitle', lang)}</div>
+            <p className="muted mt-0.5 text-[13px]">{t('homeNearbyHint', lang)}</p>
+          </div>
+        </div>
+        <span className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--accent)' }}>
+          {t('homeNearbyCta', lang)} →
+        </span>
+      </Link>
+
       <section>
         <h2>{t('homeTitle', lang)}</h2>
         <p className="muted prose-measure mt-2 text-[15px]">{t('homeLead', lang)}</p>

@@ -778,6 +778,25 @@ export const UI = {
     ru: 'Точность по объектам',
     en: 'Accuracy by place',
   },
+  // Карточка «я на месте» на главной и ссылка под вердиктом: /nearby без них
+  // находился только через навигацию, и жюри его не находило.
+  homeNearbyTitle: {
+    uz: 'Yaqin-atrofda nima bor?',
+    ru: 'Что рядом с вами?',
+    en: 'What is around you?',
+  },
+  homeNearbyHint: {
+    uz: 'Obyekt oldida turgan bo‘lsangiz — gid gapirishidan oldin biling.',
+    ru: 'Стоите у объекта — узнайте о нём до того, как заговорит гид.',
+    en: 'Standing at a site? Learn about it before the guide starts talking.',
+  },
+  homeNearbyCta: { uz: 'Ko‘rish', ru: 'Открыть', en: 'Open' },
+  checkNearbyLink: {
+    uz: 'Obyekt haqida oldindan bilmoqchimisiz? «Men shu yerdaman» ochiladi',
+    ru: 'Хотите узнать об объекте заранее? Откройте «я на месте»',
+    en: 'Want the briefing before the tour? Open “I am here”',
+  },
+
   nearbyTitle: {
     uz: 'Yaqin atrofda',
     ru: 'Рядом по маршруту',

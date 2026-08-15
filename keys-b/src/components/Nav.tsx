@@ -29,8 +29,14 @@ export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
 ];
 
 /** Для нижней панели на телефоне: только то, чем пользуются на ходу. */
+/**
+ * Нижней панели — четыре места, не пять: пять подписей на 390px уже каша.
+ * «Я на месте» стоит первым — приложение открывают, стоя у объекта.
+ * Главная из списка ушла осознанно: на неё ведёт логотип в шапке, это
+ * привычный жест, а вот /nearby без своей кнопки не найдёт никто.
+ */
 export const MOBILE_TABS = TABS.filter((tab) =>
-  ['/', '/nearby', '/check', '/plan', '/guides'].includes(tab.href),
+  ['/nearby', '/check', '/plan', '/guides'].includes(tab.href),
 );
 
 const THEME_NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'light' };

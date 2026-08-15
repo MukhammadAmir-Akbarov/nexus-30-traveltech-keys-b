@@ -462,6 +462,17 @@ function CheckPageInner() {
                 </ul>
               </details>
             )}
+
+            {/* Кольцо в обе стороны: проверка ловит сказанное ПОСЛЕ, брифинг
+                «я на месте» вооружает ДО. Без этой ссылки вторую половину
+                кольца с экрана проверки было не найти. */}
+            <Link
+              href="/nearby"
+              className="text-[13px] underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              {t('checkNearbyLink', lang)} →
+            </Link>
           </section>
         )}
       </div>
