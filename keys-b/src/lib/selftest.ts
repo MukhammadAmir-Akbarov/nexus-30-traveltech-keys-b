@@ -3,7 +3,7 @@
 // (Node 22 сам снимает типы, поэтому импорты — с расширением .ts.)
 import assert from 'node:assert/strict';
 import { CORPUS } from '../data/corpus.ts';
-import { FEATURED_IDS } from '../data/featured.ts';
+import { FEATURED_IDS, HOME_FEATURED_COUNT } from '../data/featured.ts';
 import { GUIDES } from '../data/guides.ts';
 import { PHOTOS } from '../data/photos.ts';
 import { PLACES } from '../data/places.ts';
@@ -1062,6 +1062,14 @@ assert.equal(toRoman(15), 'XV', 'век печатается римскими');
 const placeIds = new Set(PLACES.map((place) => place.id));
 
 assert.equal(new Set(FEATURED_IDS).size, FEATURED_IDS.length, 'на витрине нет повторов');
+
+// Главная показывает два полных ряда по три. Если подборка окажется короче
+// этого числа, первый экран поедет вёрсткой — а это первый экран и для жюри.
+assert.ok(
+  FEATURED_IDS.length >= HOME_FEATURED_COUNT,
+  'в подборке хватает объектов на главную',
+);
+assert.equal(HOME_FEATURED_COUNT % 3, 0, 'главная кладёт карточки в полные ряды по три');
 
 for (const id of FEATURED_IDS) {
   assert.ok(placeIds.has(id), `объект витрины ${id} есть в PLACES`);

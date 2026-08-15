@@ -228,6 +228,21 @@ export const UI = {
     ru: 'Редакционная подборка, а не рейтинг по посещаемости. За каждым объектом стоят факты с указанным источником.',
     en: 'An editorial selection, not a visitor-count ranking. Every place is backed by facts with a named source.',
   },
+  homeGreeting: {
+    uz: 'Assalomu alaykum, sayohatchi',
+    ru: 'Здравствуйте, путешественник',
+    en: 'Hello, traveller',
+  },
+  homeHeroTitle: {
+    uz: 'Qayerga bormoqchisiz?',
+    ru: 'Куда вы хотите поехать?',
+    en: 'Where do you want to go?',
+  },
+  homeSearchLabel: {
+    uz: 'Manzilni qidiring',
+    ru: 'Найдите направление',
+    en: 'Search your destination',
+  },
   homeAllPlaces: { uz: 'Barcha obyektlar', ru: 'Все объекты', en: 'All places' },
   homeFactsCount: { uz: 'manbali fakt', ru: 'фактов с источником', en: 'sourced facts' },
   photoBy: { uz: 'foto:', ru: 'фото:', en: 'photo:' },

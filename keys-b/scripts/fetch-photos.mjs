@@ -42,6 +42,7 @@ const TARGETS = [
   // Здесь поиск не помогает: по «Chorsu» верхние кадры — мясной ряд внутри.
   // Файл выбран глазами, поэтому закреплён явно.
   { id: 'chorsu', file: 'File:Chorsu Bazaar in Tashkent.jpg' },
+  { id: 'islamic-civilization', query: 'Center of Islamic Civilization of Uzbekistan Tashkent' },
 ];
 
 /** Лицензии, которые можно использовать с указанием автора. Остальные пропускаем. */

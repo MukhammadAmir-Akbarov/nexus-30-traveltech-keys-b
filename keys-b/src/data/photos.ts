@@ -83,6 +83,13 @@ export const PHOTOS: Record<string, PhotoCredit> = {
     licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0",
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Chorsu_Bazaar_in_Tashkent.jpg",
   },
+  'islamic-civilization': {
+    src: '/places/islamic-civilization.jpg',
+    author: "Зинҳор Насрӣ",
+    license: "CC BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Center_of_Islamic_Civilization_of_Uzbekistan_Tashkent_2026_001.jpg",
+  },
 };
 
 export function photoOf(placeId: string): PhotoCredit | undefined {

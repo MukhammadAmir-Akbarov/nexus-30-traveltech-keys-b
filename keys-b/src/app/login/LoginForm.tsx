@@ -21,8 +21,6 @@ export function LoginForm({ demo }: { demo: boolean }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Ошибка из адреса читается хуком Next, а не эффектом с setState:
-  // значение известно уже на первом рендере.
   const params = useSearchParams();
   const router = useRouter();
   const urlError = params.get('error');
@@ -46,8 +44,6 @@ export function LoginForm({ demo }: { demo: boolean }) {
         return;
       }
       const next = params.get('next');
-      // роутер вместо window.location: сессия проверяется на сервере,
-      // поэтому после входа страницу нужно обновить, а не перезагрузить целиком
       router.push(next ?? (data.role === 'admin' ? '/admin' : data.role === 'guide' ? '/guide' : '/'));
       router.refresh();
     } finally {
@@ -56,13 +52,13 @@ export function LoginForm({ demo }: { demo: boolean }) {
   };
 
   return (
-    <div className="mx-auto flex max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-bold">
+    <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
+      <h1 className="text-3xl font-extrabold text-slate-800 text-center uppercase tracking-wider mb-2">
         {mode === 'login' ? t('authLogin', lang) : t('authRegister', lang)}
       </h1>
 
-      <form className="card flex flex-col gap-3" onSubmit={submit}>
-        <label className="text-sm font-semibold" htmlFor="email">
+      <form className="flex flex-col gap-4" onSubmit={submit}>
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-4" htmlFor="email">
           {t('authEmail', lang)}
         </label>
         <input
@@ -70,12 +66,12 @@ export function LoginForm({ demo }: { demo: boolean }) {
           type="email"
           required
           autoComplete="email"
-          className="field"
+          className="w-full rounded-full bg-teal-50 px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 placeholder-teal-600/50 text-teal-900 shadow-inner transition-shadow"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <label className="text-sm font-semibold" htmlFor="password">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-4 mt-2" htmlFor="password">
           {t('authPassword', lang)}
         </label>
         <input
@@ -84,7 +80,7 @@ export function LoginForm({ demo }: { demo: boolean }) {
           required
           minLength={6}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          className="field"
+          className="w-full rounded-full bg-teal-50 px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 placeholder-teal-600/50 text-teal-900 shadow-inner transition-shadow"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -95,13 +91,13 @@ export function LoginForm({ demo }: { demo: boolean }) {
           </div>
         )}
 
-        <button className="btn btn-primary" disabled={loading}>
+        <button className="w-full rounded-full bg-[#0E979D] px-6 py-4 mt-4 text-sm font-bold uppercase tracking-widest text-white shadow-[0_8px_20px_rgba(14,151,157,0.3)] hover:bg-teal-500 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50" disabled={loading}>
           {mode === 'login' ? t('authLogin', lang) : t('authRegister', lang)}
         </button>
 
         <button
           type="button"
-          className="chip self-start"
+          className="text-sm text-teal-600 hover:text-[#0E979D] self-center mt-2 transition-colors font-medium underline-offset-4 hover:underline"
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setErrorKey(null);
@@ -111,9 +107,6 @@ export function LoginForm({ demo }: { demo: boolean }) {
         </button>
       </form>
 
-      {/* Показываем пароль только если он и правда тот, что написан. Признак
-          приходит с сервера при каждом запросе: NEXT_PUBLIC_* подставляется при
-          сборке, поэтому раньше подсказка врала на собранном заранее бандле. */}
       {demo && <p className="muted text-[12px]">{t('authDemoHint', lang)}</p>}
     </div>
   );
