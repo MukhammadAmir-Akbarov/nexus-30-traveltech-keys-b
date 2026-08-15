@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { getCorpus, recordFactCheck } from '@/lib/store';
+import { getCorpus, noteGap, recordFactCheck } from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
 import { hasAI, isMockAI, MODEL } from '@/lib/model';
@@ -81,6 +81,14 @@ export async function POST(req: Request) {
 
   const cached = lookupDemoVerdict(claim, lang);
   const respond = (verdict: CheckVerdict, mode: Mode) => {
+    /*
+     * «Нет ответа в источниках» — не пустой результат, а сигнал заказчику:
+     * по этой теме у государства нет опубликованного ответа. Складываем такие
+     * вопросы в журнал, а отчёт Комитету сортирует их по частоте. Спорные темы
+     * сюда не идут: там ответ есть, просто источники не сошлись.
+     */
+    if (verdict.status === 'unclear' && !disputed) noteGap(claim, placeId);
+
     // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида —
     // но только если это не повтор того же утверждения и не поток от скрипта
     // спорную тему в репутацию не пишем: гид не виноват, что источники не сошлись

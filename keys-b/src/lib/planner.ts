@@ -129,6 +129,58 @@ const TEXT = {
   },
 } satisfies Record<string, I18nText>;
 
+/**
+ * Правила, которые сработали на конкретном маршруте, словами.
+ * Главный тезис продукта — не чёрный ящик; доказывать его должен сам маршрут.
+ */
+const RULE: Record<string, I18nText> = {
+  pace: {
+    uz: 'Sur’at: kuniga {n} daqiqa ko‘rish.',
+    ru: 'Темп: {n} минут осмотра в день.',
+    en: 'Pace: {n} minutes of sightseeing per day.',
+  },
+  family: {
+    uz: 'Oilaviy format: bolalarga mos kelmaydigan obyektlar chiqarildi.',
+    ru: 'Семейный формат: объекты не для детей исключены.',
+    en: 'Family format: places unsuitable for children were dropped.',
+  },
+  accessible: {
+    uz: 'Faqat aravacha uchun qulay obyektlar.',
+    ru: 'Только объекты, доступные для коляски.',
+    en: 'Only wheelchair-accessible places.',
+  },
+  budget: {
+    uz: 'Tejamkor budjet: bepul obyektlar ustunroq.',
+    ru: 'Экономный бюджет: приоритет бесплатным объектам.',
+    en: 'Budget travel: free places are ranked higher.',
+  },
+  weather: {
+    uz: 'Ob-havo kunlar ichidagi tartibni o‘zgartirdi, tarkibni emas.',
+    ru: 'Погода изменила порядок внутри дней, но не состав.',
+    en: 'Weather changed the order within days, not the selection.',
+  },
+  season: {
+    uz: 'Bayram kunlari: kunlik ko‘rish vaqti qisqartirildi.',
+    ru: 'Праздничные дни: дневное время осмотра урезано.',
+    en: 'Public holidays: daily sightseeing time was trimmed.',
+  },
+  pinned: {
+    uz: 'Siz tanlagan obyektlar qoldirildi: {n}.',
+    ru: 'Оставлены закреплённые вами объекты: {n}.',
+    en: 'Places kept because you pinned them: {n}.',
+  },
+  excluded: {
+    uz: 'Siz olib tashlagan obyektlar chiqarildi: {n}.',
+    ru: 'Исключены убранные вами объекты: {n}.',
+    en: 'Places dropped because you removed them: {n}.',
+  },
+  transfers: {
+    uz: 'Shaharlararo ko‘chishlar yo‘l vaqti bilan hisobga olindi: {n}.',
+    ru: 'Учтены переезды между городами со временем в пути: {n}.',
+    en: 'Intercity transfers counted with travel time: {n}.',
+  },
+};
+
 const REGION_NAME: Record<Region, I18nText> = {
   samarkand: { uz: 'Samarqand', ru: 'Самарканд', en: 'Samarkand' },
   bukhara: { uz: 'Buxoro', ru: 'Бухара', en: 'Bukhara' },
@@ -225,6 +277,10 @@ function eligible(places: Place[], ctx: TripContext): Place[] {
     // формат «семья» — объекты без familyFriendly не предлагаем вовсе,
     // но закреплённый вручную объект остаётся: это осознанный выбор человека
     .filter((p) => ctx.travelType !== 'family' || p.familyFriendly || pinned.has(p.id))
+    // Доступность для коляски — то же правило: фильтр жёсткий, но закреплённый
+    // вручную объект остаётся. Поле `accessible` было объявлено у объектов
+    // и не использовалось нигде, кроме значка в каталоге.
+    .filter((p) => !ctx.accessibleOnly || p.accessible || pinned.has(p.id))
     .map((p) => ({ place: p, score: scorePlace(p, ctx) + (pinned.has(p.id) ? 100 : 0) }))
     .filter((p) => p.score > 0)
     .sort((a, b) => b.score - a.score || a.place.visitMinutes - b.place.visitMinutes)
@@ -505,5 +561,22 @@ export function buildItinerary(
       )
     : days;
 
-  return { summary, days: withWeather, cost: estimateCost(withWeather, byId) };
+  // Список сработавших правил: он собирается здесь, где уже всё известно,
+  // а не угадывается интерфейсом по косвенным признакам.
+  const rules: string[] = [];
+  const fill = (key: keyof typeof RULE, n?: number) =>
+    rules.push(RULE[key][lang].replace('{n}', String(n ?? '')));
+
+  fill('pace', PACE_MINUTES[ctx.pace ?? 'normal']);
+  if (ctx.travelType === 'family') fill('family');
+  if (ctx.accessibleOnly) fill('accessible');
+  if (ctx.budget === 'low') fill('budget');
+  if (weatherByDay?.length) fill('weather');
+  if (withWeather.some((d) => d.seasonNote)) fill('season');
+  if ((ctx.pinned ?? []).length) fill('pinned', (ctx.pinned ?? []).length);
+  if ((ctx.excluded ?? []).length) fill('excluded', (ctx.excluded ?? []).length);
+  const transferCount = withWeather.filter((d) => d.transfer).length;
+  if (transferCount) fill('transfers', transferCount);
+
+  return { summary, days: withWeather, cost: estimateCost(withWeather, byId), rules };
 }

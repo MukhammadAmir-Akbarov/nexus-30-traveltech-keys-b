@@ -5,6 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   LngLatBounds,
   Map as MapLibreMap,
+  GeolocateControl,
   Marker,
   NavigationControl,
   Popup,
@@ -147,6 +148,16 @@ export default function RouteMap({
     });
 
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-left');
+    // «Где я»: в поездке карта без своей точки почти бесполезна — человек
+    // не понимает, в какую сторону идти от выхода из метро.
+    instance.addControl(
+      new GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserLocation: true,
+      }),
+      'top-left',
+    );
 
     const draw = () => {
       const shape = toFeatures(data.current.routes);

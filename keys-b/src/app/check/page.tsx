@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Icon, type IconName } from '@/components/Icon';
 import { QrScanner } from '@/components/QrScanner';
+import { RequestForm } from '@/components/RequestForm';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
 import { GUIDES } from '@/data/guides';
@@ -382,6 +383,33 @@ function CheckPageInner() {
             {/* Проверка была тупиком: турист получал вердикт и упирался.
                 Отсюда есть два хода — посмотреть объект на карте маршрута
                 и закрепить его в поездке. Проверил — добавил к себе. */}
+            {/* «Нет данных» — момент, когда человеку нужнее всего подсказка,
+                что делать дальше. Раньше здесь была точка. */}
+            {result.verdict.status === 'unclear' && (
+              <div
+                className="flex flex-col gap-2 rounded-xl p-3 text-[13px]"
+                style={{ background: 'var(--warn-weak)' }}
+              >
+                <b>{t('unclearWhatNow', lang)}</b>
+                <p className="prose-measure" style={{ color: 'var(--warn)' }}>
+                  {t('unclearNote', lang)}
+                </p>
+                <div className="flex flex-wrap items-start gap-2">
+                  <Link className="chip" href="/guides">
+                    <Icon name="user" size={14} />
+                    {t('unclearAskGuide', lang)}
+                  </Link>
+                  {place && (
+                    <Link className="chip" href={`/place/${place.id}`}>
+                      <Icon name="pin" size={14} />
+                      {t('unclearWhatKnown', lang)}
+                    </Link>
+                  )}
+                  <RequestForm kind="place-problem" targetId={place?.id ?? 'general'} />
+                </div>
+              </div>
+            )}
+
             {place && (
               <div className="flex flex-wrap items-center gap-2">
                 <Link className="btn" href={`/place/${place.id}`}>

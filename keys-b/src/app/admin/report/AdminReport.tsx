@@ -13,7 +13,9 @@ type Row = {
   region: Region | null;
 };
 
-export function AdminReport({ rows }: { rows: Row[] }) {
+type Gap = { claim: string; count: number; placeId?: string; at: string; name: I18nText | null };
+
+export function AdminReport({ rows, gaps = [] }: { rows: Row[]; gaps?: Gap[] }) {
   const { lang } = useTrip();
 
   const totalChecks = rows.reduce((sum, r) => sum + r.confirmed + r.refuted, 0);
@@ -39,6 +41,20 @@ export function AdminReport({ rows }: { rows: Row[] }) {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'nexus30-fact-report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const gapsCsv = () => {
+    const head = 'claim,place_id,asked,last_asked\n';
+    const body = gaps
+      .map((g) => [`"${g.claim.replace(/"/g, '""')}"`, g.placeId ?? '', g.count, g.at].join(','))
+      .join('\n');
+    const blob = new Blob([head + body], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nexus30-gaps.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -120,6 +136,38 @@ export function AdminReport({ rows }: { rows: Row[] }) {
           <p className="muted prose-measure text-[12px]">{t('reportNote', lang)}</p>
         </section>
       )}
+
+      {/* О чём спрашивают, а ответа в источниках нет. Это не отчёт о сбоях —
+          это список тем, которые Комитету стоит опубликовать первыми. */}
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <b className="text-sm">{t('reportGapsTitle', lang)}</b>
+            <p className="muted prose-measure mt-1 text-[13px]">{t('reportGapsLead', lang)}</p>
+          </div>
+          {gaps.length > 0 && (
+            <button className="btn" onClick={gapsCsv}>
+              <Icon name="share" size={16} />
+              CSV
+            </button>
+          )}
+        </div>
+
+        {gaps.length === 0 ? (
+          <p className="muted text-[13px]">{t('reportGapsEmpty', lang)}</p>
+        ) : (
+          <ul className="flex flex-col gap-2 text-[13px]">
+            {gaps.map((gap) => (
+              <li key={gap.claim} className="flex flex-wrap items-center gap-2">
+                <span className="tag tag-warn">{gap.count}</span>
+                <span className="prose-measure">{gap.claim}</span>
+                {gap.name && <span className="muted">· {tr(gap.name, lang)}</span>}
+                <span className="muted text-[12px]">{gap.at}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

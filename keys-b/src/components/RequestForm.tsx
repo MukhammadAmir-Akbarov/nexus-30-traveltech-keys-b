@@ -15,12 +15,16 @@ const UI: Record<RequestKind, { title: UiKey; hint: UiKey; icon: IconName }> = {
   'guide-booking': { title: 'bookGuide', hint: 'bookGuideHint', icon: 'user' },
 };
 
+/** Коды отправленных заявок. Аккаунта у туриста нет — статус ищем по ним. */
+export const CODES_KEY = 'nexus30.requests';
+
 export function RequestForm({ kind, targetId }: { kind: RequestKind; targetId: string }) {
   const { lang } = useTrip();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [contact, setContact] = useState('');
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
   const send = async () => {
@@ -31,7 +35,21 @@ export function RequestForm({ kind, targetId }: { kind: RequestKind; targetId: s
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind, targetId, message, contact }),
       });
-      if (res.ok) setSent(true);
+      if (res.ok) {
+        const data = (await res.json()) as { code?: string };
+        setSent(true);
+        if (data.code) {
+          setCode(data.code);
+          // Код кладём себе: у туриста нет аккаунта, а статус заявки он
+          // должен видеть. В профиле по этим кодам подтягиваются ответы гидов.
+          try {
+            const saved = JSON.parse(localStorage.getItem(CODES_KEY) ?? '[]') as string[];
+            localStorage.setItem(CODES_KEY, JSON.stringify([data.code, ...saved].slice(0, 20)));
+          } catch {
+            localStorage.setItem(CODES_KEY, JSON.stringify([data.code]));
+          }
+        }
+      }
     } finally {
       setBusy(false);
     }
@@ -39,9 +57,17 @@ export function RequestForm({ kind, targetId }: { kind: RequestKind; targetId: s
 
   if (sent) {
     return (
-      <div className="tag tag-ok">
-        <Icon name="check" size={14} />
-        {t('formSent', lang)}
+      <div className="flex flex-col gap-1">
+        <div className="tag tag-ok">
+          <Icon name="check" size={14} />
+          {t('formSent', lang)}
+        </div>
+        {code && (
+          <div className="text-[12.5px]">
+            {t('requestCode', lang)}: <b>{code}</b>
+            <div className="muted">{t('requestCodeHint', lang)}</div>
+          </div>
+        )}
       </div>
     );
   }

@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { PlacePhoto } from '@/components/PlacePhoto';
 import { SaveButton } from '@/components/SaveButton';
+import { CODES_KEY } from '@/components/RequestForm';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
 import { BUDGET_LABEL } from '@/lib/budget';
@@ -22,6 +24,13 @@ import {
 
 type HistoryItem = { claim: string; status: string; at: string };
 
+type RequestStatusRow = {
+  code: string;
+  status: 'new' | 'taken' | 'busy';
+  at: string;
+  reply?: { at: string; note?: string } | null;
+};
+
 function history(): HistoryItem[] {
   try {
     return JSON.parse(localStorage.getItem('nexus30.checks') ?? '[]') as HistoryItem[];
@@ -34,6 +43,30 @@ export default function ProfilePage() {
   const { trip, lang, ready } = useTrip();
   const saved = (trip.saved ?? []).map((id) => PLACE_BY_ID[id]).filter(Boolean);
   const checks = ready ? history() : [];
+
+  // Статусы заявок подтягиваем по кодам, сохранённым при отправке: аккаунта
+  // у туриста нет, а знать, взял гид заявку или занят, он обязан.
+  const [myRequests, setMyRequests] = useState<RequestStatusRow[]>([]);
+  useEffect(() => {
+    let codes: string[] = [];
+    try {
+      codes = JSON.parse(localStorage.getItem(CODES_KEY) ?? '[]') as string[];
+    } catch {
+      codes = [];
+    }
+    if (codes.length === 0) return;
+    const controller = new AbortController();
+    void Promise.all(
+      codes.map((code) =>
+        fetch(`/api/requests?code=${encodeURIComponent(code)}`, { signal: controller.signal })
+          .then((r) => (r.ok ? (r.json() as Promise<RequestStatusRow>) : null))
+          .catch(() => null),
+      ),
+    ).then((rows) => {
+      if (!controller.signal.aborted) setMyRequests(rows.filter((r): r is RequestStatusRow => !!r));
+    });
+    return () => controller.abort();
+  }, []);
 
   const stats = [
     { key: 'profileStatSaved' as const, value: saved.length },
@@ -114,6 +147,42 @@ export default function ProfilePage() {
         <Link href="/" className="text-[13px] underline" style={{ color: 'var(--accent)' }}>
           {t('planChange', lang)}
         </Link>
+      </section>
+
+      {/* Мои заявки: круг «нашёл гида → написал → он ответил» замыкается здесь. */}
+      <section className="card flex flex-col gap-2">
+        <b className="text-sm">{t('myRequests', lang)}</b>
+        {myRequests.length === 0 ? (
+          <p className="muted text-[13px]">{t('myRequestsEmpty', lang)}</p>
+        ) : (
+          <ul className="flex flex-col gap-2 text-[13px]">
+            {myRequests.map((row) => (
+              <li key={row.code} className="flex flex-wrap items-center gap-2">
+                <span className="tag">{row.code}</span>
+                <span
+                  className={
+                    row.status === 'taken'
+                      ? 'tag tag-ok'
+                      : row.status === 'busy'
+                        ? 'tag tag-warn'
+                        : 'tag'
+                  }
+                >
+                  {t(
+                    row.status === 'taken'
+                      ? 'requestTaken'
+                      : row.status === 'busy'
+                        ? 'requestBusy'
+                        : 'requestNew',
+                    lang,
+                  )}
+                </span>
+                <span className="muted text-[12px]">{row.at}</span>
+                {row.reply?.note && <span className="prose-measure">{row.reply.note}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="card flex flex-col gap-2">

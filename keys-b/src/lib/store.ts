@@ -62,6 +62,15 @@ type Store = {
   verdicts: FactRecord[];
   /** Входящие от туристов: проблема на объекте и запрос гида. */
   requests: TouristRequest[];
+  /**
+   * Вопросы, на которые в источниках ответа не нашлось.
+   *
+   * Самый ценный побочный продукт: список тем, по которым у государства нет
+   * опубликованного ответа, отсортированный по частоте вопроса. Маленький
+   * корпус перестаёт быть слабостью и становится поручением — «вот что
+   * опубликовать в первую очередь».
+   */
+  gaps: { claim: string; placeId?: string; at: string }[];
 };
 
 const DATA_FILE = process.env.DATA_FILE ?? '.data/store.json';
@@ -72,6 +81,7 @@ type Snapshot = {
   guides: Guide[];
   corpus: CorpusItem[];
   countedChecks: string[];
+  gaps: { claim: string; placeId?: string; at: string }[];
   accuracy: [string, GuideAccuracy][];
   accuracyByPlace: [string, GuideAccuracy][];
   verdicts: FactRecord[];
@@ -108,6 +118,7 @@ function persist(): void {
       accuracyByPlace: [...s.accuracyByPlace],
       verdicts: s.verdicts,
       requests: s.requests,
+      gaps: s.gaps,
     };
     try {
       mkdirSync(dirname(DATA_FILE), { recursive: true });
@@ -195,6 +206,7 @@ function seed(): Store {
         at: '2026-08-14 16:44',
       },
     ],
+    gaps: [],
     requests: [
       {
         id: 'r1',
@@ -238,6 +250,7 @@ function store(): Store {
       fresh.accuracyByPlace = new Map(saved.accuracyByPlace ?? []);
       fresh.verdicts = saved.verdicts ?? [];
       fresh.requests = saved.requests ?? [];
+      fresh.gaps = saved.gaps ?? [];
     }
     globalStore.__nexus30 = fresh;
   }
@@ -481,6 +494,10 @@ export function addRequest(
     message: message.trim().slice(0, 500),
     contact: contact.trim().slice(0, 120),
     at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    // Код вместо регистрации: у туриста нет аккаунта, а узнать судьбу
+    // заявки он должен. Шесть знаков без похожих букв и цифр.
+    code: requestCode(),
+    status: 'new',
   };
   store().requests.push(item);
   persist();
@@ -498,6 +515,84 @@ export function requestsAllowed(ip: string, now = Date.now()): boolean {
   }
   requestTimes.set(ip, [...recent, now]);
   return true;
+}
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/** Код заявки: без нуля, единицы, I и O — их путают при диктовке по телефону. */
+function requestCode(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return store().requests.some((r) => r.code === code) ? requestCode() : code;
+}
+
+/** Заявка по коду — так турист без аккаунта видит, что с ней стало. */
+export function findRequestByCode(code: string): TouristRequest | undefined {
+  const needle = code.trim().toUpperCase();
+  return store().requests.find((r) => r.code === needle);
+}
+
+/** Заявки конкретного гида: его входящие, а не общий ящик Комитета. */
+export function listRequestsForGuide(guideId: string): TouristRequest[] {
+  return store()
+    .requests.filter((r) => r.kind === 'guide-booking' && r.targetId === guideId)
+    .slice()
+    .reverse();
+}
+
+/**
+ * Ответ гида на заявку. Отказ — тоже ответ: молчание хуже отказа,
+ * турист остаётся без плана и не знает, ждать ли.
+ */
+export function answerRequest(
+  requestId: string,
+  guideId: string,
+  status: 'taken' | 'busy',
+  note?: string,
+): boolean {
+  const item = store().requests.find(
+    (r) => r.id === requestId && r.kind === 'guide-booking' && r.targetId === guideId,
+  );
+  if (!item) return false;
+  item.status = status;
+  item.reply = {
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    note: note?.trim().slice(0, 300) || undefined,
+  };
+  persist();
+  return true;
+}
+
+/** Вопрос без ответа в источниках — в журнал пробелов для Комитета. */
+export function noteGap(claim: string, placeId?: string): void {
+  const text = claim.trim().slice(0, 200);
+  if (text.length < 8) return;
+  store().gaps.push({
+    claim: text,
+    placeId,
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+  });
+  // журнал не должен расти бесконечно на демо
+  if (store().gaps.length > 500) store().gaps.splice(0, store().gaps.length - 500);
+  persist();
+}
+
+/** Пробелы по частоте: о чём спрашивают чаще всего, а ответа нет. */
+export function listGaps(): { claim: string; count: number; placeId?: string; at: string }[] {
+  const byClaim = new Map<string, { claim: string; count: number; placeId?: string; at: string }>();
+  for (const gap of store().gaps) {
+    const key = gap.claim.toLowerCase();
+    const seen = byClaim.get(key);
+    if (seen) {
+      seen.count += 1;
+      if (gap.at > seen.at) seen.at = gap.at;
+    } else {
+      byClaim.set(key, { claim: gap.claim, count: 1, placeId: gap.placeId, at: gap.at });
+    }
+  }
+  return [...byClaim.values()].sort((a, b) => b.count - a.count || b.at.localeCompare(a.at));
 }
 
 export function listRequests(): TouristRequest[] {
