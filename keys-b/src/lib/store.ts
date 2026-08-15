@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { CORPUS } from '@/data/corpus';
 import { GUIDES } from '@/data/guides';
 import { hashPassword, verifyPassword, type Role } from './auth';
+import { mergeCorpus, mergeGuides } from './snapshot-merge';
 import type {
   CheckStatus,
   CorpusItem,
@@ -231,8 +232,14 @@ function store(): Store {
       // а старый пароль продолжает пускать. Поймано измерением: после
       // перезапуска с новым паролем вход отвечал 401.
       fresh.users = new Map([...saved.users, ...fresh.users]);
-      if (saved.guides?.length) fresh.guides = saved.guides;
-      if (saved.corpus?.length) fresh.corpus = saved.corpus;
+
+      // Слияние по id, а не замена снимком целиком: правила и их причины —
+      // в snapshot-merge.ts, под самопроверкой. Коротко: раньше снимок
+      // ЗАМЕНЯЛ посев, и абзац, добавленный в corpus.ts, не доезжал до
+      // поиска на инстансе со старым снимком, а /how показывал новое число
+      // из константы сборки. Та самая сигнатура «прод отличается от сборки».
+      fresh.corpus = mergeCorpus(fresh.corpus, saved.corpus);
+      fresh.guides = mergeGuides(fresh.guides, saved.guides);
       fresh.countedChecks = new Set(saved.countedChecks ?? []);
       fresh.accuracy = new Map(saved.accuracy ?? []);
       fresh.accuracyByPlace = new Map(saved.accuracyByPlace ?? []);

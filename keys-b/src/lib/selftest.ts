@@ -16,6 +16,7 @@ import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
 import { BRIEFING_FACTS, BRIEFING_THIN, briefingFor } from './briefing.ts';
+import { mergeCorpus, mergeGuides } from './snapshot-merge.ts';
 import { identifyFromDemo } from './vision.ts';
 import { AT_PLACE_LIMIT_M, NEAR_LIMIT_KM, nearestPlace, nearestRegion } from './geo.ts';
 import { retrieve, tokenize } from './retrieval.ts';
@@ -1377,6 +1378,48 @@ assert.ok(AT_PLACE_LIMIT_M >= 200 && AT_PLACE_LIMIT_M <= 800, 'радиус об
       'в Бухаре стоит бухарская норма, а не самаркандская',
     );
   }
+}
+
+// --- снимок на диске не смеет прятать исходник ----------------------------------
+// Снимок целиком заменял посев: абзац, добавленный в corpus.ts, не доезжал
+// до поиска на инстансе со старым снимком, а /how показывал новое число из
+// константы сборки. Сигнатура «прод отличается от сборки, счётчики сходятся».
+
+{
+  const oldSnapshot = CORPUS.slice(0, 3); // старый снимок: без новых абзацев
+  const adminAdded = {
+    ...CORPUS[0],
+    id: 'admin-1',
+    text: 'Добавлено администратором',
+  };
+
+  const merged = mergeCorpus(CORPUS, [...oldSnapshot, adminAdded]);
+  assert.equal(
+    merged.filter((item) => CORPUS.some((s) => s.id === item.id)).length,
+    CORPUS.length,
+    'каждый абзац исходника доживает до поиска, каким бы старым ни был снимок',
+  );
+  assert.ok(
+    merged.some((item) => item.id === 'admin-1'),
+    'добавленное администратором переживает рестарт',
+  );
+  assert.equal(
+    merged.filter((item) => item.id === CORPUS[0].id).length,
+    1,
+    'слияние не плодит дубликатов',
+  );
+  assert.deepEqual(mergeCorpus(CORPUS, undefined), CORPUS, 'без снимка — чистый посев');
+
+  // Гиды: сохранённый гид сильнее посевного (на нём verified от админа),
+  // но новый гид из исходника обязан появиться.
+  const toggled = { ...GUIDES[0], verified: !GUIDES[0].verified };
+  const mergedGuides = mergeGuides(GUIDES, [toggled]);
+  assert.equal(
+    mergedGuides.find((guide) => guide.id === toggled.id)?.verified,
+    toggled.verified,
+    'переключённый администратором verified переживает рестарт',
+  );
+  assert.equal(mergedGuides.length, GUIDES.length, 'новые гиды исходника не пропадают');
 }
 
 // --- документация привязана к коду тестом --------------------------------------
