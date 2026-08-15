@@ -19,6 +19,7 @@ export const PLACES: Place[] = [
     opens: 480,
     closes: 1140,
     ticketUsd: 5,
+    accessible: true,
     summary: {
       uz: 'Uchta madrasadan iborat ansambl — Samarqandning asosiy ramzi.',
       ru: 'Ансамбль из трёх медресе — главный символ Самарканда.',
@@ -43,6 +44,7 @@ export const PLACES: Place[] = [
     opens: 540,
     closes: 1140,
     ticketUsd: 4,
+    accessible: true,
     summary: {
       uz: 'Amir Temur va temuriylar dahmasi.',
       ru: 'Усыпальница Амира Темура и Тимуридов.',
@@ -62,6 +64,7 @@ export const PLACES: Place[] = [
     opens: 480,
     closes: 1140,
     ticketUsd: 3,
+    accessible: true,
     summary: {
       uz: 'O‘z davrining eng yirik masjidlaridan biri.',
       ru: 'Одна из крупнейших мечетей своего времени.',
@@ -119,6 +122,7 @@ export const PLACES: Place[] = [
     opens: 360,
     closes: 1140,
     ticketUsd: 0,
+    accessible: true,
     summary: {
       uz: 'Shaharning asosiy bozori: non, quruq mevalar, ziravorlar.',
       ru: 'Главный рынок города: лепёшки, сухофрукты, специи.',
@@ -179,6 +183,7 @@ export const PLACES: Place[] = [
     opens: 480,
     closes: 1200,
     ticketUsd: 1,
+    accessible: true,
     summary: {
       uz: 'IX–X asrlar chegarasida qurilgan g‘ishtin maqbara.',
       ru: 'Кирпичный мавзолей рубежа IX–X веков.',
@@ -215,6 +220,7 @@ export const PLACES: Place[] = [
     familyFriendly: true,
     outdoor: true,
     ticketUsd: 0,
+    accessible: true,
     summary: {
       uz: 'Hovuz atrofidagi ansambl, choyxonalar va shaharning kechki hayoti.',
       ru: 'Ансамбль вокруг водоёма, чайханы и вечерняя жизнь города.',
@@ -234,6 +240,7 @@ export const PLACES: Place[] = [
     opens: 540,
     closes: 1080,
     ticketUsd: 8,
+    accessible: true,
     summary: {
       uz: 'Xivaning ichki shahri, to‘liq holda YuNESKO obyekti.',
       ru: 'Внутренний город Хивы, объект ЮНЕСКО целиком.',
@@ -294,6 +301,7 @@ export const PLACES: Place[] = [
     opens: 480,
     closes: 1200,
     ticketUsd: 0,
+    accessible: true,
     summary: {
       uz: 'Toshkentning ma’naviy markazi, qo‘lyozmalar kutubxonasi.',
       ru: 'Духовный центр Ташкента, библиотека рукописей.',
@@ -318,6 +326,7 @@ export const PLACES: Place[] = [
     opens: 360,
     closes: 1140,
     ticketUsd: 0,
+    accessible: true,
     summary: {
       uz: 'Toshkent eski shahridagi katta gumbaz ostidagi bozor.',
       ru: 'Старый рынок Ташкента под большим куполом.',
@@ -409,6 +418,7 @@ export const PLACES: Place[] = [
     opens: 540,
     closes: 1080,
     ticketUsd: 5,
+    accessible: true,
     summary: {
       uz: 'Hazrati Imom yonidagi zamonaviy muzey-markaz.',
       ru: 'Современный музейный центр рядом с комплексом Хазрати Имам.',

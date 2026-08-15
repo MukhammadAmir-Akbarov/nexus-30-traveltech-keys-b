@@ -67,8 +67,21 @@ const STATUS_UI: Record<CheckStatus, { key: UiKey; color: string; weak: string; 
 
 const SPEECH_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
 
+/** История проверок живёт на устройстве: открывается без сети и никуда не уходит. */
+const HISTORY_KEY = 'nexus30.checks';
+type HistoryItem = { claim: string; status: CheckStatus; at: string };
+
 export default function CheckPage() {
   const { lang } = useTrip();
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    try {
+      setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'));
+    } catch {
+      // повреждённое хранилище — просто пустая история
+    }
+  }, []);
   const [claim, setClaim] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -102,7 +115,18 @@ export default function CheckPage() {
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      setResult(await res.json());
+      const data = (await res.json()) as Result;
+      setResult(data);
+
+      // запоминаем на устройстве: раньше проверка терялась при переходе на другую вкладку
+      setHistory((prev) => {
+        const next = [
+          { claim: value, status: data.verdict.status, at: new Date().toISOString().slice(0, 16).replace('T', ' ') },
+          ...prev.filter((h) => h.claim !== value),
+        ].slice(0, 20);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+        return next;
+      });
     } catch {
       setError(true);
     } finally {
@@ -327,6 +351,43 @@ export default function CheckPage() {
           </section>
         )}
       </div>
+
+      {history.length > 0 && (
+        <section className="card flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <b className="text-sm">{t('checkHistoryTitle', lang)}</b>
+            <button
+              className="chip ms-auto"
+              onClick={() => {
+                localStorage.removeItem(HISTORY_KEY);
+                setHistory([]);
+              }}
+            >
+              {t('checkHistoryClear', lang)}
+            </button>
+          </div>
+          <ul className="flex flex-col gap-1 text-[13px]">
+            {history.map((item) => (
+              <li key={item.claim} className="flex flex-wrap items-center gap-2">
+                <span
+                  className="tag"
+                  style={{
+                    background: STATUS_UI[item.status].weak,
+                    color: STATUS_UI[item.status].color,
+                  }}
+                >
+                  {t(STATUS_UI[item.status].key, lang)}
+                </span>
+                <button className="text-start underline" onClick={() => check(item.claim)}>
+                  {item.claim}
+                </button>
+                <span className="muted ms-auto">{item.at}</span>
+              </li>
+            ))}
+          </ul>
+          <span className="muted text-[12px]">{t('checkHistoryHint', lang)}</span>
+        </section>
+      )}
     </div>
   );
 }

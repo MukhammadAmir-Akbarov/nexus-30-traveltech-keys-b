@@ -239,6 +239,36 @@ export default function PlanPage() {
                             )}
                           </div>
                           <div className="muted prose-measure text-[13.5px]">{item.note}</div>
+
+                          {/* Ручная правка: главная ось персонализации, которой не было.
+                              Регион и интересы — это про класс объектов, а тут про
+                              конкретный: «этот убрать», «этот обязательно». */}
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            <button
+                              className="chip"
+                              onClick={() =>
+                                update({
+                                  excluded: [...(trip.excluded ?? []), item.placeId],
+                                  pinned: (trip.pinned ?? []).filter((id) => id !== item.placeId),
+                                })
+                              }
+                            >
+                              {t('planExclude', lang)}
+                            </button>
+                            <button
+                              className="chip"
+                              data-active={(trip.pinned ?? []).includes(item.placeId)}
+                              onClick={() =>
+                                update({
+                                  pinned: (trip.pinned ?? []).includes(item.placeId)
+                                    ? (trip.pinned ?? []).filter((id) => id !== item.placeId)
+                                    : [...(trip.pinned ?? []), item.placeId],
+                                })
+                              }
+                            >
+                              {t('planPin', lang)}
+                            </button>
+                          </div>
                         </div>
                       </li>
                     );
@@ -256,6 +286,25 @@ export default function PlanPage() {
             ))}
           </section>
 
+          {(trip.excluded ?? []).length > 0 && (
+            <section className="card flex flex-col gap-2">
+              <b className="text-sm">{t('planExcludedTitle', lang)}</b>
+              <div className="flex flex-wrap gap-2">
+                {(trip.excluded ?? []).map((id) => (
+                  <button
+                    key={id}
+                    className="chip"
+                    onClick={() =>
+                      update({ excluded: (trip.excluded ?? []).filter((x) => x !== id) })
+                    }
+                  >
+                    {PLACE_BY_ID[id] ? tr(PLACE_BY_ID[id].name, lang) : id} · {t('planRestore', lang)}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* и подсказки одиночке, и «поделиться» имеют смысл только когда маршрут есть */}
           <SoloPanel />
 
@@ -263,6 +312,9 @@ export default function PlanPage() {
             <button className="btn" onClick={downloadIcs}>
               <Icon name="calendar" />
               {t('planIcs', lang)}
+            </button>
+            <button className="btn" onClick={() => window.print()}>
+              {t('planPrint', lang)}
             </button>
           </section>
 
