@@ -5,14 +5,27 @@ export const dynamic = 'force-dynamic';
 export default function LoginPage() {
   const demo = !process.env.ADMIN_PASSWORD && !process.env.ADMIN_EMAIL;
   return (
-    <div className="flex min-h-screen w-full bg-slate-50">
-      <div 
+    <div className="flex min-h-screen w-full" style={{ background: 'var(--bg)' }}>
+      {/*
+        Картинка своя, из public/places. Здесь стояла ссылка на Unsplash —
+        внешний адрес на первом же экране. В зале, где WiFi падает, вход
+        встретил бы жюри пустой белой половиной, и это при том, что весь
+        остальной продукт умеет работать без сети: одиннадцать фотографий
+        специально скачаны в репозиторий именно ради этого.
+
+        Регистан — CC BY 2.0, Gustavo Jeronimo; автор и лицензия уже указаны
+        на /how вместе с остальными снимками (src/data/photos.ts).
+      */}
+      <div
         className="hidden md:block md:w-1/2 relative bg-cover bg-center"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070')" }}
+        style={{ backgroundImage: "url('/places/registan.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/10"></div>
       </div>
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white md:-ml-6 md:rounded-l-[40px] shadow-[-10px_0_30px_rgba(0,0,0,0.1)] z-10 relative">
+      <div
+        className="w-full md:w-1/2 flex items-center justify-center p-8 md:-ml-6 md:rounded-l-[40px] z-10 relative"
+        style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-2)' }}
+      >
         <LoginForm demo={demo} />
       </div>
     </div>
