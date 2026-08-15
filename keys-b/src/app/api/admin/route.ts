@@ -1,10 +1,13 @@
 import { currentSession } from '@/lib/session';
 import {
   addCorpusItem,
+  createGuideAccount,
   getCorpus,
   getGuides,
+  markRequestDone,
   removeCorpusItem,
   removeGuide,
+  resolveDispute,
   toggleGuideVerified,
 } from '@/lib/store';
 import type { CorpusItem } from '@/lib/types';
@@ -17,7 +20,15 @@ type Action =
   | { type: 'removeGuide'; id: string }
   | { type: 'addFact'; text: string; placeId?: string; sourceTitle: string; sourceUrl: string }
   | { type: 'removeFact'; id: string }
+  | { type: 'guideAccount'; id: string }
+  | { type: 'resolve-dispute'; id: string; outcome: 'upheld' | 'rejected' }
+  | { type: 'request-done'; id: string }
   | { type: 'export' };
+
+/** Пароль для доступа гида: показывается администратору один раз. */
+function tempPassword(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
 
 export async function POST(req: Request) {
   const session = await currentSession();
@@ -55,6 +66,20 @@ export async function POST(req: Request) {
     }
     case 'removeFact':
       return Response.json({ ok: removeCorpusItem(action.id) });
+
+    case 'guideAccount': {
+      const password = tempPassword();
+      const user = createGuideAccount(action.id, password);
+      return user
+        ? Response.json({ ok: true, email: user.email, password })
+        : Response.json({ error: 'exists_or_not_found' }, { status: 409 });
+    }
+
+    case 'resolve-dispute':
+      return Response.json({ ok: resolveDispute(action.id, action.outcome) });
+
+    case 'request-done':
+      return Response.json({ ok: markRequestDone(action.id) });
 
     case 'export':
       return Response.json({ guides: getGuides(), corpus: getCorpus() });

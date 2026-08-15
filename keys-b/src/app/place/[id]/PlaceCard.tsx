@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { NearbyPois } from '@/components/NearbyPois';
+import { RequestForm } from '@/components/RequestForm';
 import { SpeakButton } from '@/components/SpeakButton';
 import { useTrip } from '@/components/TripProvider';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
@@ -64,13 +65,15 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
         <NearbyPois place={place} />
       </section>
 
-      <section className="flex flex-wrap gap-2">
+      <section className="flex flex-wrap items-start gap-2">
         <Link href={`/check?place=${place.id}`} className="btn btn-primary">
           {t('placeCheckHere', lang)}
         </Link>
         <Link href="/plan" className="btn">
           {t('tabPlan', lang)}
         </Link>
+        {/* обратная связь с места: закрыто, ремонт, обман с ценой */}
+        <RequestForm kind="place-problem" targetId={place.id} />
       </section>
     </div>
   );

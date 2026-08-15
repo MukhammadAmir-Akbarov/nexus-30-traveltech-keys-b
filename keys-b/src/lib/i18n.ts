@@ -560,6 +560,11 @@ const UI = {
     ru: 'Пароль должен быть не короче 6 символов.',
     en: 'The password must be at least 6 characters.',
   },
+  authTooMany: {
+    uz: 'Juda ko‘p urinish. 15 daqiqadan so‘ng qayta urinib ko‘ring.',
+    ru: 'Слишком много попыток. Попробуйте через 15 минут.',
+    en: 'Too many attempts. Try again in 15 minutes.',
+  },
   authForbidden: {
     uz: 'Bu bo‘limga faqat administrator kiradi.',
     ru: 'В этот раздел заходит только администратор.',
@@ -583,6 +588,70 @@ const UI = {
 
   // Отчёт Комитету: побочный продукт проверок, которого у заказчика сегодня нет
   adminReport: { uz: 'Hisobot', ru: 'Отчёт', en: 'Report' },
+  adminRequests: { uz: 'Murojaatlar', ru: 'Заявки', en: 'Requests' },
+  adminGuideAccess: { uz: 'Kirish berish', ru: 'Выдать доступ', en: 'Grant access' },
+  adminGuideAccessDone: {
+    uz: 'Kirish yaratildi — parolni gidga bering, u boshqa ko‘rsatilmaydi:',
+    ru: 'Доступ создан — передайте пароль гиду, второй раз он не покажется:',
+    en: 'Access created — pass the password to the guide, it will not be shown again:',
+  },
+
+  // сторона гида
+  guidePanelTitle: { uz: 'Mening kabinetim', ru: 'Мой кабинет', en: 'My dashboard' },
+  guidePanelFewHint: {
+    uz: 'Aniqlik {n} tadan kam tekshiruvda hisoblanmaydi va turistlarga ko‘rsatilmaydi.',
+    ru: 'Точность не считается и не показывается туристам, пока проверок меньше порога.',
+    en: 'Accuracy is neither counted nor shown to tourists until the threshold is reached.',
+  },
+  guidePanelVerdicts: {
+    uz: 'Sizga tegishli tekshiruvlar',
+    ru: 'Проверки, засчитанные вам',
+    en: 'Checks counted against you',
+  },
+  guidePanelEmpty: {
+    uz: 'Hali tekshiruvlar yo‘q.',
+    ru: 'Проверок пока нет.',
+    en: 'No checks yet.',
+  },
+  guidePanelDispute: { uz: 'E’tiroz bildirish', ru: 'Оспорить', en: 'Dispute' },
+  guidePanelDisputeSend: { uz: 'Yuborish', ru: 'Отправить', en: 'Send' },
+  guidePanelDisputed: { uz: 'E’tiroz yuborilgan', ru: 'Оспорено', en: 'Disputed' },
+  guidePanelDisputePlaceholder: {
+    uz: 'Nima uchun rozimassiz? Manba yoki izoh keltiring.',
+    ru: 'Почему вы не согласны? Приведите источник или пояснение.',
+    en: 'Why do you disagree? Cite a source or explain.',
+  },
+
+  // входящий ящик
+  reqDisputes: { uz: 'Gidlar e’tirozi', ru: 'Возражения гидов', en: 'Guide disputes' },
+  reqIncoming: { uz: 'Turistlar murojaati', ru: 'Заявки от туристов', en: 'Tourist requests' },
+  reqEmpty: { uz: 'Bo‘sh.', ru: 'Пусто.', en: 'Nothing here.' },
+  reqUphold: { uz: 'E’tirozni qabul qilish', ru: 'Удовлетворить', en: 'Uphold' },
+  reqReject: { uz: 'Rad etish', ru: 'Отклонить', en: 'Reject' },
+  reqUpheld: { uz: 'Qabul qilindi — hisobdan chiqarildi', ru: 'Удовлетворено — снято со счёта', en: 'Upheld — removed from the count' },
+  reqRejected: { uz: 'Rad etildi', ru: 'Отклонено', en: 'Rejected' },
+  reqProblem: { uz: 'Obyektdagi muammo', ru: 'Проблема на объекте', en: 'Problem at a site' },
+  reqBooking: { uz: 'Gid so‘rovi', ru: 'Запрос гида', en: 'Guide request' },
+  reqDone: { uz: 'Ko‘rib chiqilgan', ru: 'Обработано', en: 'Handled' },
+  reqMarkDone: { uz: 'Ko‘rib chiqildi', ru: 'Отметить обработанным', en: 'Mark handled' },
+
+  // формы заявок
+  reportProblem: { uz: 'Obyekt haqida xabar berish', ru: 'Сообщить о проблеме', en: 'Report a problem' },
+  reportProblemHint: {
+    uz: 'Yopiq, ta’mirda, narx aldovi — Qo‘mitaga yetkazamiz.',
+    ru: 'Закрыто, ремонт, обман с ценой — передадим Комитету.',
+    en: 'Closed, under repair, price scam — we pass it to the Committee.',
+  },
+  bookGuide: { uz: 'Gidni so‘rash', ru: 'Запросить гида', en: 'Request this guide' },
+  bookGuideHint: {
+    uz: 'Aloqangizni qoldiring — so‘rov gidga va Qo‘mitaga tushadi.',
+    ru: 'Оставьте контакт — запрос уйдёт гиду и в Комитет.',
+    en: 'Leave a contact — the request goes to the guide and the Committee.',
+  },
+  formContact: { uz: 'Telefon yoki email', ru: 'Телефон или email', en: 'Phone or email' },
+  formMessage: { uz: 'Xabar', ru: 'Сообщение', en: 'Message' },
+  formSend: { uz: 'Yuborish', ru: 'Отправить', en: 'Send' },
+  formSent: { uz: 'Yuborildi — rahmat!', ru: 'Отправлено — спасибо!', en: 'Sent — thank you!' },
   reportLead: {
     uz: 'Turistlar gidlarning gaplarini tekshirar ekan, tizim qaysi obyektlar atrofida noto‘g‘ri ma’lumot ko‘p tarqalishini to‘playdi. Bu gidga baho emas — bu rasmiy ma’lumot yetishmayotgan joylar xaritasi.',
     ru: 'Пока туристы проверяют слова гидов, система накапливает, вокруг каких объектов чаще всего звучит недостоверное. Это не оценка гида — это карта мест, где не хватает официальной информации.',
