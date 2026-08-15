@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTrip } from '@/components/TripProvider';
 import { t } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
@@ -17,11 +17,13 @@ const TABS: { href: string; key: UiKey }[] = [
 
 export function AdminNav({ email }: { email: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang } = useTrip();
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/';
+    router.push('/');
+    router.refresh();
   };
 
   return (

@@ -13,6 +13,7 @@ import type {
 import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 import { adviceFor } from './weather.ts';
+import { seasonNote } from './calendar.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
@@ -308,7 +309,9 @@ function applyWeather(day: ItineraryDay, weather: DayWeather, byId: Map<string, 
     note = TEXT.weatherShortDay[lang].replace('{t}', String(weather.tMaxC));
   }
 
-  return { ...day, items, weather, weatherNote: note };
+  // Сезон известен из даты погоды: Рамадан и Навруз меняют часы работы
+  // и людность сильнее любого дождя, а для зиёрат-туризма — важнее всего.
+  return { ...day, items, weather, weatherNote: note, seasonNote: seasonNote(weather.date, lang) ?? undefined };
 }
 
 export function buildItinerary(

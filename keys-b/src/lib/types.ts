@@ -127,7 +127,15 @@ export type Guide = {
   reviewsList: GuideReview[];
 };
 
-export type Source = { title: I18nText; url: string };
+/**
+ * Качество источника. ЮНЕСКО, реестры и музейные публикации — первичные;
+ * туристические порталы и сводные статьи — вторичные. Раньше в вердикте они
+ * стояли рядом как равные, хотя вес у них разный, и это подрывало главный
+ * тезис продукта — про достоверность.
+ */
+export type SourceTier = 'official' | 'secondary';
+
+export type Source = { title: I18nText; url: string; tier?: SourceTier };
 
 /**
  * Корпус хранится на языке источника (русский) — это канон, его не переводим.
@@ -195,6 +203,8 @@ export type ItineraryDay = {
   /** Погода дня и её причина — почему объекты стоят в таком порядке. */
   weather?: DayWeather;
   weatherNote?: string;
+  /** Рамадан, Ураза-байрам или Навруз — они меняют часы работы и людность. */
+  seasonNote?: string;
 };
 
 export type Itinerary = {
@@ -210,7 +220,7 @@ export type CheckVerdict = {
   status: CheckStatus;
   explanation: string;
   correction?: string;
-  sources: { title: string; url: string }[];
+  sources: { title: string; url: string; tier?: SourceTier }[];
 };
 
 /** ai — ответ модели, offline — предзаписанный/правило-основанный ответ (демо без сети). */

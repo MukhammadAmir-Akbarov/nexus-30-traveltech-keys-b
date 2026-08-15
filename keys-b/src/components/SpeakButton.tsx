@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTrip } from './TripProvider';
+import { useBrowserSupport } from '@/lib/use-browser-support';
 import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
@@ -14,13 +15,11 @@ const VOICE_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-U
 
 export function SpeakButton({ text }: { text: string }) {
   const { lang } = useTrip();
-  const [supported, setSupported] = useState(false);
+  const supported = useBrowserSupport(() => 'speechSynthesis' in window);
   const [speaking, setSpeaking] = useState(false);
 
-  useEffect(() => {
-    setSupported(typeof window !== 'undefined' && 'speechSynthesis' in window);
-    return () => window.speechSynthesis?.cancel();
-  }, []);
+  // эффект остался только ради уборки: остановить речь при уходе со страницы
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
   if (!supported) return null;
 

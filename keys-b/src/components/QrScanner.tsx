@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTrip } from './TripProvider';
+import { useBrowserSupport } from '@/lib/use-browser-support';
 import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 
@@ -22,16 +23,16 @@ function createDetector(): Detector | null {
 export function QrScanner() {
   const { lang } = useTrip();
   const router = useRouter();
-  const [supported, setSupported] = useState(false);
+  const supported = useBrowserSupport(
+    () => Boolean(createDetector()) && Boolean(navigator.mediaDevices?.getUserMedia),
+  );
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => {
-    setSupported(Boolean(createDetector()) && Boolean(navigator.mediaDevices?.getUserMedia));
-    return () => streamRef.current?.getTracks().forEach((track) => track.stop());
-  }, []);
+  // эффект остался только ради уборки: отпустить камеру при уходе со страницы
+  useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
 
   useEffect(() => {
     if (!scanning) return;

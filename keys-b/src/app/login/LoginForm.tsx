@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTrip } from '@/components/TripProvider';
 import { t } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
@@ -18,14 +19,16 @@ export function LoginForm({ demo }: { demo: boolean }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorKey, setErrorKey] = useState<UiKey | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-    if (error && ERROR_KEY[error]) setErrorKey(ERROR_KEY[error]);
-  }, []);
+  // Ошибка из адреса читается хуком Next, а не эффектом с setState:
+  // значение известно уже на первом рендере.
+  const params = useSearchParams();
+  const router = useRouter();
+  const urlError = params.get('error');
+  const [submitError, setSubmitError] = useState<UiKey | null>(null);
+  const errorKey = submitError ?? (urlError ? ERROR_KEY[urlError] ?? null : null);
+  const setErrorKey = setSubmitError;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -42,8 +45,11 @@ export function LoginForm({ demo }: { demo: boolean }) {
         setErrorKey(ERROR_KEY[data.error ?? ''] ?? 'authInvalid');
         return;
       }
-      const next = new URLSearchParams(window.location.search).get('next');
-      window.location.href = next ?? (data.role === 'admin' ? '/admin' : '/');
+      const next = params.get('next');
+      // роутер вместо window.location: сессия проверяется на сервере,
+      // поэтому после входа страницу нужно обновить, а не перезагрузить целиком
+      router.push(next ?? (data.role === 'admin' ? '/admin' : data.role === 'guide' ? '/guide' : '/'));
+      router.refresh();
     } finally {
       setLoading(false);
     }

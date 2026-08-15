@@ -688,6 +688,22 @@ export const UI = {
   // Печать маршрута
   planPrint: { uz: 'Chop etish', ru: 'Распечатать', en: 'Print' },
 
+  // Голосовой ввод контекста поездки
+  voiceTripHint: {
+    uz: 'Aytib bering: «Samarqandga uch kunga, tarix qiziq».',
+    ru: 'Скажите: «в Самарканд на три дня, интересует история».',
+    en: 'Say: “Samarkand for three days, interested in history”.',
+  },
+  voiceTripNothing: {
+    uz: 'Tushunarli parametr topilmadi — qo‘lda tanlang.',
+    ru: 'Понятных параметров не нашлось — выберите вручную.',
+    en: 'Nothing recognised — pick the options by hand.',
+  },
+
+  // Качество источника: ЮНЕСКО и туристический портал — не одно и то же
+  sourceOfficial: { uz: 'rasmiy manba', ru: 'официальный источник', en: 'official source' },
+  sourceSecondary: { uz: 'ikkilamchi manba', ru: 'вторичный источник', en: 'secondary source' },
+
   skipToContent: { uz: 'Asosiy qismga o‘tish', ru: 'К содержимому', en: 'Skip to content' },
 
   // Офлайн-пакет: прогреть карту, пока сеть есть, а не когда её уже нет

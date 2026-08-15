@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTrip } from './TripProvider';
+import { useBrowserSupport } from '@/lib/use-browser-support';
 import { Icon } from './Icon';
 import { t } from '@/lib/i18n';
 
@@ -46,7 +47,7 @@ export function VoiceInput({
   onText: (text: string) => void;
 }) {
   const { lang: uiLang } = useTrip();
-  const [supported, setSupported] = useState(false);
+  const supported = useBrowserSupport(() => Boolean(createRecognition()));
   const [listening, setListening] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [partial, setPartial] = useState('');
@@ -55,13 +56,14 @@ export function VoiceInput({
   const finalTextRef = useRef('');
   const stoppingRef = useRef(false);
 
-  useEffect(() => {
-    setSupported(Boolean(createRecognition()));
-    return () => {
+  // эффект остался только ради уборки: остановить распознавание при уходе
+  useEffect(
+    () => () => {
       stoppingRef.current = true;
       recognitionRef.current?.stop();
-    };
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!listening) return;
