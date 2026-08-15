@@ -391,7 +391,7 @@ export default function GuidesPage() {
                   {t('guidesWhy', lang)}: {top.join(' · ')}
                   {rest.length > 0 && (
                     <details className="mt-1">
-                      <summary className="muted cursor-pointer">
+                      <summary>
                         {t('guidesWhyMore', lang)} ({rest.length})
                       </summary>
                       <span className="muted">{rest.join(' · ')}</span>
@@ -402,7 +402,7 @@ export default function GuidesPage() {
             })()}
 
             <details className="text-[13px]">
-              <summary className="muted cursor-pointer">{t('verifyTitle', lang)}</summary>
+              <summary>{t('verifyTitle', lang)}</summary>
               {guide.verification.registry ? (
                 <ul className="mt-2 flex flex-col gap-1">
                   <li>
@@ -429,7 +429,7 @@ export default function GuidesPage() {
             </div>
 
             <details className="text-[13px]">
-              <summary className="muted cursor-pointer">
+              <summary>
                 {t('guidesReviewsTitle', lang)} ({guide.reviewsList.length})
               </summary>
               <ul className="mt-2 flex flex-col gap-2">

@@ -21,7 +21,7 @@ export function NearbyPois({ place }: { place: Place }) {
 
   return (
     <details className="text-[13px]">
-      <summary className="muted cursor-pointer">
+      <summary>
         {t('nearbyTitle', lang)} · {t('nearbyHint', lang)}
       </summary>
 

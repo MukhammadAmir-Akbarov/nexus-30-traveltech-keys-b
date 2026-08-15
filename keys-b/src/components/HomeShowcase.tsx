@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { PlacePhoto } from './PlacePhoto';
 import { useTrip } from './TripProvider';
@@ -27,16 +27,28 @@ export function HomeShowcase() {
   const region: Region = trip.regions[0] ?? 'tashkent';
   const [weather, setWeather] = useState<DayWeather | null>(null);
 
-  // дата берётся один раз на монтирование: перерисовки не должны дёргать сеть
-  const today = useRef(new Date().toISOString().slice(0, 10));
+  // Дата берётся один раз при монтировании: перерисовки не должны дёргать сеть.
+  // Начальное состояние, а не ref — ref во время рендера читать нельзя.
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
 
   useEffect(() => {
     const controller = new AbortController();
-    void todayWeather(region, today.current, controller.signal).then((value) => {
+    void todayWeather(region, today, controller.signal).then((value) => {
       if (!controller.signal.aborted) setWeather(value);
     });
     return () => controller.abort();
-  }, [region]);
+  }, [region, today]);
+
+  // дней до выезда: считаем от сегодняшней даты, отрицательное не показываем
+  const daysLeft = (() => {
+    if (!trip.startDate) return null;
+    const diff = Math.ceil(
+      (new Date(trip.startDate + 'T00:00:00').getTime() -
+        new Date(today + 'T00:00:00').getTime()) /
+        86_400_000,
+    );
+    return diff >= 0 ? diff : null;
+  })();
 
   // те же очки, что у планировщика: витрина не имеет права советовать одно,
   // а класть в маршрут другое
@@ -51,12 +63,29 @@ export function HomeShowcase() {
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="muted text-[12px] uppercase tracking-wider">{t('homeOverline', lang)}</div>
           <h1 className="mt-0.5">{t('homeGreeting', lang)}</h1>
           <p className="muted prose-measure mt-1 text-[15px]">{t('homeGreetingSub', lang)}</p>
         </div>
+
+        {/* Сколько дней до выезда. Мелочь, но она превращает страницу
+            из справочника в «мою поездку». */}
+        {daysLeft !== null && (
+          <div className="card flex flex-col justify-center py-3">
+            {daysLeft === 0 ? (
+              <b className="text-[15px]">{t('tripToday', lang)}</b>
+            ) : (
+              <>
+                <span className="muted text-[12px]">{t('tripCountdown', lang)}</span>
+                <b className="text-[17px]">
+                  {daysLeft} {t('tripDaysLeft', lang)}
+                </b>
+              </>
+            )}
+          </div>
+        )}
 
         {weather && (
           <div className="card flex items-center gap-3 py-3">

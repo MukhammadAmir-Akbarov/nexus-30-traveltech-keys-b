@@ -448,7 +448,7 @@ function CheckPageInner() {
 
             {result.passages.length > 0 && (
               <details className="text-[13px]">
-                <summary className="muted cursor-pointer">{t('passagesLabel', lang)}</summary>
+                <summary>{t('passagesLabel', lang)}</summary>
                 <ul className="mt-2 flex flex-col gap-2">
                   {result.passages.map((passage) => (
                     <li key={passage} className="muted prose-measure">
