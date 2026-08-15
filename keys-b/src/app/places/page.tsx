@@ -118,13 +118,6 @@ function PlacesCatalog() {
             <div className="muted text-[12px]">
               {place.interests.map((i) => tr(INTEREST_LABEL[i], lang)).join(', ')}
             </div>
-
-            {/* CC BY-SA требует указать автора там, где показан кадр */}
-            {photo && (
-              <div className="muted text-[11px]">
-                {t('photoBy', lang)} {photo.author} · {photo.license}
-              </div>
-            )}
           </Link>
           );
         })}

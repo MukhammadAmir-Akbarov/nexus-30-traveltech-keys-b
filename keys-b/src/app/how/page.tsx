@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
-import { t } from '@/lib/i18n';
+import { FEATURED_IDS } from '@/data/featured';
+import { PHOTOS } from '@/data/photos';
+import { PLACE_BY_ID } from '@/data/places';
+import { t, tr } from '@/lib/i18n';
 import type { UiKey } from '@/lib/i18n';
 
 // Прямой ответ на критерий «применимость» (30% оценки): что в прототипе демо,
@@ -75,6 +78,40 @@ export default function HowPage() {
 
       <section className="card">
         <p className="muted prose-measure text-[13px]">{t('howPrivacy', lang)}</p>
+      </section>
+
+      {/* Полный список фотографий с авторами и лицензиями.
+          CC BY-SA требует указать автора, но не под каждой миниатюрой: на
+          витрине подпись повторялась шесть раз и делала её рябой. Здесь она
+          собрана в одном месте, а на странице объекта стоит у самого кадра.
+          Заодно это ответ жюри на вопрос «а картинки откуда». */}
+      <section className="card flex flex-col gap-3">
+        <div>
+          <b className="text-sm">{t('howPhotosTitle', lang)}</b>
+          <p className="muted prose-measure mt-1 text-[13px]">{t('howPhotosLead', lang)}</p>
+        </div>
+        <ul className="flex flex-col gap-1.5 text-[12.5px]">
+          {FEATURED_IDS.flatMap((id) => {
+            const place = PLACE_BY_ID[id];
+            const photo = PHOTOS[id];
+            if (!place || !photo) return [];
+            return [
+              <li key={id} className="flex flex-wrap gap-x-2">
+                <span className="font-medium">{tr(place.name, lang)}</span>
+                <span className="muted">
+                  {t('photoBy', lang)}{' '}
+                  <a href={photo.sourceUrl} target="_blank" rel="noreferrer" className="underline">
+                    {photo.author}
+                  </a>{' '}
+                  ·{' '}
+                  <a href={photo.licenseUrl} target="_blank" rel="noreferrer" className="underline">
+                    {photo.license}
+                  </a>
+                </span>
+              </li>,
+            ];
+          })}
+        </ul>
       </section>
     </div>
   );

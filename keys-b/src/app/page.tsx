@@ -34,6 +34,11 @@ import { REGIONS, REGION_LABEL, t, tr } from '@/lib/i18n';
  *   достоверность — это ровно то, в чём мы упрекаем недобросовестного гида.
  *   Вместо неё показываем то, что у нас правда есть: число фактов с источником.
  * - Строк в коде. Интерфейс трёхъязычный, и словарь один — src/lib/i18n.ts.
+ *
+ * Атрибуции под каждой карточкой тоже нет — она повторялась шесть раз и делала
+ * витрину рябой. CC BY-SA требует указать автора «разумным образом», а не под
+ * каждой миниатюрой: подпись стоит на странице объекта, где кадр показан
+ * крупно, и полным списком на /how.
  */
 
 /** Сколько фактов корпуса стоит за объектом — это и есть наша единица доверия. */
@@ -189,19 +194,6 @@ export default function Home() {
                     {place.visitMinutes} {t('planMinutes', lang)}
                   </span>
                   {place.ticketUsd ? <span className="tag">${place.ticketUsd}</span> : null}
-                </div>
-
-                {/* Лицензия CC BY-SA требует указать автора. Заодно это тот же
-                    принцип, что и с фактами: на витрине нет данных без источника. */}
-                <div className="muted text-[11px]">
-                  {t('photoBy', lang)}{' '}
-                  <a href={photo.sourceUrl} target="_blank" rel="noreferrer" className="underline">
-                    {photo.author}
-                  </a>{' '}
-                  ·{' '}
-                  <a href={photo.licenseUrl} target="_blank" rel="noreferrer" className="underline">
-                    {photo.license}
-                  </a>
                 </div>
               </div>
             </article>

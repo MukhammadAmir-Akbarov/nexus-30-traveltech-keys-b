@@ -246,6 +246,21 @@ export const UI = {
   homeAllPlaces: { uz: 'Barcha obyektlar', ru: 'Все объекты', en: 'All places' },
   homeFactsCount: { uz: 'manbali fakt', ru: 'фактов с источником', en: 'sourced facts' },
   photoBy: { uz: 'foto:', ru: 'фото:', en: 'photo:' },
+  placeOverview: { uz: 'Umumiy ma’lumot', ru: 'Обзор', en: 'Overview' },
+  placeStatTime: { uz: 'Vaqt', ru: 'Время', en: 'Time' },
+  placeStatFacts: { uz: 'Faktlar', ru: 'Факты', en: 'Facts' },
+  placeStatListen: { uz: 'Eshitish', ru: 'Послушать', en: 'Listen' },
+
+  howPhotosTitle: {
+    uz: 'Fotosuratlar va litsenziyalar',
+    ru: 'Фотографии и лицензии',
+    en: 'Photographs and licences',
+  },
+  howPhotosLead: {
+    uz: 'Barcha suratlar Vikiomborhdan olingan va ochiq litsenziya ostida. Fayllar loyiha ichida saqlanadi — internetsiz ham ko‘rinadi.',
+    ru: 'Все снимки взяты с Викисклада под открытой лицензией. Файлы лежат в проекте — показываются и без сети.',
+    en: 'All photographs come from Wikimedia Commons under an open licence. The files ship with the project, so they render offline too.',
+  },
 
   planSetupTitle: { uz: 'Sayohat konteksti', ru: 'Контекст поездки', en: 'Trip context' },
   planSetupHint: {
