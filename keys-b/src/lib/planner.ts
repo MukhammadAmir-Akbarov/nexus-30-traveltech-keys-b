@@ -162,6 +162,12 @@ export function scorePlace(place: Place, ctx: TripContext): number {
   if (ctx.travelType === 'family' && place.familyFriendly) score += 1;
   if (ctx.travelType === 'group' && place.visitMinutes <= 60) score += 0.5;
   if (ctx.travelType === 'solo' && place.interests.includes('photo')) score += 0.5;
+  // Пара: виды и неспешность. Ограничителя по детям, как у семьи, здесь нет —
+  // поэтому это не «семья на двоих», а отдельный профиль.
+  if (ctx.travelType === 'couple') {
+    if (place.interests.includes('photo')) score += 0.5;
+    if (place.outdoor) score += 0.5;
+  }
   return score;
 }
 

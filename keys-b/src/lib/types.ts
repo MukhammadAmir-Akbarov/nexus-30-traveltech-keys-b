@@ -23,7 +23,12 @@ export type Interest =
   | 'crafts'
   | 'photo';
 
-export type TravelType = 'solo' | 'family' | 'group';
+/**
+ * `couple` — пара, а не «семья»: у семьи главный ограничитель это дети
+ * (familyFriendly), у пары его нет, а есть спрос на неспешность и виды.
+ * Раньше пара выбирала между «соло» и «семьёй», и оба ответа были неверны.
+ */
+export type TravelType = 'solo' | 'couple' | 'family' | 'group';
 
 /** Темп: сколько часов осмотра турист готов выдержать за день. */
 export type Pace = 'relaxed' | 'normal' | 'packed';

@@ -35,6 +35,10 @@ const INTEREST_WORDS: Record<Interest, string[]> = {
 const TYPE_WORDS: Record<TravelType, string[]> = {
   family: ['семья', 'семьей', 'семьёй', 'детьми', 'oila', 'family'],
   group: ['группа', 'группой', 'guruh', 'group'],
+  couple: [
+    'вдвоем', 'вдвоём', 'пара', 'парой', 'женой', 'мужем', 'девушкой', 'парнем',
+    'er-xotin', 'juftlik', 'ikkimiz', 'couple', 'honeymoon',
+  ],
   solo: ['один', 'одна', 'соло', 'yakka', 'solo'],
 };
 
@@ -77,8 +81,10 @@ export function parseTripPhrase(phrase: string): VoiceTripResult {
   );
   if (interests.length) result.interests = interests;
 
-  // формат ищем в порядке убывания специфичности: «с семьёй» важнее «один»
-  const type = (['family', 'group', 'solo'] as TravelType[]).find((t) =>
+  // Формат ищем в порядке убывания специфичности: «с семьёй» важнее «один».
+  // «Вдвоём» стоит раньше «solo» намеренно: во фразе «едем вдвоём, я и жена»
+  // иначе сработало бы «я» и пара превратилась бы в одиночку.
+  const type = (['family', 'group', 'couple', 'solo'] as TravelType[]).find((t) =>
     has(tokens, raw, TYPE_WORDS[t]),
   );
   if (type) result.travelType = type;

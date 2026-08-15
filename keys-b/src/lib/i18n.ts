@@ -34,6 +34,7 @@ export const INTEREST_LABEL: Record<Interest, I18nText> = {
 
 export const TRAVEL_TYPE_LABEL: Record<TravelType, I18nText> = {
   solo: { uz: 'yakka', ru: 'соло', en: 'solo' },
+  couple: { uz: 'er-xotin', ru: 'пара', en: 'couple' },
   family: { uz: 'oila', ru: 'семья', en: 'family' },
   group: { uz: 'guruh', ru: 'группа', en: 'group' },
 };
@@ -958,6 +959,11 @@ export const UI = {
     uz: 'Yakka sayohatchiga foto nuqtalari qo‘shiladi va tasdiqlangan gidlar oldinga chiqadi.',
     ru: 'Одиночке добавляются фототочки, а проверенные гиды поднимаются выше.',
     en: 'Solo travellers get photo spots, and verified guides rank higher.',
+  },
+  compareWhyCouple: {
+    uz: 'Er-xotin uchun ochiq havodagi va foto joylar oldinga chiqadi; bolalar bo‘yicha cheklov yo‘q.',
+    ru: 'Паре выше поднимаются виды и открытые пространства; ограничения по детям нет.',
+    en: 'For couples, open-air and scenic spots rank higher; no child-friendly filter applies.',
   },
   compareWhyFamily: {
     uz: 'Oila uchun bolalarga mos bo‘lmagan obyektlar umuman taklif qilinmaydi.',

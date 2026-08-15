@@ -43,7 +43,7 @@ import {
   verifyPassword,
   verifySession,
 } from './auth.ts';
-import type { Interest, Lang, ScoredGuide, TripContext } from './types.ts';
+import type { Interest, Lang, ScoredGuide, TravelType, TripContext } from './types.ts';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
 
@@ -1099,6 +1099,46 @@ assert.ok(
   pinnedTrip.days.flatMap((day) => day.items.map((item) => item.placeId)).includes('registan'),
   'закреплённый вручную объект не выбрасывается фильтром интересов',
 );
+
+// --- формат «пара» ------------------------------------------------------------
+// Раньше форматов было три, и пара выбирала между «соло» и «семьёй»: оба ответа
+// неверны. У семьи главный ограничитель — дети (familyFriendly), у пары его нет,
+// а есть спрос на виды и неспешность.
+
+const coupleTrip = placesOfTrip(['history', 'architecture']);
+const asType = (type: TravelType) =>
+  buildItinerary(PLACES, { ...interestCtx(['history', 'architecture']), travelType: type }).days
+    .flatMap((day) => day.items.map((item) => item.placeId));
+
+assert.notDeepEqual(asType('couple'), asType('solo'), 'пара и одиночка идут разными маршрутами');
+assert.notDeepEqual(asType('couple'), asType('family'), 'пара и семья идут разными маршрутами');
+assert.ok(coupleTrip.length > 0, 'маршрут для пары не пустой');
+
+// Жёсткий фильтр familyFriendly действует только на семью: паре без детей
+// незачем терять объекты, где детям скучно.
+const familyOnly = new Set(asType('family'));
+const coupleOnly = asType('couple');
+assert.ok(
+  coupleOnly.some((id) => !familyOnly.has(id)),
+  'паре доступны объекты, отсеянные семейным фильтром',
+);
+
+// Подбор гида обязан работать: если бы в данных гидов не было travelTypes
+// с couple, пара получила бы пустой список — регресс, заметный на демо.
+const coupleGuides = matchGuides(GUIDES, {
+  ...interestCtx(['history', 'architecture']),
+  travelType: 'couple',
+  gender: 'any',
+  languages: ['uz'],
+  needTransport: false,
+});
+assert.ok(coupleGuides.length > 0, 'для пары находятся гиды');
+
+// Голосовой ввод: «вдвоём» стоит раньше «solo», иначе фраза «едем вдвоём, я и
+// жена» распознавалась бы как одиночка по слову «я».
+assert.equal(parseTripPhrase('вдвоем с женой на 3 дня').travelType, 'couple', 'ru: вдвоём — пара');
+assert.equal(parseTripPhrase('er-xotin ikkimiz Samarqandga').travelType, 'couple', 'uz: er-xotin');
+assert.equal(parseTripPhrase('travelling as a couple').travelType, 'couple', 'en: couple');
 
 // --- вердикт по правилам (работает без ключа модели) -------------------------
 // Правило существует ради одного: без ключа продукт обязан ловить перепутанный

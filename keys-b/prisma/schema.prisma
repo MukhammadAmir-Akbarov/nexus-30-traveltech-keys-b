@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+  name  String?
+}
+
+model Guide {
+  id              String   @id @default(cuid())
+  name            String
+  photoUrl        String?
+  rating          Float    @default(0)
+  reviews         Int      @default(0)
+  pricePerDay     Float
+  hourlyRate      Float?
+  experienceYears Int      @default(0)
+  bio             String   @default("")
+  shortBio        String?
+  languages       String   @default("[]")
+  verified        Boolean  @default(false)
+  licenseNumber   String?
+  regions         String   @default("[]")
+  specializations String   @default("[]")
+  createdAt       DateTime @default(now())
+}

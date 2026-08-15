@@ -18,6 +18,7 @@ import type { TravelType } from '@/lib/types';
 
 const REASON: Record<TravelType, UiKey> = {
   solo: 'compareWhySolo',
+  couple: 'compareWhyCouple',
   family: 'compareWhyFamily',
   group: 'compareWhyGroup',
 };
