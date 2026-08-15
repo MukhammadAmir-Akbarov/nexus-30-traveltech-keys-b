@@ -9,6 +9,7 @@ import type {
   TripContext,
 } from './types.ts';
 import { buildTransfer, transferHours } from './transfer.ts';
+import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 
 // Правило-основанный планировщик. Работает без сети — это одновременно
 // и запасной путь, если LLM недоступен на демо.
@@ -60,6 +61,12 @@ const TEXT = {
     uz: 'Mamlakat bo‘ylab {days} kunlik marshrut — shaharlar: {cities}, obyektlar: {n}. Boshlanish: {start}.',
     ru: 'Маршрут по стране на {days} дн. — городов: {cities}, объектов: {n}. Старт: {start}.',
     en: 'A {days}-day countrywide itinerary — cities: {cities}, places: {n}. Starts in {start}.',
+  },
+  // Молча отдать 2 дня вместо запрошенных 5 нельзя: человек решит, что система сломалась
+  shortened: {
+    uz: ' So‘ralgan {asked} kundan qisqa: tanlangan filtrlarga mos obyektlar shuncha kunga yetdi.',
+    ru: ' Это короче запрошенных {asked} дн.: объектов под выбранные фильтры хватило на столько.',
+    en: ' Shorter than the {asked} days requested: the places matching your filters fill only these.',
   },
 } satisfies Record<string, I18nText>;
 
@@ -116,14 +123,24 @@ function orderByProximity(places: Place[]): Place[] {
   return ordered;
 }
 
-function noteFor(place: Place, ctx: TripContext, lang: Lang): string {
+/**
+ * `withInterestReason` — показывать ли «совпадает с вашими интересами».
+ * Эта фраза верна почти для каждого отобранного объекта, и шесть повторов подряд
+ * читаются как шум, поэтому она ставится один раз на день.
+ */
+function noteFor(
+  place: Place,
+  ctx: TripContext,
+  lang: Lang,
+  withInterestReason: boolean,
+): string {
   const summary = place.summary[lang];
   // летом жара делает дневной осмотр под открытым небом тяжёлым (см. корпус, c34)
   if (ctx.summer && place.outdoor) return `${summary} ${TEXT.summerOutdoor[lang]}`;
   if (ctx.travelType === 'family' && place.familyFriendly) {
     return `${summary} ${TEXT.family[lang]}`;
   }
-  if (place.interests.some((i) => ctx.interests.includes(i))) {
+  if (withInterestReason && place.interests.some((i) => ctx.interests.includes(i))) {
     return `${summary} ${TEXT.matches[lang]}`;
   }
   return summary;
@@ -179,7 +196,10 @@ function makeDay(
         ? `${cityTitle}: ${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
         : `${cityTitle}: ${ordered[0].name[lang]}`,
     transfer,
-    items: ordered.map((p) => ({ placeId: p.id, note: noteFor(p, ctx, lang) })),
+    items: ordered.map((p, index) => ({
+      placeId: p.id,
+      note: noteFor(p, ctx, lang, index === 0),
+    })),
   };
 }
 
@@ -289,13 +309,15 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
     ? pool.find((p) => p.id === days[0].items[0].placeId)!.region
     : ENTRY_REGION;
 
-  return {
-    summary: template[lang]
+  const summary =
+    template[lang]
       .replace('{days}', String(days.length))
       .replace('{n}', String(total))
       .replace('{cities}', String(cities.size))
       .replace('{start}', REGION_NAME[startRegion][lang])
-      .replace('{type}', ctx.travelType),
-    days,
-  };
+      // формат поездки показываем словом на языке интерфейса, а не ключом «solo»
+      .replace('{type}', TRAVEL_TYPE_LABEL[ctx.travelType][lang]) +
+    (days.length < ctx.days ? TEXT.shortened[lang].replace('{asked}', String(ctx.days)) : '');
+
+  return { summary, days };
 }

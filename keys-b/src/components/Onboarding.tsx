@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 import { useTrip } from './TripProvider';
-import { INTEREST_LABEL, INTERESTS, REGIONS, REGION_LABEL, TRAVEL_TYPES, TRAVEL_TYPE_LABEL, t, tr } from '@/lib/i18n';
+import {
+  INTEREST_LABEL,
+  INTERESTS,
+  LANGS,
+  LANG_LABEL,
+  REGIONS,
+  REGION_LABEL,
+  TRAVEL_TYPES,
+  TRAVEL_TYPE_LABEL,
+  t,
+  tr,
+} from '@/lib/i18n';
 import type { Interest } from '@/lib/types';
 
 // Отзыв (запись 6): «unga qisqa gina savol berilsin: nimalarga qiziqasiz» —
@@ -23,6 +34,26 @@ export function Onboarding() {
     });
 
   const steps = [
+    {
+      // Язык — первым: подложка опроса перекрывает шапку с переключателем,
+      // и без этого шага иностранец заперт в узбекском интерфейсе.
+      title: t('onbLang', lang),
+      body: (
+        <div className="flex flex-wrap gap-2">
+          {LANGS.map((code) => (
+            <button
+              key={code}
+              className="chip"
+              style={{ minHeight: 48, paddingInline: 18 }}
+              data-active={lang === code}
+              onClick={() => update({ lang: code })}
+            >
+              {LANG_LABEL[code]}
+            </button>
+          ))}
+        </div>
+      ),
+    },
     {
       title: t('onbInterests', lang),
       body: (
@@ -48,8 +79,18 @@ export function Onboarding() {
             <button
               key={region}
               className="chip"
-              data-active={trip.region === region}
-              onClick={() => update({ region })}
+              data-active={
+                region === 'all' ? trip.regions.length === 0 : trip.regions.includes(region)
+              }
+              // Пишем оба поля: планировщик читает regions, и если обновить
+              // только region, ответ на первый же вопрос молча пропадает.
+              onClick={() =>
+                update(
+                  region === 'all'
+                    ? { region: 'all', regions: [] }
+                    : { region, regions: [region] },
+                )
+              }
             >
               {region === 'all' ? t('allUzbekistan', lang) : tr(REGION_LABEL[region], lang)}
             </button>

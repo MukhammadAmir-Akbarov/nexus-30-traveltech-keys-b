@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
-import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import {
   GENDER_LABEL,
@@ -59,9 +58,10 @@ export default function GuidesPage() {
       <section>
         <h1>{t('guidesTitle', lang)}</h1>
         <p className="muted prose-measure mt-2 text-[15px]">{t('guidesLead', lang)}</p>
+        {/* ★ и точность фактов стоят в карточке рядом — без этой строки непонятно,
+            чем они отличаются, а это и есть главная идея продукта */}
+        <p className="muted prose-measure mt-2 text-[13px]">{t('guidesTwoScores', lang)}</p>
       </section>
-
-      <SoloPanel />
 
       <section className="card flex flex-col gap-4">
         <div>
@@ -204,9 +204,26 @@ export default function GuidesPage() {
               </div>
             )}
 
-            <div className="text-[13px]" style={{ color: 'var(--accent)' }}>
-              {t('guidesWhy', lang)}: {why}
-            </div>
+            {/* Восемь причин через точку читались как лог. Показываем три главные,
+                остальные — под раскрытием: порядок в match.ts уже по важности. */}
+            {(() => {
+              const reasons = why.split(' · ');
+              const top = reasons.slice(0, 3);
+              const rest = reasons.slice(3);
+              return (
+                <div className="text-[13px]" style={{ color: 'var(--accent)' }}>
+                  {t('guidesWhy', lang)}: {top.join(' · ')}
+                  {rest.length > 0 && (
+                    <details className="mt-1">
+                      <summary className="muted cursor-pointer">
+                        {t('guidesWhyMore', lang)} ({rest.length})
+                      </summary>
+                      <span className="muted">{rest.join(' · ')}</span>
+                    </details>
+                  )}
+                </div>
+              );
+            })()}
 
             <details className="text-[13px]">
               <summary className="muted cursor-pointer">{t('verifyTitle', lang)}</summary>

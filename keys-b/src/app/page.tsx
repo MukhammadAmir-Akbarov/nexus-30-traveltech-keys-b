@@ -14,12 +14,25 @@ import {
 } from '@/lib/i18n';
 import type { Interest } from '@/lib/types';
 
+/** Верхняя граница поездки: одна и та же для дат и для ползунка, иначе они спорят. */
+const MAX_DAYS = 14;
+
 /** Число дней поездки из выбранных дат: обе даты включительно. */
 function daysBetween(from?: string, to?: string): number | null {
   if (!from || !to) return null;
   const ms = new Date(to).getTime() - new Date(from).getTime();
   if (Number.isNaN(ms) || ms < 0) return null;
-  return Math.min(14, Math.round(ms / 86400000) + 1);
+  return Math.min(MAX_DAYS, Math.round(ms / 86400000) + 1);
+}
+
+/**
+ * Летняя жара определяется датой, а не галочкой: выбрал июль — правило включилось.
+ * Галочка остаётся ручной поправкой для тех, кто планирует без дат.
+ */
+function isSummer(date?: string): boolean | null {
+  if (!date) return null;
+  const month = Number(date.slice(5, 7));
+  return month >= 6 && month <= 8;
 }
 
 export default function Home() {
@@ -86,7 +99,11 @@ export default function Home() {
               value={trip.startDate ?? ''}
               onChange={(e) => {
                 const startDate = e.target.value;
-                update({ startDate, days: daysBetween(startDate, trip.endDate) ?? trip.days });
+                update({
+                  startDate,
+                  days: daysBetween(startDate, trip.endDate) ?? trip.days,
+                  summer: isSummer(startDate) ?? trip.summer,
+                });
               }}
             />
             <span className="muted">{t('fieldDateTo', lang)}</span>
@@ -97,7 +114,11 @@ export default function Home() {
               value={trip.endDate ?? ''}
               onChange={(e) => {
                 const endDate = e.target.value;
-                update({ endDate, days: daysBetween(trip.startDate, endDate) ?? trip.days });
+                update({
+                  endDate,
+                  days: daysBetween(trip.startDate, endDate) ?? trip.days,
+                  summer: isSummer(trip.startDate) ?? trip.summer,
+                });
               }}
             />
           </div>
@@ -153,7 +174,7 @@ export default function Home() {
             <input
               type="range"
               min={1}
-              max={7}
+              max={MAX_DAYS}
               value={trip.days}
               onChange={(e) => update({ days: Number(e.target.value) })}
               className="w-48 accent-[var(--accent)]"
