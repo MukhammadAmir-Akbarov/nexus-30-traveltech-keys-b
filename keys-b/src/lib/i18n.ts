@@ -492,6 +492,52 @@ export const UI = {
   guidesVerified: { uz: '✓ tasdiqlangan (demo)', ru: '✓ подтверждён (демо)', en: '✓ verified (demo)' },
   guidesReviews: { uz: 'sharh', ru: 'отзывов', en: 'reviews' },
   guidesPerDay: { uz: 'kun', ru: 'день', en: 'day' },
+  verdictOnMap: { uz: 'Xaritada ko‘rish', ru: 'Показать на карте', en: 'Show on the map' },
+  verdictSave: {
+    uz: 'Marshrutga saqlash',
+    ru: 'Сохранить в маршрут',
+    en: 'Save to my itinerary',
+  },
+  verdictSaved: { uz: 'Marshrutda', ru: 'В маршруте', en: 'In your itinerary' },
+  verdictOpenPlan: { uz: 'marshrutni ochish', ru: 'открыть маршрут', en: 'open the itinerary' },
+
+  suggestAge: { uz: 'Qachon qurilgan?', ru: 'Когда построен?', en: 'When was it built?' },
+  suggestGuideSaid: { uz: 'Gid shunday dedi…', ru: 'Гид сказал…', en: 'The guide said…' },
+  suggestHeight: { uz: 'Bu ma’lumot to‘g‘rimi?', ru: 'Верна ли эта информация?', en: 'Is this correct?' },
+
+  guidesSearch: {
+    uz: 'Gid, shahar, til yoki yo‘nalish bo‘yicha qidiring…',
+    ru: 'Поиск по гиду, городу, языку или направлению…',
+    en: 'Search by guide, city, language or specialisation…',
+  },
+  guidesSort: { uz: 'Saralash', ru: 'Сортировка', en: 'Sort by' },
+  sortMatch: { uz: 'moslik bo‘yicha', ru: 'по совпадению', en: 'best match' },
+  sortAccuracy: { uz: 'aniqlik bo‘yicha', ru: 'по точности фактов', en: 'fact accuracy' },
+  sortPrice: { uz: 'narx bo‘yicha', ru: 'по цене', en: 'price' },
+  sortExperience: { uz: 'tajriba bo‘yicha', ru: 'по опыту', en: 'experience' },
+  guidesFound: { uz: 'Topildi', ru: 'Найдено', en: 'Found' },
+  guidesVerifiedCount: { uz: 'tasdiqlangan', ru: 'подтверждённых', en: 'verified' },
+  guidesWithinBudget: {
+    uz: 'Budjetim doirasida',
+    ru: 'В рамках моего бюджета',
+    en: 'Within my budget',
+  },
+  guidesAboveBudget: {
+    uz: 'budjetdan qimmat',
+    ru: 'дороже вашего бюджета',
+    en: 'above your budget',
+  },
+  guidesHiddenByBudget: {
+    uz: 'Budjetdan qimmatroq gidlarni ko‘rsatish',
+    ru: 'Показать гидов дороже бюджета',
+    en: 'Show guides above my budget',
+  },
+  guidesClearSearch: { uz: 'Qidiruvni tozalash', ru: 'Очистить поиск', en: 'Clear the search' },
+  guidesClearTransport: {
+    uz: 'Transport shartini olib tashlash',
+    ru: 'Снять условие «свой транспорт»',
+    en: 'Drop the “own transport” filter',
+  },
   guidesYears: { uz: 'yillik tajriba', ru: 'лет опыта', en: 'years of experience' },
   guidesByPlace: {
     uz: 'Obyektlar bo‘yicha aniqlik',
