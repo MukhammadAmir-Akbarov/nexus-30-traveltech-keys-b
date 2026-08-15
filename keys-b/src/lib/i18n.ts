@@ -205,6 +205,42 @@ export const UI = {
     ru: 'Один контекст поездки — три функции: проверка того, что рассказывает гид, персональный маршрут и подбор гида.',
     en: 'One trip context, three functions: verify what your guide says, build a personal itinerary, find the right guide.',
   },
+  homeCtaPlan: {
+    uz: 'Sayohatni rejalashtirish',
+    ru: 'Спланировать поездку',
+    en: 'Plan a trip',
+  },
+  homeCtaCheck: {
+    uz: 'Ma’lumotni tekshirish',
+    ru: 'Проверить факт',
+    en: 'Check a fact',
+  },
+  homeFeatured: {
+    uz: 'O‘zbekistonning asosiy maskanlari',
+    ru: 'Главные места Узбекистана',
+    en: 'Uzbekistan’s landmarks',
+  },
+  // Прямо говорим, что это редакторская подборка: статистики посещаемости по
+  // объектам у нас нет, а называть подборку рейтингом значило бы соврать
+  // ровно в том продукте, который обещает достоверность.
+  homeFeaturedLead: {
+    uz: 'Tahririy tanlov — tashrif statistikasi bo‘yicha reyting emas. Har bir obyekt ortida manbasi ko‘rsatilgan faktlar turadi.',
+    ru: 'Редакционная подборка, а не рейтинг по посещаемости. За каждым объектом стоят факты с указанным источником.',
+    en: 'An editorial selection, not a visitor-count ranking. Every place is backed by facts with a named source.',
+  },
+  homeAllPlaces: { uz: 'Barcha obyektlar', ru: 'Все объекты', en: 'All places' },
+  homeFactsCount: { uz: 'manbali fakt', ru: 'фактов с источником', en: 'sourced facts' },
+  photoBy: { uz: 'foto:', ru: 'фото:', en: 'photo:' },
+
+  planSetupTitle: { uz: 'Sayohat konteksti', ru: 'Контекст поездки', en: 'Trip context' },
+  planSetupHint: {
+    uz: 'Marshrut shu javoblar asosida quriladi. Istalgan paytda o‘zgartirsangiz, marshrut qayta hisoblanadi.',
+    ru: 'Маршрут строится по этим ответам. Измените что угодно — он пересчитается сам.',
+    en: 'The itinerary is built from these answers. Change anything and it rebuilds itself.',
+  },
+  planSetupToggle: { uz: 'Kontekstni o‘zgartirish', ru: 'Изменить контекст', en: 'Change context' },
+  planSetupDone: { uz: 'Marshrutni ko‘rish', ru: 'Показать маршрут', en: 'Show the itinerary' },
+
   fieldRegion: { uz: 'Hudud', ru: 'Регион', en: 'Region' },
   fieldInterests: { uz: 'Qiziqishlar', ru: 'Интересы', en: 'Interests' },
   fieldTravelType: { uz: 'Sayohat formati', ru: 'Формат поездки', en: 'Travel type' },

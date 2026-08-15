@@ -3,7 +3,9 @@
 // (Node 22 сам снимает типы, поэтому импорты — с расширением .ts.)
 import assert from 'node:assert/strict';
 import { CORPUS } from '../data/corpus.ts';
+import { FEATURED_IDS } from '../data/featured.ts';
 import { GUIDES } from '../data/guides.ts';
+import { PHOTOS } from '../data/photos.ts';
 import { PLACES } from '../data/places.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
@@ -994,4 +996,39 @@ assert.ok(
   'ссылка в навигатор ведёт по тем же точкам и в том же порядке',
 );
 
-console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, маршрут, переводы, авторизация');
+// --- витрина главной ---------------------------------------------------------
+// Главная — первый экран и для туриста, и для жюри. Опечатка в id даёт молча
+// пропавшую карточку, а не ошибку сборки, поэтому проверяем данными.
+
+const placeIds = new Set(PLACES.map((place) => place.id));
+
+assert.equal(new Set(FEATURED_IDS).size, FEATURED_IDS.length, 'на витрине нет повторов');
+
+for (const id of FEATURED_IDS) {
+  assert.ok(placeIds.has(id), `объект витрины ${id} есть в PLACES`);
+
+  const photo = PHOTOS[id];
+  assert.ok(photo, `у объекта витрины ${id} есть фотография`);
+  assert.equal(photo.src, `/places/${id}.jpg`, `путь к фото ${id} совпадает с id`);
+
+  // Лицензия CC BY-SA требует указать автора: пустое поле — это нарушение,
+  // а не косметика, и на витрине проекта про достоверность особенно.
+  assert.ok(photo.author.trim().length > 0, `у фото ${id} указан автор`);
+  assert.ok(photo.license.trim().length > 0, `у фото ${id} указана лицензия`);
+  assert.ok(photo.sourceUrl.startsWith('https://'), `у фото ${id} есть ссылка на источник`);
+}
+
+// Подряд идущие объекты одного региона создают впечатление, что больше
+// в стране ничего нет. Порядок в featured.ts подобран руками — стережём его.
+const featuredRegions = FEATURED_IDS.map(
+  (id) => PLACES.find((place) => place.id === id)!.region,
+);
+for (let i = 2; i < featuredRegions.length; i++) {
+  const sameRun =
+    featuredRegions[i] === featuredRegions[i - 1] && featuredRegions[i] === featuredRegions[i - 2];
+  assert.ok(!sameRun, `на витрине три ${featuredRegions[i]} подряд — перемешайте регионы`);
+}
+
+console.log(
+  'OK: retrieval (uz/ru/en), demo-cache, planner, match, маршрут, переводы, авторизация, витрина',
+);

@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
@@ -9,6 +8,7 @@ import { NearbyPois } from '@/components/NearbyPois';
 import { OfflinePack } from '@/components/OfflinePack';
 import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
+import { TripSetup } from '@/components/TripSetup';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
 import { itineraryToIcs } from '@/lib/ics';
@@ -35,7 +35,14 @@ const PRAYER_KEY: Record<Prayer, UiKey> = {
 };
 
 export default function PlanPage() {
-  const { trip, lang, update } = useTrip();
+  const { trip, lang, update, ready, onboarded, finishOnboarding } = useTrip();
+
+  // Вопросы о поездке задаются здесь, а не модалкой при первом входе: человек
+  // уже нажал «спланировать», и теперь у вопроса есть смысл. Пока на них не
+  // ответили ни разу — форма раскрыта; дальше она сворачивается и открывается
+  // кнопкой, чтобы не занимать экран над готовым маршрутом.
+  const [setupOpen, setSetupOpen] = useState(false);
+  const showSetup = setupOpen || (ready && !onboarded);
 
   // сюда попадают по ссылке «поделиться поездкой»: /plan?trip=<контекст>
   useEffect(() => {
@@ -124,22 +131,51 @@ export default function PlanPage() {
       <section className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1>{t('planTitle', lang)}</h1>
-          <p className="muted prose-measure mt-2 text-[15px]">
-            {t('planLead', lang)}{' '}
-            <Link href="/" className="underline" style={{ color: 'var(--accent)' }}>
-              {t('planChange', lang)}
-            </Link>
-          </p>
+          <p className="muted prose-measure mt-2 text-[15px]">{t('planLead', lang)}</p>
         </div>
-        <button className="btn btn-primary" disabled={loading} onClick={build}>
-          <Icon name="route" />
-          {loading
-            ? t('planLoading', lang)
-            : itinerary
-              ? t('planRebuild', lang)
-              : t('planButton', lang)}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="btn"
+            aria-expanded={showSetup}
+            aria-controls="trip-setup"
+            onClick={() => setSetupOpen((open) => !open)}
+          >
+            <Icon name="search" />
+            {t('planSetupToggle', lang)}
+          </button>
+          <button className="btn btn-primary" disabled={loading} onClick={build}>
+            <Icon name="route" />
+            {loading
+              ? t('planLoading', lang)
+              : itinerary
+                ? t('planRebuild', lang)
+                : t('planButton', lang)}
+          </button>
+        </div>
       </section>
+
+      {showSetup && (
+        <section id="trip-setup" className="card flex flex-col gap-4">
+          <div>
+            <h2 className="text-base font-bold">{t('planSetupTitle', lang)}</h2>
+            <p className="muted prose-measure mt-1 text-[13px]">{t('planSetupHint', lang)}</p>
+          </div>
+
+          <TripSetup />
+
+          <div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                finishOnboarding();
+                setSetupOpen(false);
+              }}
+            >
+              {t('planSetupDone', lang)}
+            </button>
+          </div>
+        </section>
+      )}
 
       {error && (
         <div className="card text-sm" style={{ color: 'var(--danger)' }}>

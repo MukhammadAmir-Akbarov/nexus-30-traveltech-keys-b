@@ -4,7 +4,6 @@ import './globals.css';
 import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
 import { OfflineReady } from '@/components/OfflineReady';
-import { Onboarding } from '@/components/Onboarding';
 import { SkipLink } from '@/components/SkipLink';
 import { TabBar } from '@/components/TabBar';
 import { TripProvider } from '@/components/TripProvider';
@@ -33,7 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={manrope.variable}>
         <TripProvider>
           <OfflineReady />
-          <Onboarding />
+          {/* Модального опроса при первом входе больше нет: он закрывал продукт
+              собой и спрашивал раньше, чем человек понимал, ради чего отвечает.
+              Те же вопросы теперь стоят в /plan — после нажатия «спланировать». */}
           {/* с клавиатуры первым делом предлагаем перепрыгнуть навигацию,
               иначе до содержимого приходится проходить всю шапку каждый раз */}
           <SkipLink />
