@@ -402,6 +402,37 @@ export const UI = {
     en: 'This day goes over budget',
   },
   budgetDay: { uz: 'Kun xarajati', ru: 'Траты за день', en: 'Spend for the day' },
+
+  // Сколько человек едет: билеты и переезды продаются на человека, и до этого
+  // поля любая семья видела сумму втрое-вчетверо меньше настоящей.
+  fieldTravelers: { uz: 'Necha kishi', ru: 'Сколько человек', en: 'Travellers' },
+  travelersHint: {
+    uz: 'Chiptalar va yo‘l shu songa ko‘paytiriladi.',
+    ru: 'На это число умножаются билеты и переезды.',
+    en: 'Tickets and transfers are multiplied by this number.',
+  },
+  travelersUnit: { uz: 'kishi', ru: 'чел.', en: 'people' },
+  planCostFor: { uz: 'hammaga', ru: 'на всех', en: 'total' },
+  planCostPerPerson: { uz: 'bir kishiga', ru: 'на человека', en: 'per person' },
+
+  // Перегруженный день: сказать об этом надо, пока человек ещё дома.
+  dayLong: { uz: 'Kun juda uzun', ru: 'День перегружен', en: 'Long day' },
+  dayLongHint: {
+    uz: 'Ko‘rish va yo‘l 10 soatdan oshdi — bitta obyektni olib tashlang yoki ertangi kunga qoldiring.',
+    ru: 'Осмотр и дорога занимают больше 10 часов — уберите один объект или перенесите его на другой день.',
+    en: 'Sightseeing plus travel runs over 10 hours — drop a site or move it to another day.',
+  },
+
+  // Восход, закат и золотой час — для тех, кто выбрал интерес «фото».
+  sunTitle: { uz: 'Yorug‘lik', ru: 'Свет', en: 'Light' },
+  sunSunrise: { uz: 'quyosh chiqishi', ru: 'восход', en: 'sunrise' },
+  sunSunset: { uz: 'quyosh botishi', ru: 'закат', en: 'sunset' },
+  sunGolden: { uz: 'oltin soat', ru: 'золотой час', en: 'golden hour' },
+  sunNote: {
+    uz: 'Hisob quyosh bo‘yicha, internetsiz. Peshindagi va botishdan oldingi surat — ikki xil surat.',
+    ru: 'Расчёт по солнцу, без сети. Снимок в полдень и снимок перед закатом — это два разных снимка.',
+    en: 'Computed from the sun, no network needed. A midday photo and a pre-sunset photo are two different photos.',
+  },
   fieldGuideLangs: { uz: 'Muloqot tillari', ru: 'Языки общения', en: 'Languages you speak' },
   guideLangsHint: {
     uz: 'Gid tanlashda ishlatiladi — interfeys tili bilan bir xil bo‘lishi shart emas.',
@@ -972,6 +1003,37 @@ export const UI = {
   },
   placesSearch: { uz: 'Obyekt nomi bo‘yicha qidirish', ru: 'Поиск по названию', en: 'Search by name' },
   placesEmpty: { uz: 'Hech narsa topilmadi.', ru: 'Ничего не нашлось.', en: 'Nothing found.' },
+
+  // Часы работы объекта. Поля лежали в данных и работали только внутри
+  // планировщика — человеку у входа они не показывались нигде.
+  placeHours: { uz: 'Ish vaqti', ru: 'Часы работы', en: 'Opening hours' },
+  placeOpenNow: { uz: 'hozir ochiq', ru: 'сейчас открыто', en: 'open now' },
+  placeClosedNow: { uz: 'hozir yopiq', ru: 'сейчас закрыто', en: 'closed now' },
+  placeClosingSoon: {
+    uz: 'tez orada yopiladi — ko‘rishga ulgurmasligingiz mumkin',
+    ru: 'скоро закрывается — осмотр может не влезть',
+    en: 'closing soon — the full visit may not fit',
+  },
+  placeAlwaysOpen: {
+    uz: 'ochiq maydon — istalgan vaqtda',
+    ru: 'открытое пространство — в любое время',
+    en: 'open space — any time',
+  },
+  placeHoursNote: {
+    uz: 'Vaqt Toshkent bo‘yicha. Bayram kunlarida ish vaqti qisqarishi mumkin.',
+    ru: 'Время по Ташкенту. В праздники часы работы могут быть короче.',
+    en: 'Tashkent time. Hours may be shorter on public holidays.',
+  },
+  placeTicket: { uz: 'Chipta', ru: 'Билет', en: 'Ticket' },
+  placeFree: { uz: 'bepul', ru: 'бесплатно', en: 'free' },
+  placeNavigator: { uz: 'Navigatorda ochish', ru: 'Открыть в навигаторе', en: 'Open in navigator' },
+
+  // Каталог: фильтры сверх поиска и региона.
+  placesFilters: { uz: 'Saralash', ru: 'Отбор', en: 'Filters' },
+  placesFree: { uz: 'bepul kirish', ru: 'бесплатный вход', en: 'free entry' },
+  placesOpenNow: { uz: 'hozir ochiq', ru: 'открыто сейчас', en: 'open now' },
+  placesFound: { uz: 'Topildi', ru: 'Найдено', en: 'Found' },
+  placesReset: { uz: 'Saralashni tozalash', ru: 'Сбросить отбор', en: 'Clear filters' },
   placesAccessible: { uz: 'aravacha uchun qulay', ru: 'доступно на коляске', en: 'wheelchair accessible' },
 
   // История проверок
@@ -1222,6 +1284,76 @@ export const UI = {
   adminRole: { uz: 'Rol', ru: 'Роль', en: 'Role' },
   adminCreated: { uz: 'Qo‘shilgan', ru: 'Создан', en: 'Created' },
   adminStats: { uz: 'Ko‘rsatkichlar', ru: 'Показатели', en: 'Overview' },
+
+  // Откуда турист услышал утверждение. Гид — не единственный источник ошибок
+  // и чаще всего не главный: люди читают табличку и первую ссылку в поиске.
+  checkSourceLabel: { uz: 'Buni qayerdan eshitdingiz?', ru: 'Откуда вы это услышали?', en: 'Where did you hear it?' },
+  checkSourceHint: {
+    uz: 'Xato faqat giddan kelmaydi. Manbani ajratsak, Qo‘mita aynan qayerni tuzatishni biladi.',
+    ru: 'Ошибка приходит не только от гида. Разделив источники, Комитет узнаёт, что именно чинить.',
+    en: 'Errors do not come from guides alone. Separating sources tells the Committee what to fix.',
+  },
+  srcGuide: { uz: 'gid', ru: 'гид', en: 'a guide' },
+  srcSign: { uz: 'kirishdagi lavha', ru: 'табличка у входа', en: 'a sign at the entrance' },
+  srcInternet: { uz: 'internet', ru: 'интернет', en: 'the internet' },
+  srcOther: { uz: 'boshqa', ru: 'другое', en: 'other' },
+
+  // Проверка должна открываться по ссылке: её отправляют гиду и спутнику.
+  // Черновик заявки гиду: даты и языки турист уже называл на главной.
+  draftDates: { uz: 'Sanalar', ru: 'Даты', en: 'Dates' },
+  draftCities: { uz: 'Shaharlar', ru: 'Города', en: 'Cities' },
+  draftLangs: { uz: 'Til', ru: 'Язык', en: 'Language' },
+  draftPeople: { uz: 'Kishi', ru: 'Человек', en: 'Travellers' },
+
+  verdictShare: { uz: 'Tekshiruv havolasi', ru: 'Ссылка на проверку', en: 'Link to this check' },
+  verdictShareDone: { uz: 'Havola nusxalandi', ru: 'Ссылка скопирована', en: 'Link copied' },
+
+  reportSourcesTitle: {
+    uz: 'Noto‘g‘ri ma’lumot qayerdan keladi',
+    ru: 'Откуда приходит недостоверное',
+    en: 'Where inaccurate claims come from',
+  },
+  reportSourcesNote: {
+    uz: 'Ulush muhim, soni emas: radlar ulushi yuqori manba — pudratchiga topshiriq, gidlarga da’vo emas.',
+    ru: 'Важна доля, а не число: источник с высокой долей опровержений — это поручение подрядчику, а не претензия к гидам.',
+    en: 'The share matters more than the count: a source with a high refuted share is a work order for the contractor, not a complaint about guides.',
+  },
+  reportColSource: { uz: 'Manba', ru: 'Источник', en: 'Source' },
+
+  // Журнал действий администратора.
+  // Страницы «не нашлось» и «сбой»: раньше их не было вовсе, и человек
+  // получал служебную заглушку Next по-английски и без единого пути дальше.
+  notFoundTitle: { uz: 'Bunday sahifa yo‘q', ru: 'Такой страницы нет', en: 'No such page' },
+  notFoundText: {
+    uz: 'Havola eskirgan yoki obyekt nomi o‘zgargan bo‘lishi mumkin. Katalogdan qidiring — u yerda barcha obyektlar bor.',
+    ru: 'Ссылка могла устареть, а объект — сменить название. Поищите в каталоге: там все объекты.',
+    en: 'The link may be outdated or the place renamed. Try the catalogue — every place is there.',
+  },
+  notFoundHome: { uz: 'Bosh sahifa', ru: 'На главную', en: 'Home' },
+  errorTitle: { uz: 'Nimadir ishlamadi', ru: 'Что-то сломалось', en: 'Something went wrong' },
+  errorText: {
+    uz: 'Xatolik yuz berdi. Qayta urinib ko‘ring: saqlangan marshrut va tekshiruvlar joyida qoladi.',
+    ru: 'Произошла ошибка. Попробуйте ещё раз — сохранённый маршрут и проверки на месте.',
+    en: 'An error occurred. Try again — your saved itinerary and checks are intact.',
+  },
+  errorRetry: { uz: 'Qayta urinish', ru: 'Повторить', en: 'Try again' },
+
+  adminAudit: { uz: 'Jurnal', ru: 'Журнал', en: 'Audit log' },
+  auditTitle: { uz: 'Panel harakatlari jurnali', ru: 'Журнал действий панели', en: 'Admin action log' },
+  auditLead: {
+    uz: 'Gidning tasdig‘ini olib tashlash va faktni o‘chirish — muallifi va vaqti bo‘lishi kerak bo‘lgan qarorlar.',
+    ru: 'Снятие подтверждения с гида и удаление факта — решения, у которых должен быть автор и время.',
+    en: 'Unverifying a guide and deleting a fact are decisions that need an author and a timestamp.',
+  },
+  auditEmpty: {
+    uz: 'Hali harakatlar yo‘q. Panelda biror amal bajaring — u shu yerda paydo bo‘ladi.',
+    ru: 'Действий пока нет. Сделайте что-нибудь в панели — оно появится здесь.',
+    en: 'No actions yet. Do something in the panel and it will show up here.',
+  },
+  auditWhen: { uz: 'Vaqt', ru: 'Когда', en: 'When' },
+  auditWho: { uz: 'Kim', ru: 'Кто', en: 'Who' },
+  auditWhat: { uz: 'Nima', ru: 'Что', en: 'What' },
+  auditTarget: { uz: 'Obyekt', ru: 'Над чем', en: 'Target' },
 
   shareTrip: {
     uz: 'Sayohatni ulashish (QR)',

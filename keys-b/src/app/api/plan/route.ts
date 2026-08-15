@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { PLACES, PLACE_BY_ID } from '@/data/places';
 import { buildItinerary } from '@/lib/planner';
 import { hasAI, isMockAI, MODEL } from '@/lib/model';
+import { allowRequest, ipOf } from '@/lib/store';
 import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
 import { climateNorm, forecastFor, tripDates } from '@/lib/weather';
 import type { DayWeather, Itinerary, Lang, Mode, TripContext } from '@/lib/types';
@@ -37,9 +38,13 @@ function sanitize(raw: Itinerary): Itinerary {
     }))
     .filter((day) => day.items.length > 0)
     .map((day, index) => ({ ...day, day: index + 1 }));
-  // cost сохраняем: иначе в ветке модели бюджет поездки молча исчезал бы
-  return { summary: raw.summary, days, cost: raw.cost };
+  // cost и rules сохраняем: иначе в ветке модели бюджет поездки и объяснение
+  // «как собран маршрут» молча исчезали бы — а это главный тезис продукта
+  return { summary: raw.summary, days, cost: raw.cost, rules: raw.rules };
 }
+
+/** Маршрутов с одного адреса в минуту: каждый — запрос к модели и к погоде. */
+const PLANS_PER_MINUTE = 30;
 
 /**
  * Погода запрашивается по тому городу, где турист окажется в этот день, а не по
@@ -74,6 +79,9 @@ async function weatherForDraft(ctx: TripContext, lang: Lang): Promise<DayWeather
 }
 
 export async function POST(req: Request) {
+  if (!allowRequest('plan', ipOf(req), PLANS_PER_MINUTE, 60_000)) {
+    return Response.json({ error: 'too_many_requests' }, { status: 429 });
+  }
   const ctx = (await req.json()) as TripContext;
   const lang = ctx.lang ?? 'ru';
 

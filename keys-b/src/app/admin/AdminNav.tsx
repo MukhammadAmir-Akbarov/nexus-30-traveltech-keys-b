@@ -14,6 +14,7 @@ const TABS: { href: string; key: UiKey }[] = [
   { href: '/admin/facts', key: 'adminFacts' },
   { href: '/admin/users', key: 'adminUsers' },
   { href: '/admin/data', key: 'adminData' },
+  { href: '/admin/audit', key: 'adminAudit' },
 ];
 
 export function AdminNav({ email }: { email: string }) {

@@ -1,5 +1,5 @@
 import { PLACE_BY_ID } from '@/data/places';
-import { getPlaceFactStats, listGaps } from '@/lib/store';
+import { getPlaceFactStats, listClaimSources, listGaps } from '@/lib/store';
 import { AdminReport } from './AdminReport';
 
 // Отчёт для Комитета по туризму. Пока турист проверяет слова гида, система
@@ -20,5 +20,7 @@ export default async function AdminReportPage() {
   const gaps = listGaps()
     .slice(0, 30)
     .map((gap) => ({ ...gap, name: gap.placeId ? (PLACE_BY_ID[gap.placeId]?.name ?? null) : null }));
-  return <AdminReport rows={rows} gaps={gaps} />;
+  // Третий разрез: откуда приходит недостоверное. Отчёт про объекты отвечает
+  // «где», этот — «через что»: гид, табличка у входа или первая ссылка в поиске.
+  return <AdminReport rows={rows} gaps={gaps} sources={listClaimSources()} />;
 }

@@ -16,11 +16,18 @@ import { PLACE_BY_ID } from '@/data/places';
 import { POIS } from '@/data/poi';
 import { POI_ICON, POI_LABEL, nearestPois } from '@/lib/poi';
 import { itineraryToIcs } from '@/lib/ics';
-import { prayerTimes, type Prayer } from '@/lib/prayer';
+import { prayerTimes, sunTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
 import { overBudget, usdToUzsLabel } from '@/lib/budget';
 import { isWindy } from '@/lib/weather';
-import { dayDuration, distanceLabel, hoursLabel, navigatorUrl, routeTotals } from '@/lib/route';
+import {
+  dayDuration,
+  distanceLabel,
+  hoursLabel,
+  isLongDay,
+  navigatorUrl,
+  routeTotals,
+} from '@/lib/route';
 import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
 import type { MapPoi, RoutePoint } from '@/components/RouteMap';
@@ -41,7 +48,7 @@ const PRAYER_KEY: Record<Prayer, UiKey> = {
 };
 
 export default function PlanPage() {
-  const { trip, lang, update } = useTrip();
+  const { trip, lang, update, ready } = useTrip();
 
   // сюда попадают по ссылке «поделиться поездкой»: /plan?trip=<контекст>
   useEffect(() => {
@@ -58,7 +65,13 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
+  // Номер последнего запроса: ответы на маршрут приходят по сети и вполне
+  // могут вернуться не в том порядке, в каком уходили. Показываем только
+  // ответ на самый свежий запрос — иначе на экране оседает старый маршрут.
+  const latest = useRef(0);
+
   const build = useCallback(async () => {
+    const ticket = ++latest.current;
     setLoading(true);
     setError(false);
     try {
@@ -69,25 +82,32 @@ export default function PlanPage() {
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { itinerary: Itinerary; mode: Mode };
+      if (ticket !== latest.current) return;
       setItinerary(data.itinerary);
       setMode(data.mode);
     } catch {
-      setError(true);
+      if (ticket === latest.current) setError(true);
     } finally {
-      setLoading(false);
+      if (ticket === latest.current) setLoading(false);
     }
   }, [trip]);
 
   // Контекст уже собран на главной — ждать нажатия незачем. Заодно это чинит
   // и смену языка: текст дней и заметок приходит с сервера уже переведённым,
   // иначе половина карточки остаётся на прежнем языке.
+  //
+  // Ждём `ready`: до чтения localStorage контекст — это значения по умолчанию,
+  // и маршрут строился дважды. Два запроса возвращались в произвольном порядке,
+  // и на русском интерфейсе оставались узбекские заголовки дней — от первого,
+  // «дефолтного» ответа, пришедшего вторым. Поймано глазами на демо.
   const builtFor = useRef<string>('');
   useEffect(() => {
+    if (!ready) return;
     const key = JSON.stringify(trip);
     if (builtFor.current === key) return;
     builtFor.current = key;
     void build();
-  }, [trip, build]);
+  }, [ready, trip, build]);
 
   // маршрут в календарь телефона: файл собирается на клиенте, сеть не нужна
   const downloadIcs = () => {
@@ -198,6 +218,15 @@ export default function PlanPage() {
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px]">
                 <span className="muted">{t('planCost', lang)}</span>
                 <b className="text-[15px]">≈ ${itinerary.cost.totalUsd}</b>
+                <span className="muted">· {usdToUzsLabel(itinerary.cost.totalUsd, lang)}</span>
+                {/* Едут вдвоём и больше — сразу говорим, где сумма на всех,
+                    а где на одного: иначе цифру сравнивают не с тем. */}
+                {(itinerary.cost.travelers ?? 1) > 1 && (
+                  <span className="tag">
+                    {t('planCostFor', lang)} {itinerary.cost.travelers} ·{' '}
+                    {t('planCostPerPerson', lang)} ≈ ${itinerary.cost.perPersonUsd}
+                  </span>
+                )}
                 <span className="muted">
                   ({t('planCostTickets', lang)} ${itinerary.cost.ticketsUsd} ·{' '}
                   {t('planCostTransfer', lang)} ${itinerary.cost.transferUsd})
@@ -265,12 +294,21 @@ export default function PlanPage() {
                   <p className="muted mb-2 prose-measure text-[13px]">{day.weatherNote}</p>
                 )}
 
+                {/* Порядок изменён под часы работы: причина названа вслух,
+                    как и у погоды. Раньше объект просто помечался «закрыт». */}
+                {day.hoursNote && (
+                  <p className="muted mb-2 prose-measure text-[13px]">
+                    <Icon name="clock" size={13} /> {day.hoursNote}
+                  </p>
+                )}
+
                 {/* Траты дня против дневного потолка: бюджет спросили —
                     значит обязаны сказать, когда день из него вышел. */}
                 {(() => {
                   const spend = itinerary.cost?.perDayUsd?.[day.day - 1];
                   if (spend === undefined || spend === 0) return null;
-                  const over = overBudget(spend, trip.budget);
+                  // потолок назван на одного, а траты дня — уже на всех
+                  const over = overBudget(spend, trip.budget, trip.travelers);
                   return (
                     <div className="mb-2 flex flex-wrap items-center gap-2 text-[12.5px]">
                       <span className={over ? 'tag tag-warn' : 'tag'}>
@@ -311,6 +349,32 @@ export default function PlanPage() {
                     <span className="muted">· {t('prayerNote', lang)}</span>
                   </div>
                 )}
+                {/* Свет дня — тем, кто выбрал «фото». Регистан в полдень и
+                    Регистан перед закатом — это два разных снимка, и узнать
+                    об этом надо до поездки, а не после. */}
+                {trip.interests.includes('photo') && day.weather && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="muted">{t('sunTitle', lang)}</span>
+                    {(() => {
+                      const sun = sunTimes(day.weather.region, day.weather.date);
+                      return (
+                        <>
+                          <span className="tag">
+                            {t('sunSunrise', lang)} {sun.sunrise}
+                          </span>
+                          <span className="tag tag-accent" title={t('sunNote', lang)}>
+                            {t('sunGolden', lang)} {sun.sunrise}–{sun.goldenMorning} ·{' '}
+                            {sun.goldenEvening}–{sun.sunset}
+                          </span>
+                          <span className="tag">
+                            {t('sunSunset', lang)} {sun.sunset}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {day.transfer && <TransferCard transfer={day.transfer} />}
 
                 {/* Как добраться за день: сколько пешком, сколько на такси
@@ -337,11 +401,24 @@ export default function PlanPage() {
                           placesOf(day).map(({ place }) => place.visitMinutes),
                           route.legs,
                         );
+                        // одиннадцать часов на ногах — это не насыщенная
+                        // программа, а брошенный к обеду маршрут
+                        const long = isLongDay(d.total);
                         return (
-                          <span className="tag" title={t('dayDurationHint', lang)}>
-                            <Icon name="clock" size={13} />
-                            {t('dayDuration', lang)} ≈ {hoursLabel(d.total, lang)}
-                          </span>
+                          <>
+                            <span
+                              className={long ? 'tag tag-warn' : 'tag'}
+                              title={t(long ? 'dayLongHint' : 'dayDurationHint', lang)}
+                            >
+                              <Icon name={long ? 'alert' : 'clock'} size={13} />
+                              {t('dayDuration', lang)} ≈ {hoursLabel(d.total, lang)}
+                            </span>
+                            {long && (
+                              <span className="muted" style={{ color: 'var(--warn)' }}>
+                                {t('dayLong', lang)}
+                              </span>
+                            )}
+                          </>
                         );
                       })()}
                       {totals.walkKm > 0 && (

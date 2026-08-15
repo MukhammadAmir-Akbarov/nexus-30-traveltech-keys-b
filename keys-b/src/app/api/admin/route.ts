@@ -5,6 +5,7 @@ import {
   getCorpus,
   getGuides,
   markRequestDone,
+  noteAdminAction,
   removeCorpusItem,
   removeGuide,
   resolveDispute,
@@ -37,6 +38,12 @@ export async function POST(req: Request) {
   }
 
   const action = (await req.json()) as Action;
+
+  // След остаётся от каждого действия, кроме выгрузки: снятие подтверждения
+  // с гида и удаление факта — решения, у которых должен быть автор и время.
+  if (action.type !== 'export') {
+    noteAdminAction(session.email, action.type, 'id' in action ? action.id : undefined);
+  }
 
   switch (action.type) {
     case 'toggleGuide': {

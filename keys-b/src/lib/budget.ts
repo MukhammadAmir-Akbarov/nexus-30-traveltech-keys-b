@@ -61,10 +61,20 @@ export function dailyCapUsd(budget: Budget): number {
   return cap === Number.POSITIVE_INFINITY ? cap : Math.round(cap / UZS_PER_USD);
 }
 
-/** День вылез за потолок — об этом надо сказать, а не молча оставить в плане. */
-export function overBudget(dayUsd: number, budget: Budget | undefined): boolean {
+/**
+ * День вылез за потолок — об этом надо сказать, а не молча оставить в плане.
+ *
+ * Потолок назван на одного человека, а траты дня считаются на всех сразу,
+ * поэтому его умножаем: иначе семья из четверых получала предупреждение
+ * на каждом дне просто за то, что их четверо.
+ */
+export function overBudget(
+  dayUsd: number,
+  budget: Budget | undefined,
+  travelers = 1,
+): boolean {
   if (!budget) return false;
-  return dayUsd > dailyCapUsd(budget);
+  return dayUsd > dailyCapUsd(budget) * Math.max(1, travelers);
 }
 
 /**

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PinButton } from '@/components/PinButton';
 import { PlacePhoto } from '@/components/PlacePhoto';
 import { SaveButton } from '@/components/SaveButton';
 import { officialFactsFor } from '@/lib/sources';
@@ -9,9 +10,11 @@ import { useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
 import { PLACES } from '@/data/places';
-import { INTEREST_LABEL, REGIONS, REGION_LABEL, t, tr } from '@/lib/i18n';
+import { isOpenAt } from '@/lib/hours';
+import { useTashkentMinutes } from '@/lib/use-clock';
+import { INTERESTS, INTEREST_LABEL, REGIONS, REGION_LABEL, t, tr } from '@/lib/i18n';
 import { normalize } from '@/lib/retrieval';
-import type { Region } from '@/lib/types';
+import type { Interest, Region } from '@/lib/types';
 
 // Каталог объектов. До него добраться до конкретного объекта можно было только
 // через маршрут или QR у входа: 31 объект в базе и ни одного способа их
@@ -22,11 +25,37 @@ export default function PlacesPage() {
   const { lang } = useTrip();
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<Region | 'all'>('all');
+  // Отбор сверх поиска и региона. Регион и строка отвечают на «где» и «как
+  // называется», а человек чаще спрашивает другое: что бесплатно, что открыто
+  // прямо сейчас и куда проедет коляска.
+  const [interests, setInterests] = useState<Interest[]>([]);
+  const [freeOnly, setFreeOnly] = useState(false);
+  const [openOnly, setOpenOnly] = useState(false);
+  const [accessibleOnly, setAccessibleOnly] = useState(false);
+
+  // На сервере часов нет: до гидратации фильтр «открыто сейчас» не жмётся,
+  // потому что честного ответа у нас в этот момент тоже нет.
+  const now = useTashkentMinutes();
+
+  const dirty = Boolean(query) || region !== 'all' || interests.length > 0 || freeOnly || openOnly || accessibleOnly;
+  const reset = () => {
+    setQuery('');
+    setRegion('all');
+    setInterests([]);
+    setFreeOnly(false);
+    setOpenOnly(false);
+    setAccessibleOnly(false);
+  };
 
   const found = useMemo(() => {
     const needle = normalize(query);
     return PLACES.filter((place) => {
       if (region !== 'all' && place.region !== region) return false;
+      if (interests.length && !place.interests.some((i) => interests.includes(i))) return false;
+      if (freeOnly && place.ticketUsd) return false;
+      if (accessibleOnly && !place.accessible) return false;
+      // у площадей часов работы нет — они открыты всегда, а не «неизвестно»
+      if (openOnly && now !== null && isOpenAt(place, now) === false) return false;
       if (!needle) return true;
       // ищем по всем трём языкам сразу: турист может знать название по-разному
       const haystack = normalize(
@@ -34,7 +63,7 @@ export default function PlacesPage() {
       );
       return haystack.includes(needle);
     });
-  }, [query, region, lang]);
+  }, [query, region, lang, interests, freeOnly, openOnly, accessibleOnly, now]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,6 +91,58 @@ export default function PlacesPage() {
               {value === 'all' ? t('allUzbekistan', lang) : tr(REGION_LABEL[value], lang)}
             </button>
           ))}
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold">{t('placesFilters', lang)}</div>
+          <div className="flex flex-wrap gap-2">
+            {INTERESTS.map((interest) => (
+              <button
+                key={interest}
+                className="chip"
+                data-active={interests.includes(interest)}
+                onClick={() =>
+                  setInterests(
+                    interests.includes(interest)
+                      ? interests.filter((i) => i !== interest)
+                      : [...interests, interest],
+                  )
+                }
+              >
+                {tr(INTEREST_LABEL[interest], lang)}
+              </button>
+            ))}
+            <button className="chip" data-active={freeOnly} onClick={() => setFreeOnly(!freeOnly)}>
+              {t('placesFree', lang)}
+            </button>
+            <button
+              className="chip"
+              data-active={openOnly}
+              disabled={now === null}
+              onClick={() => setOpenOnly(!openOnly)}
+            >
+              <Icon name="clock" size={13} />
+              {t('placesOpenNow', lang)}
+            </button>
+            <button
+              className="chip"
+              data-active={accessibleOnly}
+              onClick={() => setAccessibleOnly(!accessibleOnly)}
+            >
+              {t('placesAccessible', lang)}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="muted">
+            {t('placesFound', lang)}: <b>{found.length}</b>
+          </span>
+          {dirty && (
+            <button className="chip" onClick={reset}>
+              {t('placesReset', lang)}
+            </button>
+          )}
         </div>
       </section>
 
@@ -94,6 +175,9 @@ export default function PlacesPage() {
 
             <div className="flex flex-wrap gap-2">
               <SaveButton placeId={place.id} compact />
+              {/* поставить объект в маршрут можно было только из самого
+                  маршрута — то есть тот, которого там нет, поставить нельзя */}
+              <PinButton placeId={place.id} compact />
             </div>
 
             <div className="muted text-[12px]">
