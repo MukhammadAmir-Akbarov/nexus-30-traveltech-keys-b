@@ -1,4 +1,4 @@
-import { addRequest } from '@/lib/store';
+import { addRequest, requestsAllowed } from '@/lib/store';
 import type { RequestKind } from '@/lib/types';
 
 const KINDS: RequestKind[] = ['place-problem', 'guide-booking'];
@@ -16,6 +16,13 @@ export async function POST(req: Request) {
 
   if (!kind || !KINDS.includes(kind) || !targetId || !message?.trim() || !contact?.trim()) {
     return Response.json({ error: 'missing_fields' }, { status: 400 });
+  }
+
+  // Проверки и вход защищены лимитом, заявки были без него: ящик админки
+  // забивался одной командой в цикле.
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'local';
+  if (!requestsAllowed(ip)) {
+    return Response.json({ error: 'too_many_requests' }, { status: 429 });
   }
 
   const item = addRequest(kind, targetId, message, contact);

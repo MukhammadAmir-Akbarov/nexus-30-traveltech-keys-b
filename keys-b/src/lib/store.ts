@@ -388,6 +388,19 @@ export function addRequest(
   return item;
 }
 
+/** Не больше пяти заявок с одного адреса за десять минут. */
+const requestTimes = new Map<string, number[]>();
+
+export function requestsAllowed(ip: string, now = Date.now()): boolean {
+  const recent = (requestTimes.get(ip) ?? []).filter((t) => now - t < 600_000);
+  if (recent.length >= 5) {
+    requestTimes.set(ip, recent);
+    return false;
+  }
+  requestTimes.set(ip, [...recent, now]);
+  return true;
+}
+
 export function listRequests(): TouristRequest[] {
   return [...store().requests].reverse();
 }

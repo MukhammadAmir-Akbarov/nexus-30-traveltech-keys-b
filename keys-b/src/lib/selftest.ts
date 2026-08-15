@@ -577,6 +577,44 @@ assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка р
   assert.deepEqual(broken, [], `ключи без перевода: ${broken.join(', ')}`);
 }
 
+// --- темп, исключения и закрепление ---
+
+// темп меняет бюджет дня: спокойный вмещает меньше, насыщенный больше
+const relaxed = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 1, pace: 'relaxed' });
+const packed = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 1, pace: 'packed' });
+const dayMinutes = (it: typeof relaxed) =>
+  it.days[0].items.reduce(
+    (sum, i) => sum + PLACES.find((p) => p.id === i.placeId)!.visitMinutes,
+    0,
+  );
+assert.ok(
+  dayMinutes(packed) > dayMinutes(relaxed),
+  `насыщенный день должен вмещать больше осмотра: ${dayMinutes(packed)} против ${dayMinutes(relaxed)}`,
+);
+
+// исключённый объект не появляется в маршруте, даже если идеально подходит
+const withoutRegistan = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  excluded: ['registan'],
+});
+assert.ok(
+  !withoutRegistan.days.flatMap((d) => d.items).some((i) => i.placeId === 'registan'),
+  'убранный руками объект не должен возвращаться в маршрут',
+);
+
+// закреплённый объект попадает в маршрут, даже когда фильтр формата против него:
+// это осознанный выбор человека, а не промах алгоритма
+const pinnedShahiZinda = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'family',
+  pinned: ['shahi-zinda'],
+});
+assert.ok(
+  pinnedShahiZinda.days.flatMap((d) => d.items).some((i) => i.placeId === 'shahi-zinda'),
+  'закреплённый объект должен попадать в маршрут вопреки семейному фильтру',
+);
+
 // --- погода ---
 
 // норма считается для любой даты и без сети

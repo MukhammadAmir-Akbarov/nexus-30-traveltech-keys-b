@@ -440,6 +440,23 @@ h2 {
     gap: 8mm;
   }
 
+  /* Печать маршрута: карта, кнопки и служебные блоки на бумаге не нужны,
+     а день не должен разрываться между страницами. */
+  .route-map,
+  .maplibregl-map,
+  .btn,
+  .chip,
+  .skeleton {
+    display: none !important;
+  }
+
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
   .qr-sheet .card {
     border: 1px solid #ccc;
     box-shadow: none;

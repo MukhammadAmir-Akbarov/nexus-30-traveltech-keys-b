@@ -12,7 +12,13 @@ import {
   t,
   tr,
 } from '@/lib/i18n';
-import type { Interest } from '@/lib/types';
+import type { Interest, Pace } from '@/lib/types';
+
+const PACES: { pace: Pace; key: 'paceRelaxed' | 'paceNormal' | 'pacePacked' }[] = [
+  { pace: 'relaxed', key: 'paceRelaxed' },
+  { pace: 'normal', key: 'paceNormal' },
+  { pace: 'packed', key: 'pacePacked' },
+];
 
 /** Верхняя граница поездки: одна и та же для дат и для ползунка, иначе они спорят. */
 const MAX_DAYS = 14;
@@ -166,6 +172,25 @@ export default function Home() {
             />
             {t('fieldSummer', lang)}
           </label>
+
+          <div>
+            <div className="mb-2 text-sm font-semibold">
+              {t('fieldPace', lang)}{' '}
+              <span className="muted font-normal">· {t('paceHint', lang)}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PACES.map(({ pace, key }) => (
+                <button
+                  key={pace}
+                  className="chip"
+                  data-active={(trip.pace ?? 'normal') === pace}
+                  onClick={() => update({ pace })}
+                >
+                  {t(key, lang)}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <div className="mb-2 text-sm font-semibold">

@@ -24,6 +24,20 @@ import { adviceFor } from './weather.ts';
 //    переезд между городами занимает часть дня.
 
 const MINUTES_PER_DAY = 330; // ~5.5 часов осмотра, остальное — дорога и еда
+
+/**
+ * Темп поездки. Одному нужен музей и чайхана, другому — восемь объектов за день;
+ * это отдельная ось персонализации, которой не было: раньше все получали 330 минут.
+ */
+const PACE_MINUTES: Record<NonNullable<TripContext['pace']>, number> = {
+  relaxed: 240,
+  normal: MINUTES_PER_DAY,
+  packed: 420,
+};
+
+function dayBudget(ctx: TripContext): number {
+  return PACE_MINUTES[ctx.pace ?? 'normal'];
+}
 /** Начало осмотра. Позже жары и раньше закрытия музеев — обычный туристический день. */
 const DAY_START = 9 * 60;
 /** Переход между объектами внутри города. */
@@ -184,11 +198,17 @@ export function selectedRegions(ctx: TripContext): Region[] {
 
 function eligible(places: Place[], ctx: TripContext): Place[] {
   const regions = selectedRegions(ctx);
+  const excluded = new Set(ctx.excluded ?? []);
+  const pinned = new Set(ctx.pinned ?? []);
+
   return places
     .filter((p) => regions.length === 0 || regions.includes(p.region))
-    // формат «семья» — объекты без familyFriendly не предлагаем вовсе
-    .filter((p) => ctx.travelType !== 'family' || p.familyFriendly)
-    .map((p) => ({ place: p, score: scorePlace(p, ctx) }))
+    // турист убрал объект руками — уважаем, даже если он идеально подходит
+    .filter((p) => !excluded.has(p.id))
+    // формат «семья» — объекты без familyFriendly не предлагаем вовсе,
+    // но закреплённый вручную объект остаётся: это осознанный выбор человека
+    .filter((p) => ctx.travelType !== 'family' || p.familyFriendly || pinned.has(p.id))
+    .map((p) => ({ place: p, score: scorePlace(p, ctx) + (pinned.has(p.id) ? 100 : 0) }))
     .filter((p) => p.score > 0)
     .sort((a, b) => b.score - a.score || a.place.visitMinutes - b.place.visitMinutes)
     .map((p) => p.place);
@@ -337,7 +357,7 @@ export function buildItinerary(
     let firstDayInCity = true;
 
     while (cityPool.length && days.length < ctx.days) {
-      let budget = MINUTES_PER_DAY;
+      let budget = dayBudget(ctx);
       let transfer: Transfer | undefined;
 
       // первый день в новом городе укорачивается на дорогу
@@ -347,7 +367,7 @@ export function buildItinerary(
           region,
           haversineKm(centroid(byRegion.get(previousRegion)!), centroid(byRegion.get(region)!)),
         );
-        budget = Math.max(120, MINUTES_PER_DAY - transferHours(transfer) * 60);
+        budget = Math.max(120, dayBudget(ctx) - transferHours(transfer) * 60);
       }
       firstDayInCity = false;
 
@@ -382,7 +402,7 @@ export function buildItinerary(
     if (leftovers.length) {
       const picked = fillDay(
         leftovers,
-        Math.max(120, MINUTES_PER_DAY - transferHours(transfer) * 60),
+        Math.max(120, dayBudget(ctx) - transferHours(transfer) * 60),
       );
       days.push(makeDay(days.length + 1, picked, ctx, lang, transfer));
     }

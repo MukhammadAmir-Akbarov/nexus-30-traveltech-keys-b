@@ -645,6 +645,49 @@ export const UI = {
 
   planIcs: { uz: 'Kalendarga qo‘shish', ru: 'В календарь', en: 'Add to calendar' },
 
+  // Темп поездки — ещё одна ось персонализации, отдельная от формата
+  fieldPace: { uz: 'Sur’at', ru: 'Темп', en: 'Pace' },
+  paceRelaxed: { uz: 'sokin', ru: 'спокойный', en: 'relaxed' },
+  paceNormal: { uz: 'odatiy', ru: 'обычный', en: 'normal' },
+  pacePacked: { uz: 'jadal', ru: 'насыщенный', en: 'packed' },
+  paceHint: {
+    uz: 'Kuniga qancha ko‘rish: 4, 5,5 yoki 7 soat.',
+    ru: 'Сколько осмотра в день: 4, 5,5 или 7 часов.',
+    en: 'Sightseeing per day: 4, 5.5 or 7 hours.',
+  },
+
+  // Ручная правка маршрута
+  planExclude: { uz: 'Olib tashlash', ru: 'Убрать', en: 'Remove' },
+  planPin: { uz: 'Albatta qoldirish', ru: 'Обязательно', en: 'Must-see' },
+  planPinned: { uz: 'albatta', ru: 'обязательно', en: 'must-see' },
+  planExcludedTitle: { uz: 'Olib tashlangan obyektlar', ru: 'Убранные объекты', en: 'Removed places' },
+  planRestore: { uz: 'Qaytarish', ru: 'Вернуть', en: 'Restore' },
+
+  // Каталог объектов
+  tabPlaces: { uz: 'Obyektlar', ru: 'Объекты', en: 'Places' },
+  placesTitle: { uz: 'Barcha obyektlar', ru: 'Все объекты', en: 'All places' },
+  placesLead: {
+    uz: 'Katalogda qidiring yoki hududga ko‘ra saralang. Har bir obyekt kartasida faktlar va yaqin atrofdagi infratuzilma bor.',
+    ru: 'Ищите по каталогу или отберите по региону. В карточке объекта — факты и инфраструктура рядом.',
+    en: 'Search the catalogue or filter by region. Each card holds facts and nearby infrastructure.',
+  },
+  placesSearch: { uz: 'Obyekt nomi bo‘yicha qidirish', ru: 'Поиск по названию', en: 'Search by name' },
+  placesEmpty: { uz: 'Hech narsa topilmadi.', ru: 'Ничего не нашлось.', en: 'Nothing found.' },
+  placesAccessible: { uz: 'aravacha uchun qulay', ru: 'доступно на коляске', en: 'wheelchair accessible' },
+
+  // История проверок
+  checkHistoryTitle: { uz: 'Mening tekshiruvlarim', ru: 'Мои проверки', en: 'My checks' },
+  checkHistoryEmpty: { uz: 'Hali tekshiruv yo‘q.', ru: 'Проверок пока нет.', en: 'No checks yet.' },
+  checkHistoryClear: { uz: 'Tozalash', ru: 'Очистить', en: 'Clear' },
+  checkHistoryHint: {
+    uz: 'Tarix faqat shu qurilmada saqlanadi va internetsiz ham ochiladi.',
+    ru: 'История хранится только на этом устройстве и открывается без интернета.',
+    en: 'History stays on this device and opens without a connection.',
+  },
+
+  // Печать маршрута
+  planPrint: { uz: 'Chop etish', ru: 'Распечатать', en: 'Print' },
+
   skipToContent: { uz: 'Asosiy qismga o‘tish', ru: 'К содержимому', en: 'Skip to content' },
 
   // Офлайн-пакет: прогреть карту, пока сеть есть, а не когда её уже нет

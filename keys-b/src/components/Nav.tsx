@@ -19,9 +19,15 @@ export const TABS: { href: string; key: UiKey; icon: IconName }[] = [
   { href: '/', key: 'tabTrip', icon: 'pin' },
   { href: '/check', key: 'tabCheck', icon: 'shield' },
   { href: '/plan', key: 'tabPlan', icon: 'route' },
+  { href: '/places', key: 'tabPlaces', icon: 'pin' },
   { href: '/compare', key: 'tabCompare', icon: 'search' },
   { href: '/guides', key: 'tabGuides', icon: 'user' },
 ];
+
+/** Для нижней панели на телефоне: только то, чем пользуются на ходу. */
+export const MOBILE_TABS = TABS.filter((tab) =>
+  ['/', '/check', '/plan', '/guides'].includes(tab.href),
+);
 
 const THEME_NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'light' };
 const THEME_ICON: Record<Theme, IconName> = { light: 'moon', dark: 'sun' };
