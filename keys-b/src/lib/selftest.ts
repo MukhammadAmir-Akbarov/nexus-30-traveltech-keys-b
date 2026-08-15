@@ -14,6 +14,8 @@ import { itineraryToIcs } from './ics.ts';
 import { disputedForLang, findDisputed } from './disputed.ts';
 import { adviceFor, climateNorm, tripDates } from './weather.ts';
 import { prayerTimes, prayersDuring } from './prayer.ts';
+import { parseTripPhrase } from './voice-trip.ts';
+import { seasonBudgetFactor, seasonFor, seasonNote, seasonsFor } from './calendar.ts';
 import type { DayWeather } from './types.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, UI, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
@@ -575,6 +577,52 @@ assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка р
     }
   }
   assert.deepEqual(broken, [], `ключи без перевода: ${broken.join(', ')}`);
+}
+
+// --- сезонность ---
+assert.equal(seasonFor('2026-03-01'), 'ramadan', 'начало марта 2026 — Рамадан');
+assert.equal(seasonFor('2026-03-21'), 'eid', 'после Рамадана идёт праздник');
+assert.equal(seasonFor('2026-07-15'), null, 'обычный июльский день');
+assert.ok(seasonNote('2026-03-01', 'ru')?.includes('Рамадан'), 'подпись называет сезон');
+for (const lang of LANGS) {
+  assert.ok(seasonNote('2026-03-21', lang)?.length, `подпись сезона есть на ${lang}`);
+}
+assert.ok(
+  seasonBudgetFactor('2026-03-21') < seasonBudgetFactor('2026-07-15'),
+  'в праздники осмотра меньше: учреждения работают короче',
+);
+// в 2026 году Ураза-байрам и Навруз совпадают — показываем оба, а не первый попавшийся
+assert.deepEqual(
+  seasonsFor('2026-03-21').sort(),
+  ['eid', 'navruz'],
+  'совпавшие праздники должны быть оба',
+);
+assert.ok(
+  seasonNote('2026-03-21', 'ru')?.includes('Навруз'),
+  'подпись должна называть оба праздника, а не только первый',
+);
+
+// --- голосовой ввод контекста ---
+{
+  const ru = parseTripPhrase('хочу в Самарканд на три дня, интересует история');
+  assert.deepEqual(ru.regions, ['samarkand'], 'регион из фразы');
+  assert.equal(ru.days, 3, 'число словом');
+  assert.deepEqual(ru.interests, ['history'], 'интерес из фразы');
+
+  const uz = parseTripPhrase('Buxoro va Xiva, 5 kun, oila bilan');
+  assert.deepEqual(uz.regions?.sort(), ['bukhara', 'khiva'], 'два региона на узбекском');
+  assert.equal(uz.days, 5, 'число цифрой');
+  assert.equal(uz.travelType, 'family', 'формат поездки');
+  assert.equal(uz.region, 'all', 'два региона — это уже не один город');
+
+  const en = parseTripPhrase('Bukhara for two days, architecture and food');
+  assert.equal(en.days, 2, 'число словом по-английски');
+  assert.deepEqual(en.interests?.sort(), ['architecture', 'food'], 'два интереса');
+
+  // мусор не должен менять контекст молча
+  assert.deepEqual(parseTripPhrase('привет как дела'), {}, 'из мусора ничего не берём');
+  // за границей допустимого числа дней значение игнорируем
+  assert.equal(parseTripPhrase('Самарканд на 90 дней').days, undefined, '90 дней — не поездка');
 }
 
 // --- темп, исключения и закрепление ---

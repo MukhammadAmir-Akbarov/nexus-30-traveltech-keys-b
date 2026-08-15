@@ -25,6 +25,7 @@ export function disputedForLang(topic: DisputedTopic, lang: Lang) {
       claim: p.claim[lang],
       title: p.source.title[lang],
       url: p.source.url,
+      tier: p.source.tier ?? 'secondary',
     })),
   };
 }

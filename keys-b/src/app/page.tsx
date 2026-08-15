@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTrip } from '@/components/TripProvider';
+import { VoiceTrip } from '@/components/VoiceTrip';
 import {
   INTEREST_LABEL,
   INTERESTS,
@@ -61,6 +62,8 @@ export default function Home() {
       </section>
 
       <section className="card flex flex-col gap-5">
+        <VoiceTrip />
+
         <div>
           <div className="mb-2 text-sm font-semibold">
             {t('fieldRegion', lang)}{' '}

@@ -59,9 +59,18 @@ export async function POST(req: Request) {
   const hits = retrieve(getCorpus(), claim, 3);
   const sources = [
     ...new Map(
-      hits.map((h) => [h.item.source.url, { title: tr(h.item.source.title, lang), url: h.item.source.url }]),
+      hits.map((h) => [
+        h.item.source.url,
+        {
+          title: tr(h.item.source.title, lang),
+          url: h.item.source.url,
+          tier: h.item.source.tier ?? 'secondary',
+        },
+      ]),
     ).values(),
-  ];
+  ]
+    // официальные источники показываем первыми: вес у них разный
+    .sort((a, b) => (a.tier === b.tier ? 0 : a.tier === 'official' ? -1 : 1));
   const passages = hits.map((h) => h.item.text);
 
   // Спорные темы проверяем ДО модели и до кэша: если источники расходятся,

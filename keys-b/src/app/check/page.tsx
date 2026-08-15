@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Icon, type IconName } from '@/components/Icon';
 import { QrScanner } from '@/components/QrScanner';
 import { useTrip } from '@/components/TripProvider';
@@ -9,15 +10,25 @@ import { VoiceInput } from '@/components/VoiceInput';
 import { GUIDES } from '@/data/guides';
 import { PLACE_BY_ID } from '@/data/places';
 import { t, tr } from '@/lib/i18n';
-import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
+import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode, SourceTier } from '@/lib/types';
 import type { UiKey } from '@/lib/i18n';
 
 type Counted = 'counted' | 'duplicate' | 'rate-limited';
 type Disputed = {
   question: string;
   note: string;
-  positions: { claim: string; title: string; url: string }[];
+  positions: { claim: string; title: string; url: string; tier?: SourceTier }[];
 };
+
+/** Плашка качества источника: ЮНЕСКО и туристический портал — не одно и то же. */
+function SourceTierTag({ tier, lang }: { tier?: SourceTier; lang: Lang }) {
+  const official = tier === 'official';
+  return (
+    <span className={official ? 'tag tag-ok' : 'tag'}>
+      {t(official ? 'sourceOfficial' : 'sourceSecondary', lang)}
+    </span>
+  );
+}
 type Result = {
   verdict: CheckVerdict;
   passages: string[];
@@ -71,30 +82,45 @@ const SPEECH_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-
 const HISTORY_KEY = 'nexus30.checks';
 type HistoryItem = { claim: string; status: CheckStatus; at: string };
 
+/**
+ * useSearchParams требует границы Suspense: без неё страница не может быть
+ * отрендерена заранее. Обёртка тонкая — вся страница внутри.
+ */
 export default function CheckPage() {
+  return (
+    <Suspense fallback={<div className="skeleton" style={{ height: 320 }} />}>
+      <CheckPageInner />
+    </Suspense>
+  );
+}
+
+function CheckPageInner() {
   const { lang } = useTrip();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [claim, setClaim] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
-  const [placeId, setPlaceId] = useState<string | null>(null);
   const [guideId, setGuideId] = useState('');
 
-  // Один эффект на всё, что читается из браузера после монтирования:
-  // объект из QR-ссылки и история проверок с этого устройства.
+  // Объект из QR-ссылки известен уже на первом рендере — эффект не нужен.
+  const placeId = useSearchParams().get('place');
+
+  // А вот localStorage прочитать в рендере нельзя: на сервере его нет,
+  // и разметка разошлась бы с клиентской. Эффект здесь — правильный способ.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('place');
-    if (id && PLACE_BY_ID[id]) setPlaceId(id);
     try {
       const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') as HistoryItem[];
+      // localStorage в рендере читать нельзя: на сервере его нет и разметка
+      // разошлась бы с клиентской. Эффект здесь — правильный способ.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved.length) setHistory(saved);
     } catch {
       // повреждённое хранилище — просто пустая история
     }
   }, []);
 
-  const place = placeId ? PLACE_BY_ID[placeId] : null;
+  const place = placeId ? (PLACE_BY_ID[placeId] ?? null) : null;
 
   const check = async (text: string) => {
     const value = text.trim();
@@ -285,16 +311,19 @@ export default function CheckPage() {
                     <div className="font-semibold">
                       {t('disputedPosition', lang)} {index + 1}: {position.claim}
                     </div>
-                    <a
-                      href={position.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 underline"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      {position.title}
-                      <Icon name="external" size={13} />
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={position.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {position.title}
+                        <Icon name="external" size={13} />
+                      </a>
+                      <SourceTierTag tier={position.tier} lang={lang} />
+                    </div>
                   </div>
                 ))}
 
@@ -318,7 +347,7 @@ export default function CheckPage() {
                 <div className="muted mb-2">{t('sourcesLabel', lang)}</div>
                 <ul className="flex flex-col gap-1">
                   {result.verdict.sources.map((source) => (
-                    <li key={source.url}>
+                    <li key={source.url} className="flex flex-wrap items-center gap-2">
                       <a
                         href={source.url}
                         target="_blank"
@@ -329,6 +358,7 @@ export default function CheckPage() {
                         {source.title}
                         <Icon name="external" size={14} />
                       </a>
+                      <SourceTierTag tier={source.tier} lang={lang} />
                     </li>
                   ))}
                 </ul>

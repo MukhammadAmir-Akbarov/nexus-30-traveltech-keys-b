@@ -53,9 +53,15 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   // до загрузки localStorage считаем опрос пройденным, иначе он мигает на каждом заходе
   const [onboarded, setOnboarded] = useState(true);
 
+  // localStorage недоступен на сервере, поэтому контекст читается после
+  // монтирования: прочитать его в рендере значит получить разную разметку
+  // на сервере и клиенте. Эффект здесь — единственный правильный способ.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(TRIP_KEY);
+      // контекст поездки лежит в localStorage, а его нет на сервере: прочитать
+      // в рендере значит получить разную разметку на сервере и клиенте
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setTrip({ ...DEFAULT_TRIP, ...JSON.parse(raw) });
       // в старых версиях в localStorage мог лежать 'system' — такой темы больше нет,
       // поэтому значение всегда проверяем и чиним, иначе интерфейс падает

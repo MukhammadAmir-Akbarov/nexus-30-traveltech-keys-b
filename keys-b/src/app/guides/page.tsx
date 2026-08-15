@@ -46,7 +46,12 @@ export default function GuidesPage() {
     }
   }, [trip, languages, gender, needTransport]);
 
+  // Загрузка списка — сетевой запрос: setState происходит после await, но
+  // правило видит вызов внутри эффекта. Другого места у запроса нет.
   useEffect(() => {
+    // сетевой запрос: setState случается после await, но правило видит вызов
+    // внутри эффекта. Другого места у загрузки списка нет.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready) load();
   }, [ready, load]);
 

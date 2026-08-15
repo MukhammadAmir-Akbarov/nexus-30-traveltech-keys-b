@@ -192,6 +192,15 @@ export default function PlanPage() {
                   <p className="muted mb-2 prose-measure text-[13px]">{day.weatherNote}</p>
                 )}
 
+                {day.seasonNote && (
+                  <p
+                    className="mb-2 rounded-xl p-2 prose-measure text-[13px]"
+                    style={{ background: 'var(--warn-weak)', color: 'var(--warn)' }}
+                  >
+                    {day.seasonNote}
+                  </p>
+                )}
+
                 {/* Время намаза показываем только тем, кто выбрал «святыни»:
                     для зиёрат-туризма это важнее прочего, остальным — шум. */}
                 {trip.interests.includes('religion') && day.weather && (

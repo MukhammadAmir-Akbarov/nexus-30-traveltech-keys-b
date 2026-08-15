@@ -7,6 +7,7 @@ const UNESCO_SAMARKAND = {
     en: 'UNESCO: Samarkand — Crossroads of Cultures',
   },
   url: 'https://whc.unesco.org/en/list/603',
+  tier: 'official' as const,
 };
 const UNESCO_BUKHARA = {
   title: {
@@ -15,10 +16,12 @@ const UNESCO_BUKHARA = {
     en: 'UNESCO: Historic Centre of Bukhara',
   },
   url: 'https://whc.unesco.org/en/list/602',
+  tier: 'official' as const,
 };
 const UNESCO_KHIVA = {
   title: { uz: 'YuNESKO: Ichan Qal’a', ru: 'ЮНЕСКО: Ичан-Кала', en: 'UNESCO: Itchan Kala' },
   url: 'https://whc.unesco.org/en/list/543',
+  tier: 'official' as const,
 };
 const UNESCO_SHAKHRISABZ = {
   title: {
@@ -27,6 +30,7 @@ const UNESCO_SHAKHRISABZ = {
     en: 'UNESCO: Historic Centre of Shakhrisyabz',
   },
   url: 'https://whc.unesco.org/en/list/885',
+  tier: 'official' as const,
 };
 const UZ_TRAVEL = {
   title: {
@@ -35,6 +39,7 @@ const UZ_TRAVEL = {
     en: 'Official tourism portal of Uzbekistan',
   },
   url: 'https://uzbekistan.travel/',
+  tier: 'secondary' as const,
 };
 
 /**

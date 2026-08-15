@@ -1,4 +1,4 @@
-import type { CheckVerdict, I18nText, Lang } from '../lib/types.ts';
+import type { CheckVerdict, I18nText, Lang, Source } from '../lib/types.ts';
 import { tokenize } from '../lib/retrieval.ts';
 
 /**
@@ -11,7 +11,7 @@ type CachedVerdict = {
   status: CheckVerdict['status'];
   explanation: I18nText;
   correction?: I18nText;
-  source: { title: I18nText; url: string };
+  source: Source;
 };
 
 const UNESCO_SAMARKAND = {
@@ -21,6 +21,7 @@ const UNESCO_SAMARKAND = {
     en: 'UNESCO: Samarkand — Crossroads of Cultures',
   },
   url: 'https://whc.unesco.org/en/list/603',
+  tier: 'official' as const,
 };
 
 const REGISTAN_DATES: CachedVerdict = {
@@ -64,6 +65,7 @@ const CACHE: CachedVerdict[] = [
         en: 'UNESCO: Historic Centre of Bukhara',
       },
       url: 'https://whc.unesco.org/en/list/602',
+  tier: 'official',
     },
   },
   {
@@ -77,6 +79,7 @@ const CACHE: CachedVerdict[] = [
     source: {
       title: { uz: 'YuNESKO: Ichan Qal’a', ru: 'ЮНЕСКО: Ичан-Кала', en: 'UNESCO: Itchan Kala' },
       url: 'https://whc.unesco.org/en/list/543',
+  tier: 'official',
     },
   },
 ];
@@ -92,7 +95,13 @@ export function lookupDemoVerdict(claim: string, lang: Lang): CheckVerdict | nul
       status: entry.status,
       explanation: entry.explanation[lang],
       correction: entry.correction?.[lang],
-      sources: [{ title: entry.source.title[lang], url: entry.source.url }],
+      sources: [
+        {
+          title: entry.source.title[lang],
+          url: entry.source.url,
+          tier: entry.source.tier ?? 'secondary',
+        },
+      ],
     };
   }
   return null;

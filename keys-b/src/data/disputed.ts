@@ -28,6 +28,7 @@ const UNESCO_BUKHARA: Source = {
     en: 'UNESCO: Historic Centre of Bukhara',
   },
   url: 'https://whc.unesco.org/en/list/602',
+  tier: 'official',
 };
 
 const UZ_TRAVEL: Source = {
@@ -37,6 +38,7 @@ const UZ_TRAVEL: Source = {
     en: 'Uzbekistan travel portal',
   },
   url: 'https://uzbekistan.travel/',
+  tier: 'secondary',
 };
 
 export const DISPUTED: DisputedTopic[] = [
@@ -118,11 +120,13 @@ const UNESCO_SAMARKAND: Source = {
     en: 'UNESCO: Samarkand — Crossroads of Cultures',
   },
   url: 'https://whc.unesco.org/en/list/603',
+  tier: 'official',
 };
 
 const UNESCO_KHIVA: Source = {
   title: { uz: 'YuNESKO: Ichan Qal’a', ru: 'ЮНЕСКО: Ичан-Кала', en: 'UNESCO: Itchan Kala' },
   url: 'https://whc.unesco.org/en/list/543',
+  tier: 'official',
 };
 
 DISPUTED.push(

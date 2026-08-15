@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
 import { MIN_CHECKS } from '@/lib/match';
@@ -30,6 +31,7 @@ export function GuidePanel({
   verdicts: Row[];
 }) {
   const { lang } = useTrip();
+  const router = useRouter();
   const [rows, setRows] = useState(verdicts);
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState('');
@@ -39,7 +41,8 @@ export function GuidePanel({
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/';
+    router.push('/');
+    router.refresh();
   };
 
   const dispute = async (id: string) => {
