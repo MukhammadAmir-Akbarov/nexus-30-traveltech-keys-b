@@ -372,6 +372,15 @@ const UI = {
   planTotal: { uz: 'Jami', ru: 'Итого', en: 'Summary' },
   planModeAi: { uz: 'model tuzgan', ru: 'составлено моделью', en: 'built by the model' },
   planDay: { uz: 'Kun', ru: 'День', en: 'Day' },
+  planClosed: { uz: 'shu vaqtda yopiq', ru: 'в это время закрыт', en: 'closed at this hour' },
+  planCost: { uz: 'Taxminiy xarajat', ru: 'Ориентировочные расходы', en: 'Estimated cost' },
+  planCostTickets: { uz: 'chiptalar', ru: 'билеты', en: 'tickets' },
+  planCostTransfer: { uz: 'yo‘l', ru: 'дорога', en: 'travel' },
+  planCostNote: {
+    uz: 'Demo baholash: turar joy, ovqat va gid ishtirok etmagan.',
+    ru: 'Демо-оценка: без жилья, еды и услуг гида.',
+    en: 'Demo estimate: excludes lodging, meals and guide fees.',
+  },
   planMinutes: { uz: 'daq', ru: 'мин', en: 'min' },
   mapLoading: { uz: 'Xarita yuklanmoqda…', ru: 'Карта загружается…', en: 'Loading the map…' },
 
@@ -488,6 +497,22 @@ const UI = {
     en: '★ is the tourists’ rating. “Fact accuracy” is the share of the guide’s claims confirmed by official sources.',
   },
   guidesWhyMore: { uz: 'yana sabablar', ru: 'ещё причины', en: 'more reasons' },
+  // до порога процент не показываем: «100% по одной проверке» — это ложь, а не оценка
+  guidesFewChecks: {
+    uz: 'Tekshiruv kam — aniqlik hali hisoblanmaydi',
+    ru: 'Проверок мало — точность пока не считается',
+    en: 'Too few checks — accuracy not counted yet',
+  },
+  checkDuplicate: {
+    uz: 'Bu gap allaqachon hisobga olingan — takrori reytingga qo‘shilmaydi',
+    ru: 'Это утверждение уже учтено — повтор в рейтинг не идёт',
+    en: 'This claim is already counted — repeats do not affect the rating',
+  },
+  checkRateLimited: {
+    uz: 'Juda ko‘p tekshiruv — reyting vaqtincha yangilanmaydi',
+    ru: 'Слишком много проверок подряд — рейтинг временно не обновляется',
+    en: 'Too many checks in a row — the rating is paused for now',
+  },
   checkWhoSaid: {
     uz: 'Kimning gapi tekshirilyapti?',
     ru: 'Чьё утверждение проверяем?',
@@ -555,6 +580,36 @@ const UI = {
   adminGuides: { uz: 'Gidlar', ru: 'Гиды', en: 'Guides' },
   adminFacts: { uz: 'Manba faktlari', ru: 'Факты источников', en: 'Source facts' },
   adminUsers: { uz: 'Foydalanuvchilar', ru: 'Пользователи', en: 'Users' },
+
+  // Отчёт Комитету: побочный продукт проверок, которого у заказчика сегодня нет
+  adminReport: { uz: 'Hisobot', ru: 'Отчёт', en: 'Report' },
+  reportLead: {
+    uz: 'Turistlar gidlarning gaplarini tekshirar ekan, tizim qaysi obyektlar atrofida noto‘g‘ri ma’lumot ko‘p tarqalishini to‘playdi. Bu gidga baho emas — bu rasmiy ma’lumot yetishmayotgan joylar xaritasi.',
+    ru: 'Пока туристы проверяют слова гидов, система накапливает, вокруг каких объектов чаще всего звучит недостоверное. Это не оценка гида — это карта мест, где не хватает официальной информации.',
+    en: 'While tourists verify what guides say, the system accumulates which sites attract the most inaccurate claims. This is not a rating of any guide — it is a map of where official information is missing.',
+  },
+  reportChecks: { uz: 'Tekshiruvlar', ru: 'Проверок', en: 'Checks' },
+  reportRefuted: { uz: 'Rad etilgan', ru: 'Опровергнуто', en: 'Refuted' },
+  reportPlaces: { uz: 'Obyektlar', ru: 'Объектов', en: 'Sites' },
+  reportEmpty: {
+    uz: 'Hali tekshiruvlar yo‘q. «Faktlarni tekshirish»da gidni tanlab bir nechta gapni tekshiring.',
+    ru: 'Проверок пока нет. Проверьте несколько утверждений на «Проверке фактов», указав гида.',
+    en: 'No checks yet. Verify a few claims on the fact-check page with a guide selected.',
+  },
+  reportTableTitle: {
+    uz: 'Rad etish ulushi bo‘yicha obyektlar',
+    ru: 'Объекты по доле опровержений',
+    en: 'Sites by share of refuted claims',
+  },
+  reportColPlace: { uz: 'Obyekt', ru: 'Объект', en: 'Site' },
+  reportColChecks: { uz: 'Tekshiruv', ru: 'Проверок', en: 'Checks' },
+  reportColRefuted: { uz: 'Rad etilgan', ru: 'Опровергнуто', en: 'Refuted' },
+  reportColShare: { uz: 'Ulush', ru: 'Доля', en: 'Share' },
+  reportNote: {
+    uz: 'Ma’lumotlar demo. Ishchi versiyada bu hisobot Qo‘mitaga qaysi obyekt bo‘yicha rasmiy matnni yangilash kerakligini ko‘rsatadi.',
+    ru: 'Данные демонстрационные. В рабочей версии этот отчёт показывает Комитету, по каким объектам пора обновить официальные материалы.',
+    en: 'Demo data. In production this report tells the Committee which sites need their official materials refreshed.',
+  },
   adminExport: { uz: 'JSON eksport', ru: 'Экспорт JSON', en: 'Export JSON' },
   adminVerifyOn: { uz: 'Tasdiqlash', ru: 'Подтвердить', en: 'Verify' },
   adminVerifyOff: { uz: 'Tasdiqni olib tashlash', ru: 'Снять подтверждение', en: 'Unverify' },

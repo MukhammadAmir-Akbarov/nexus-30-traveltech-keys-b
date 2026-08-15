@@ -1,8 +1,8 @@
 import type { Place } from '../lib/types.ts';
 
 /**
- * ДЕМО-датасет туробъектов (18 шт.) на трёх языках.
- * Координаты приблизительные, для карты прототипа.
+ * ДЕМО-датасет туробъектов на трёх языках.
+ * Координаты, часы работы и цены билетов приблизительные, для прототипа.
  * В проде заменяется базой объектов Комитета по туризму.
  */
 export const PLACES: Place[] = [
@@ -16,6 +16,9 @@ export const PLACES: Place[] = [
     visitMinutes: 120,
     familyFriendly: true,
     outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 5,
     summary: {
       uz: 'Uchta madrasadan iborat ansambl — Samarqandning asosiy ramzi.',
       ru: 'Ансамбль из трёх медресе — главный символ Самарканда.',
@@ -37,6 +40,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: false,
+    opens: 540,
+    closes: 1140,
+    ticketUsd: 4,
     summary: {
       uz: 'Amir Temur va temuriylar dahmasi.',
       ru: 'Усыпальница Амира Темура и Тимуридов.',
@@ -53,6 +59,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 3,
     summary: {
       uz: 'O‘z davrining eng yirik masjidlaridan biri.',
       ru: 'Одна из крупнейших мечетей своего времени.',
@@ -69,6 +78,9 @@ export const PLACES: Place[] = [
     visitMinutes: 75,
     familyFriendly: false,
     outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 3,
     summary: {
       uz: 'XI–XIX asrlarga oid maqbaralar ko‘chasi, koshin bezaklari bilan.',
       ru: 'Улица мавзолеев XI–XIX веков с изразцовыми фасадами.',
@@ -85,6 +97,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 3,
     summary: {
       uz: 'O‘rta asr astronomiya rasadxonasi va muzey.',
       ru: 'Средневековая астрономическая обсерватория и музей.',
@@ -101,6 +116,9 @@ export const PLACES: Place[] = [
     visitMinutes: 45,
     familyFriendly: true,
     outdoor: false,
+    opens: 360,
+    closes: 1140,
+    ticketUsd: 0,
     summary: {
       uz: 'Shaharning asosiy bozori: non, quruq mevalar, ziravorlar.',
       ru: 'Главный рынок города: лепёшки, сухофрукты, специи.',
@@ -117,6 +135,7 @@ export const PLACES: Place[] = [
     visitMinutes: 90,
     familyFriendly: true,
     outdoor: true,
+    ticketUsd: 2,
     summary: {
       uz: 'Kalon minorasi, Kalon masjidi va Mir Arab madrasasi.',
       ru: 'Минарет Калян, мечеть Калян и медресе Мири-Араб.',
@@ -138,6 +157,9 @@ export const PLACES: Place[] = [
     visitMinutes: 75,
     familyFriendly: true,
     outdoor: true,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 4,
     summary: {
       uz: 'Buxoroning eng qadimgi inshooti, hukmdorlar qarorgohi.',
       ru: 'Древнейшая постройка Бухары, резиденция правителей.',
@@ -154,6 +176,9 @@ export const PLACES: Place[] = [
     visitMinutes: 40,
     familyFriendly: true,
     outdoor: true,
+    opens: 480,
+    closes: 1200,
+    ticketUsd: 1,
     summary: {
       uz: 'IX–X asrlar chegarasida qurilgan g‘ishtin maqbara.',
       ru: 'Кирпичный мавзолей рубежа IX–X веков.',
@@ -170,6 +195,9 @@ export const PLACES: Place[] = [
     visitMinutes: 30,
     familyFriendly: true,
     outdoor: true,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 1,
     summary: {
       uz: 'To‘rt xil minorali kichik bino.',
       ru: 'Небольшое здание с четырьмя разными башнями.',
@@ -186,6 +214,7 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: true,
+    ticketUsd: 0,
     summary: {
       uz: 'Hovuz atrofidagi ansambl, choyxonalar va shaharning kechki hayoti.',
       ru: 'Ансамбль вокруг водоёма, чайханы и вечерняя жизнь города.',
@@ -202,6 +231,9 @@ export const PLACES: Place[] = [
     visitMinutes: 180,
     familyFriendly: true,
     outdoor: true,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 8,
     summary: {
       uz: 'Xivaning ichki shahri, to‘liq holda YuNESKO obyekti.',
       ru: 'Внутренний город Хивы, объект ЮНЕСКО целиком.',
@@ -223,6 +255,7 @@ export const PLACES: Place[] = [
     visitMinutes: 30,
     familyFriendly: true,
     outdoor: true,
+    ticketUsd: 0,
     summary: {
       uz: 'Feruza koshinlardagi tugallanmagan minora.',
       ru: 'Незавершённый минарет в бирюзовых изразцах.',
@@ -239,6 +272,9 @@ export const PLACES: Place[] = [
     visitMinutes: 40,
     familyFriendly: false,
     outdoor: true,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 2,
     summary: {
       uz: 'Xivadagi eng baland minora, tepasiga chiqish mumkin.',
       ru: 'Самый высокий минарет Хивы, подъём на смотровую площадку.',
@@ -255,6 +291,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: false,
+    opens: 480,
+    closes: 1200,
+    ticketUsd: 0,
     summary: {
       uz: 'Toshkentning ma’naviy markazi, qo‘lyozmalar kutubxonasi.',
       ru: 'Духовный центр Ташкента, библиотека рукописей.',
@@ -276,6 +315,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: false,
+    opens: 360,
+    closes: 1140,
+    ticketUsd: 0,
     summary: {
       uz: 'Toshkent eski shahridagi katta gumbaz ostidagi bozor.',
       ru: 'Старый рынок Ташкента под большим куполом.',
@@ -292,6 +334,9 @@ export const PLACES: Place[] = [
     visitMinutes: 60,
     familyFriendly: true,
     outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 2,
     summary: {
       uz: 'Amir Temur saroyining ulkan peshtoq qoldiqlari.',
       ru: 'Фрагменты гигантского портала дворца Амира Темура.',
@@ -312,6 +357,7 @@ export const PLACES: Place[] = [
     visitMinutes: 240,
     familyFriendly: true,
     outdoor: true,
+    ticketUsd: 0,
     summary: {
       uz: 'Yurtdagi tunash, tuya sayri, dasht va ko‘l.',
       ru: 'Ночёвка в юрте, прогулки на верблюдах, степь и озеро.',
@@ -332,6 +378,9 @@ export const PLACES: Place[] = [
     visitMinutes: 90,
     familyFriendly: true,
     outdoor: true,
+    opens: 480,
+    closes: 1200,
+    ticketUsd: 0,
     summary: {
       uz: 'Hadis ilmi allomasi Imom Buxoriy qadamjosi — ziyoratgoh va majmua.',
       ru: 'Мемориальный комплекс имама аль-Бухари — место паломничества.',
@@ -357,6 +406,9 @@ export const PLACES: Place[] = [
     visitMinutes: 120,
     familyFriendly: true,
     outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 5,
     summary: {
       uz: 'Hazrati Imom yonidagi zamonaviy muzey-markaz.',
       ru: 'Современный музейный центр рядом с комплексом Хазрати Имам.',
@@ -367,6 +419,226 @@ export const PLACES: Place[] = [
       { uz: 'Qo‘lyozmalar zali', ru: 'Зал рукописей', en: 'Manuscript hall' },
       { uz: 'Interaktiv ekspozitsiya', ru: 'Интерактивная экспозиция', en: 'Interactive exhibition' },
     ],
+  },
+
+  // --- Хива: внутри Ичан-Калы объектов много, а маршрут упирался в три ---
+  {
+    id: 'juma-mosque',
+    name: { uz: 'Juma masjidi', ru: 'Джума-мечеть', en: 'Juma Mosque' },
+    region: 'khiva',
+    lat: 41.3777,
+    lng: 60.3591,
+    interests: ['architecture', 'religion', 'history'],
+    visitMinutes: 45,
+    familyFriendly: true,
+    outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 2,
+    summary: {
+      uz: 'Yog‘ochdan o‘yilgan 200 dan ortiq ustun ustidagi shiftli masjid.',
+      ru: 'Мечеть с потолком на двух с лишним сотнях резных деревянных колонн.',
+      en: 'A mosque whose roof rests on more than two hundred carved wooden columns.',
+    },
+    highlights: [
+      { uz: 'X–XI asrlarga oid qadimgi ustunlar', ru: 'Древнейшие колонны X–XI веков', en: 'The oldest columns, 10th–11th centuries' },
+    ],
+  },
+  {
+    id: 'tash-hauli',
+    name: { uz: 'Toshhovli saroyi', ru: 'Дворец Таш-Хаули', en: 'Tash-Hauli Palace' },
+    region: 'khiva',
+    lat: 41.3782,
+    lng: 60.3639,
+    interests: ['history', 'architecture', 'photo'],
+    visitMinutes: 60,
+    familyFriendly: true,
+    outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 3,
+    summary: {
+      uz: 'Xon saroyi: hovlilar, koshin bezaklari va o‘yma ustunlar.',
+      ru: 'Ханский дворец: дворы, изразцы и резные колонны.',
+      en: 'The khan’s palace: courtyards, tilework and carved columns.',
+    },
+  },
+  {
+    id: 'kunya-ark',
+    name: { uz: 'Ko‘hna Ark', ru: 'Куня-Арк', en: 'Kunya-Ark' },
+    region: 'khiva',
+    lat: 41.379,
+    lng: 60.36,
+    interests: ['history', 'architecture', 'photo'],
+    visitMinutes: 50,
+    familyFriendly: true,
+    outdoor: true,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 2,
+    summary: {
+      uz: 'Xon qal’asi va shahar ustidan ko‘rinadigan tomosha maydonchasi.',
+      ru: 'Ханская крепость со смотровой площадкой над городом.',
+      en: 'The khan’s fortress with a viewing platform over the old town.',
+    },
+    highlights: [
+      { uz: 'Quyosh botishini kuzatish maydonchasi', ru: 'Площадка для заката', en: 'The sunset viewpoint' },
+    ],
+  },
+  {
+    id: 'pahlavan-mahmud',
+    name: {
+      uz: 'Pahlavon Mahmud maqbarasi',
+      ru: 'Мавзолей Пахлавана Махмуда',
+      en: 'Pahlavan Mahmud Mausoleum',
+    },
+    region: 'khiva',
+    lat: 41.377,
+    lng: 60.3617,
+    interests: ['religion', 'architecture', 'history'],
+    visitMinutes: 40,
+    familyFriendly: true,
+    outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 2,
+    summary: {
+      uz: 'Shahar homiysi qabri — ziyoratgoh va ko‘k koshinli gumbaz.',
+      ru: 'Гробница покровителя города — место паломничества под бирюзовым куполом.',
+      en: 'The tomb of the city’s patron — a pilgrimage site under a turquoise dome.',
+    },
+  },
+
+  // --- Шахрисабз: был один Ак-Сарай на весь город ---
+  {
+    id: 'dorut-tilovat',
+    name: { uz: 'Dorut Tilovat majmuasi', ru: 'Комплекс Дорут Тиловат', en: 'Dorut Tilovat Complex' },
+    region: 'shakhrisabz',
+    lat: 39.051,
+    lng: 66.833,
+    interests: ['religion', 'architecture', 'history'],
+    visitMinutes: 45,
+    familyFriendly: true,
+    outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 1,
+    summary: {
+      uz: 'Ko‘k Gumbaz masjidi va Temur ustozlari dahmasi bir majmuada.',
+      ru: 'Мечеть Кок-Гумбаз и усыпальница наставников Темура в одном ансамбле.',
+      en: 'The Kok-Gumbaz mosque and the tombs of Temur’s teachers in one ensemble.',
+    },
+  },
+  {
+    id: 'dorus-siadat',
+    name: { uz: 'Dorus Siyodat', ru: 'Дорус Сиадат', en: 'Dorus Siadat' },
+    region: 'shakhrisabz',
+    lat: 39.053,
+    lng: 66.836,
+    interests: ['history', 'architecture'],
+    visitMinutes: 40,
+    familyFriendly: true,
+    outdoor: true,
+    opens: 480,
+    closes: 1140,
+    ticketUsd: 1,
+    summary: {
+      uz: 'Temurning o‘g‘li Jahongir maqbarasi va yer ostidagi dahma.',
+      ru: 'Мавзолей Джахонгира, сына Темура, и подземный склеп.',
+      en: 'The mausoleum of Jahongir, Temur’s son, and the underground crypt.',
+    },
+    highlights: [
+      { uz: 'Temur uchun tayyorlangan yer osti dahmasi', ru: 'Подземный склеп, готовившийся для Темура', en: 'The crypt prepared for Temur himself' },
+    ],
+  },
+  {
+    id: 'shakhrisabz-chorsu',
+    name: { uz: 'Chorsu gumbazi', ru: 'Торговый купол Чорсу', en: 'Chorsu Trading Dome' },
+    region: 'shakhrisabz',
+    lat: 39.054,
+    lng: 66.832,
+    interests: ['crafts', 'history', 'food'],
+    visitMinutes: 30,
+    familyFriendly: true,
+    outdoor: false,
+    opens: 540,
+    closes: 1080,
+    ticketUsd: 0,
+    summary: {
+      uz: 'XVIII asr savdo gumbazi, hozir hunarmandchilik bozori.',
+      ru: 'Торговый купол XVIII века, сегодня — ремесленный рынок.',
+      en: 'An 18th-century trading dome, now a crafts market.',
+    },
+  },
+
+  // --- Нурата: был один Айдаркуль ---
+  {
+    id: 'chashma',
+    name: { uz: 'Chashma buloq majmuasi', ru: 'Комплекс Чашма', en: 'Chashma Spring Complex' },
+    region: 'nurata',
+    lat: 40.5636,
+    lng: 65.6875,
+    interests: ['religion', 'nature', 'history'],
+    visitMinutes: 45,
+    familyFriendly: true,
+    outdoor: true,
+    ticketUsd: 0,
+    summary: {
+      uz: 'Muqaddas buloq, baliqlari bilan mashhur hovuz va masjid.',
+      ru: 'Священный источник, пруд со священной рыбой и мечеть.',
+      en: 'A sacred spring, a pool of holy fish and a mosque.',
+    },
+  },
+  {
+    id: 'nurata-fortress',
+    name: { uz: 'Nurota qal’asi', ru: 'Крепость Нурата', en: 'Nurata Fortress' },
+    region: 'nurata',
+    lat: 40.5645,
+    lng: 65.6866,
+    interests: ['history', 'photo'],
+    visitMinutes: 40,
+    familyFriendly: true,
+    outdoor: true,
+    ticketUsd: 0,
+    summary: {
+      uz: 'Iskandar Zulqarnayn davriga bog‘lanadigan qal’a xarobalari.',
+      ru: 'Руины крепости, которую связывают со временами Александра Македонского.',
+      en: 'Fortress ruins linked to the time of Alexander the Great.',
+    },
+  },
+  {
+    id: 'sarmyshsay',
+    name: { uz: 'Sarmishsoy petrogliflari', ru: 'Петроглифы Сармышсая', en: 'Sarmyshsay Petroglyphs' },
+    region: 'nurata',
+    lat: 40.65,
+    lng: 65.47,
+    interests: ['history', 'nature', 'photo'],
+    visitMinutes: 90,
+    familyFriendly: true,
+    outdoor: true,
+    ticketUsd: 1,
+    summary: {
+      uz: 'Tog‘ darasidagi minglab qoya tasvirlari — bronza davridan.',
+      ru: 'Тысячи наскальных рисунков в горном ущелье — начиная с бронзового века.',
+      en: 'Thousands of rock carvings in a mountain gorge, from the Bronze Age onwards.',
+    },
+  },
+  {
+    id: 'sentyab',
+    name: { uz: 'Sentob qishlog‘i', ru: 'Кишлак Сентяб', en: 'Sentyab Village' },
+    region: 'nurata',
+    lat: 40.42,
+    lng: 66.36,
+    interests: ['nature', 'food', 'photo'],
+    visitMinutes: 120,
+    familyFriendly: true,
+    outdoor: true,
+    ticketUsd: 0,
+    summary: {
+      uz: 'Tog‘ qishlog‘i: sharsharalar, piyoda yo‘llar va uy mehmonxonalari.',
+      ru: 'Горный кишлак: водопады, пешие тропы и дома-гостевые.',
+      en: 'A mountain village: waterfalls, walking trails and family guesthouses.',
+    },
   },
 ];
 

@@ -7,6 +7,7 @@ import type {
   Region,
   Transfer,
   TripContext,
+  TripCost,
 } from './types.ts';
 import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
@@ -21,6 +22,16 @@ import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 //    переезд между городами занимает часть дня.
 
 const MINUTES_PER_DAY = 330; // ~5.5 часов осмотра, остальное — дорога и еда
+/** Начало осмотра. Позже жары и раньше закрытия музеев — обычный туристический день. */
+const DAY_START = 9 * 60;
+/** Переход между объектами внутри города. */
+const HOP_MINUTES = 30;
+
+function clock(minutes: number): string {
+  const h = Math.floor(minutes / 60) % 24;
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 /** Точка входа в страну: сюда прилетают и отсюда улетают. */
 const ENTRY_REGION: Region = 'tashkent';
 
@@ -188,6 +199,8 @@ function makeDay(
   transfer?: Transfer,
 ): ItineraryDay {
   const ordered = orderByProximity(picked);
+  // день с переездом начинается позже: сначала доехали, потом смотрим
+  const transferMinutes = transfer ? Math.round(transferHours(transfer) * 60) : 0;
   const cityTitle = REGION_NAME[ordered[0].region][lang];
   return {
     day: dayNumber,
@@ -196,10 +209,41 @@ function makeDay(
         ? `${cityTitle}: ${ordered[0].name[lang]} + ${TEXT.more[lang]} ${ordered.length - 1}`
         : `${cityTitle}: ${ordered[0].name[lang]}`,
     transfer,
-    items: ordered.map((p, index) => ({
-      placeId: p.id,
-      note: noteFor(p, ctx, lang, index === 0),
-    })),
+    items: ordered.map((p, index) => {
+      // время накапливаем от начала дня: осмотр + переход до следующего объекта
+      const startedAt =
+        DAY_START +
+        transferMinutes +
+        ordered
+          .slice(0, index)
+          .reduce((sum, prev) => sum + prev.visitMinutes + HOP_MINUTES, 0);
+      return {
+        placeId: p.id,
+        note: noteFor(p, ctx, lang, index === 0),
+        at: clock(startedAt),
+        // закрыт, если приходим после закрытия или до открытия
+        closed:
+          p.closes !== undefined &&
+          (startedAt >= p.closes || (p.opens !== undefined && startedAt < p.opens)),
+      };
+    }),
+  };
+}
+
+/** Ориентировочная стоимость: билеты плюс самый дешёвый вариант каждого переезда. */
+function estimateCost(days: ItineraryDay[], byId: Map<string, Place>): TripCost {
+  const ticketsUsd = days
+    .flatMap((d) => d.items)
+    .reduce((sum, item) => sum + (byId.get(item.placeId)?.ticketUsd ?? 0), 0);
+  const transferUsd = days.reduce((sum, day) => {
+    if (!day.transfer) return sum;
+    const cheapest = Math.min(...day.transfer.options.map((o) => o.priceUsd));
+    return sum + cheapest;
+  }, 0);
+  return {
+    ticketsUsd: Math.round(ticketsUsd),
+    transferUsd: Math.round(transferUsd),
+    totalUsd: Math.round(ticketsUsd + transferUsd),
   };
 }
 
@@ -319,5 +363,6 @@ export function buildItinerary(places: Place[], ctx: TripContext): Itinerary {
       .replace('{type}', TRAVEL_TYPE_LABEL[ctx.travelType][lang]) +
     (days.length < ctx.days ? TEXT.shortened[lang].replace('{asked}', String(ctx.days)) : '');
 
-  return { summary, days };
+  const byId = new Map(places.map((p) => [p.id, p]));
+  return { summary, days, cost: estimateCost(days, byId) };
 }
