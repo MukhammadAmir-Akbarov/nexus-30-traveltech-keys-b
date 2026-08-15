@@ -1,6 +1,6 @@
 import { haversineKm } from './route.ts';
 import { PLACES } from '../data/places.ts';
-import type { Region } from './types.ts';
+import type { Place, Region } from './types.ts';
 
 /**
  * Определение ближайшего города по координатам туриста.
@@ -52,5 +52,34 @@ export function nearestRegion(lat: number, lng: number): NearestRegion {
   }
 
   if (!best || best.km > NEAR_LIMIT_KM) return null;
+  return best;
+}
+
+/**
+ * «Турист стоит У объекта» — это метры, а не километры.
+ *
+ * 500 м выбрано по размеру самих ансамблей: площадь Регистана со всеми тремя
+ * медресе укладывается примерно в этот круг, Ичан-Кала внутри стен — тоже.
+ * Больше радиус — и человек на другом конце Самарканда получил бы брифинг
+ * по Регистану; меньше — брифинг не сработал бы, пока не встанешь вплотную
+ * к точке, которой мы записали координату.
+ *
+ * Дальше порога возвращаем null: «рядом объекта нет» — честный ответ,
+ * а подсунуть ближайший из другого района значит соврать первым же экраном.
+ * Тот же принцип, что и у nearestRegion, и у вердиктов фактчека.
+ */
+export const AT_PLACE_LIMIT_M = 500;
+
+export type NearestPlace = { place: Place; meters: number } | null;
+
+export function nearestPlace(lat: number, lng: number): NearestPlace {
+  let best: { place: Place; meters: number } | null = null;
+
+  for (const place of PLACES) {
+    const meters = haversineKm({ lat, lng }, { lat: place.lat, lng: place.lng }) * 1000;
+    if (!best || meters < best.meters) best = { place, meters };
+  }
+
+  if (!best || best.meters > AT_PLACE_LIMIT_M) return null;
   return best;
 }

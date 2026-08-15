@@ -1,7 +1,7 @@
 import type { CorpusItem } from './types.ts';
 
 // Поиск по корпусу без эмбеддингов и без БД.
-// ponytail: 85 абзацев -> хватает IDF по префиксам слов; при корпусе >500 абзацев
+// ponytail: 88 абзацев -> хватает IDF по префиксам слов; при корпусе >500 абзацев
 // менять на Postgres + pgvector (интерфейс retrieve() останется тем же).
 
 const STOPWORDS = new Set([

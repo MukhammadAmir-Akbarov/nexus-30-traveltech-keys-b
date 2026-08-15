@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { PLACES, PLACE_BY_ID } from '@/data/places';
-import { buildItinerary } from '@/lib/planner';
+import { buildItinerary, selectedRegions } from '@/lib/planner';
 import { hasAI, isMockAI, MODEL } from '@/lib/model';
 import { REGION_LABEL, LANG_LABEL, tr } from '@/lib/i18n';
 import { climateNorm, forecastFor, tripDates } from '@/lib/weather';
@@ -111,7 +111,25 @@ export async function POST(req: Request) {
     });
   }
 
-  const candidates = PLACES.filter((p) => ctx.region === 'all' || p.region === ctx.region).map(
+  /*
+   * Отбор кандидатов должен совпадать с тем, что делает планировщик без
+   * модели, иначе две ветки одного экрана отвечают по-разному.
+   *
+   * Здесь стояло `ctx.region === 'all' || p.region === ctx.region` — только
+   * одно поле. Турист, выбравший два города, с ключом получал объекты
+   * одного: `ctx.regions` до модели не доходил. И объекты, убранные руками
+   * (`ctx.excluded`), возвращались обратно — правка маршрута работала без
+   * ключа и молча переставала работать с ключом.
+   *
+   * `selectedRegions()` уже экспортирован из planner.ts и знает оба поля:
+   * повторять его логику здесь значило бы завести третье место, где живёт
+   * один и тот же вопрос «какие регионы выбраны».
+   */
+  const regions = selectedRegions(ctx);
+  const excluded = new Set(ctx.excluded ?? []);
+  const candidates = PLACES.filter(
+    (p) => (regions.length === 0 || regions.includes(p.region)) && !excluded.has(p.id),
+  ).map(
     (p) => ({
       id: p.id,
       name: tr(p.name, lang),

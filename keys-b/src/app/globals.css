@@ -370,34 +370,58 @@ h2 {
 /* Нижняя навигация только на телефоне. Прячем здесь же, а не утилитой
    sm:hidden: та объявлена раньше в файле, и `display: flex` отсюда её
    перебивал — на десктопе рядом висели обе навигации. */
+/*
+  Плавающая «таблетка» вместо панели во всю ширину — как в макете
+  мобильного приложения. Панель отрывается от края экрана: под ней видно
+  содержимое, и она читается как элемент поверх страницы, а не как рамка
+  окна. Так же выглядит нижняя навигация в самом приложении команды.
+
+  Отступ снизу считается вместе с env(safe-area-inset-bottom): на телефонах
+  с жестовой навигацией полоса-индикатор перекрыла бы нижний ряд кнопок.
+  Запас в main (pb-24) уже был и остаётся достаточным.
+*/
 .tabbar {
   position: fixed;
-  inset: auto 0 0 0;
+  inset: auto 16px calc(12px + env(safe-area-inset-bottom)) 16px;
   z-index: 30;
   display: flex;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--border);
-  padding-bottom: env(safe-area-inset-bottom);
+  gap: 4px;
+  padding: 6px;
+  background: var(--navy);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
 }
 
 @media (min-width: 640px) {
   .tabbar { display: none; }
 }
 
+/*
+  Подпись видна только у текущей вкладки — как в макете. У остальных она
+  остаётся в разметке под .sr-only: экранный диктор обязан прочитать все
+  четыре пункта, иначе навигация превращается в четыре безымянные картинки.
+  Высота 48px: минимум под палец — 44.
+*/
 .tabbar a {
   flex: 1;
-  min-height: 56px;
+  min-height: 48px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  font-size: 11px;
-  color: var(--muted);
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-navy);
   text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
-.tabbar a[data-active='true'] { color: var(--accent); font-weight: 600; }
+.tabbar a[data-active='true'] {
+  flex: 0 0 auto;
+  padding-inline: 14px;
+  background: var(--surface);
+  color: var(--accent-ink);
+}
 
 /* ── Карта (MapLibre GL) ──────────────────────────────────── */
 

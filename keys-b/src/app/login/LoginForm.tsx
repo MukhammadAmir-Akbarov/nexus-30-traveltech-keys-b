@@ -53,12 +53,21 @@ export function LoginForm({ demo }: { demo: boolean }) {
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
-      <h1 className="text-3xl font-extrabold text-slate-800 text-center uppercase tracking-wider mb-2">
+      {/* slate-* — фиксированные серые: в тёмной теме заголовок и подписи
+          остались бы тёмными на тёмной карточке. --text и --muted следуют теме */}
+      <h1
+        className="text-3xl font-extrabold text-center uppercase tracking-wider mb-2"
+        style={{ color: 'var(--text)' }}
+      >
         {mode === 'login' ? t('authLogin', lang) : t('authRegister', lang)}
       </h1>
 
       <form className="flex flex-col gap-4" onSubmit={submit}>
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-4" htmlFor="email">
+        <label
+          className="text-xs font-bold uppercase tracking-wide ml-4"
+          style={{ color: 'var(--muted)' }}
+          htmlFor="email"
+        >
           {t('authEmail', lang)}
         </label>
         <input
@@ -66,12 +75,17 @@ export function LoginForm({ demo }: { demo: boolean }) {
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-full bg-teal-50 px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 placeholder-teal-600/50 text-teal-900 shadow-inner transition-shadow"
+          className="w-full rounded-full px-6 py-4 text-sm shadow-inner transition-shadow focus:outline-none"
+          style={{ background: 'var(--surface-2)', color: 'var(--text)' }}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-4 mt-2" htmlFor="password">
+        <label
+          className="text-xs font-bold uppercase tracking-wide ml-4 mt-2"
+          style={{ color: 'var(--muted)' }}
+          htmlFor="password"
+        >
           {t('authPassword', lang)}
         </label>
         <input
@@ -80,7 +94,8 @@ export function LoginForm({ demo }: { demo: boolean }) {
           required
           minLength={6}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          className="w-full rounded-full bg-teal-50 px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 placeholder-teal-600/50 text-teal-900 shadow-inner transition-shadow"
+          className="w-full rounded-full px-6 py-4 text-sm shadow-inner transition-shadow focus:outline-none"
+          style={{ background: 'var(--surface-2)', color: 'var(--text)' }}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -91,13 +106,25 @@ export function LoginForm({ demo }: { demo: boolean }) {
           </div>
         )}
 
-        <button className="w-full rounded-full bg-[#0E979D] px-6 py-4 mt-4 text-sm font-bold uppercase tracking-widest text-white shadow-[0_8px_20px_rgba(14,151,157,0.3)] hover:bg-teal-500 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50" disabled={loading}>
+        {/*
+          Цвета через токены, а не значениями. Здесь стояли bg-[#0E979D],
+          text-white и hover:bg-teal-500 — тот самый акцент, но записанный
+          числом, плюс чужая бирюза Tailwind в наведении.
+
+          Две беды. В тёмной теме токен становится #2cb6bb, а вшитый цвет
+          оставался прежним: кнопка выпадала из темы. И правка контраста
+          (белый на акценте давал 3.54:1) до этой кнопки просто не дошла —
+          она мимо токенов. Вход — один из первых экранов, которые увидит зал.
+        */}
+        <button className="w-full rounded-full bg-[var(--accent)] px-6 py-4 mt-4 text-sm font-bold uppercase tracking-widest text-[var(--on-accent)] shadow-[var(--shadow-2)] hover:bg-[var(--accent-hover)] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50" disabled={loading}>
           {mode === 'login' ? t('authLogin', lang) : t('authRegister', lang)}
         </button>
 
         <button
           type="button"
-          className="text-sm text-teal-600 hover:text-[#0E979D] self-center mt-2 transition-colors font-medium underline-offset-4 hover:underline"
+          // text-teal-600 давал 3.74:1 на белом — ниже нормы; --accent-ink
+          // это та же роль «акцент как текст на светлой подложке», 5.78:1
+          className="text-sm text-[var(--accent-ink)] hover:text-[var(--accent)] self-center mt-2 transition-colors font-medium underline-offset-4 hover:underline"
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setErrorKey(null);

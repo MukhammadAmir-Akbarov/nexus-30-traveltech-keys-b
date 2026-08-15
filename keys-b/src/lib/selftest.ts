@@ -11,7 +11,8 @@ import { staysFor } from '../data/stays.ts';
 import { lookupDemoVerdict } from '../data/demo-cache.ts';
 import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBound } from './match.ts';
 import { buildItinerary } from './planner.ts';
-import { NEAR_LIMIT_KM, nearestRegion } from './geo.ts';
+import { BRIEFING_FACTS, BRIEFING_THIN, briefingFor } from './briefing.ts';
+import { AT_PLACE_LIMIT_M, NEAR_LIMIT_KM, nearestPlace, nearestRegion } from './geo.ts';
 import { retrieve, tokenize } from './retrieval.ts';
 import { ruleVerdict, toRoman } from './verdict.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
@@ -1284,6 +1285,65 @@ assert.equal(nearestRegion(0, 0), null, 'нулевые координаты н�
 
 // Порог задан явно и должен оставаться осмысленным
 assert.ok(NEAR_LIMIT_KM >= 100 && NEAR_LIMIT_KM <= 200, 'порог близости в разумных пределах');
+
+// --- «турист стоит У объекта»: метры, а не километры ---------------------------
+// Брифинг «вы рядом» срабатывает по этой функции, поэтому её граница — это
+// граница всей проактивной ветки. Ошибка в большую сторону выдаст человеку
+// на другом конце города брифинг по Регистану.
+
+const registanPlace = PLACES.find((place) => place.id === 'registan')!;
+assert.equal(
+  nearestPlace(registanPlace.lat, registanPlace.lng)?.place.id,
+  'registan',
+  'координата Регистана определяет сам Регистан',
+);
+
+// Центр Ташкента — сотни километров от Самарканда: никакого объекта рядом нет
+assert.equal(nearestPlace(41.3111, 69.2797)?.place.id, undefined, 'из Ташкента Регистан не «рядом»');
+assert.equal(nearestPlace(41.3111, 69.2797), null, 'нет объекта рядом — честный null');
+
+// Соседний объект того же города не должен подменять собой текущий:
+// Гур-Эмир и Регистан в одном Самарканде, но это разные экскурсии
+const gurEmir = PLACES.find((place) => place.id === 'gur-emir')!;
+assert.equal(
+  nearestPlace(gurEmir.lat, gurEmir.lng)?.place.id,
+  'gur-emir',
+  'координата Гур-Эмира определяет Гур-Эмир, а не соседний Регистан',
+);
+
+// Порог в метрах: чуть в стороне — ещё «у объекта», через километр — уже нет.
+// 0.02° широты ≈ 2.2 км, заведомо дальше порога.
+assert.ok(
+  nearestPlace(registanPlace.lat + 0.02, registanPlace.lng) === null,
+  'в двух километрах от объекта брифинг не срабатывает',
+);
+assert.ok(AT_PLACE_LIMIT_M >= 200 && AT_PLACE_LIMIT_M <= 800, 'радиус объекта в разумных пределах');
+
+// --- брифинг собирается из корпуса, а не сочиняется ----------------------------
+
+const registanBrief = briefingFor('registan', 'uz')!;
+assert.ok(registanBrief, 'у Регистана есть брифинг');
+assert.ok(registanBrief.facts.length >= BRIEFING_THIN, 'Регистану хватает материала на брифинг');
+assert.equal(registanBrief.thin, false, 'брифинг Регистана не помечен как скудный');
+assert.ok(registanBrief.facts.length <= BRIEFING_FACTS, 'брифинг не превращается в лекцию');
+
+// Каждый факт обязан прийти со своим источником: это и есть разница между
+// брифингом и пересказом. Продукт, ловящий гида на непроверяемом утверждении,
+// сам произносить непроверяемое не имеет права.
+for (const fact of registanBrief.facts) {
+  assert.ok(fact.text.trim().length > 0, 'факт непустой');
+  assert.ok(fact.source?.url?.startsWith('https://'), `у факта ${fact.id} есть ссылка на источник`);
+  assert.ok(
+    CORPUS.some((item) => item.id === fact.id),
+    `факт ${fact.id} взят из корпуса, а не сочинён`,
+  );
+}
+
+// «Что вы здесь увидите» — из данных объекта, на языке интерфейса
+assert.ok(registanBrief.highlights.length > 0, 'у Регистана перечислено, что внутри');
+assert.equal(briefingFor('registan', 'en')!.name, 'Registan Square', 'имя приходит на языке запроса');
+
+assert.equal(briefingFor('no-such-place', 'uz'), null, 'несуществующий объект даёт null');
 
 // Закреплённый объект переживает и сужение региона: турист сначала приколол
 // Регистан, потом выбрал только Бухару — и раньше план молча уезжал без него.
