@@ -88,8 +88,64 @@ function seed(): Store {
     accuracyByPlace,
     countedChecks: new Set<string>(),
     checkTimes: new Map<string, number[]>(),
-    verdicts: [],
-    requests: [],
+    // Демо-история: без неё кабинет гида и ящик заявок пусты при первом входе,
+    // и жюри видит форму без содержимого. Счётчики выше с этим согласованы.
+    verdicts: [
+      {
+        id: 'v1',
+        guideId: 'g1',
+        placeId: 'registan',
+        claim: 'Регистан построен в XII веке',
+        status: 'refuted',
+        at: '2026-08-14 11:20',
+      },
+      {
+        id: 'v2',
+        guideId: 'g1',
+        placeId: 'registan',
+        claim: 'Медресе Улугбека построено в 1417–1420 годах',
+        status: 'confirmed',
+        at: '2026-08-14 11:38',
+      },
+      {
+        id: 'v3',
+        guideId: 'g6',
+        placeId: 'registan',
+        claim: 'Регистан был главным базаром города',
+        status: 'refuted',
+        at: '2026-08-14 15:02',
+        dispute: {
+          note: 'Площадь действительно была торговой до застройки медресе — я говорил об этом периоде.',
+          at: '2026-08-14 18:10',
+        },
+      },
+      {
+        id: 'v4',
+        guideId: 'g5',
+        placeId: 'khast-imam',
+        claim: 'Здесь хранится Коран Османа',
+        status: 'confirmed',
+        at: '2026-08-14 16:44',
+      },
+    ],
+    requests: [
+      {
+        id: 'r1',
+        kind: 'place-problem',
+        targetId: 'shahi-zinda',
+        message: 'Верхний ярус закрыт на реставрацию, в кассе об этом не предупреждают.',
+        contact: '+998 90 123-45-67',
+        at: '2026-08-14 12:05',
+      },
+      {
+        id: 'r2',
+        kind: 'guide-booking',
+        targetId: 'g2',
+        message: 'Нужен гид на 17–19 августа, Самарканд и Бухара, английский язык.',
+        contact: 'anna.travel@example.com',
+        at: '2026-08-14 19:30',
+      },
+    ],
   };
 }
 
@@ -198,7 +254,7 @@ export function recordFactCheck(
 
   // сохраняем саму проверку: гид должен видеть, за что именно ему поставили минус
   store().verdicts.push({
-    id: `v${store().verdicts.length + 1}`,
+    id: `v${store().verdicts.length + 1}-${Math.round(performance.now())}`,
     guideId,
     placeId,
     claim: claim.trim(),

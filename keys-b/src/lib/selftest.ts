@@ -15,7 +15,7 @@ import { disputedForLang, findDisputed } from './disputed.ts';
 import { adviceFor, climateNorm, tripDates } from './weather.ts';
 import { prayerTimes, prayersDuring } from './prayer.ts';
 import type { DayWeather } from './types.ts';
-import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
+import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, UI, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
   clearLoginAttempts,
   hashPassword,
@@ -560,6 +560,22 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- полнота словаря ---
+// Больше трёхсот ключей заводились руками. Один забытый язык — и на сцене
+// в узбекском интерфейсе всплывает русская строка. Держим это тестом.
+{
+  const dictionary = UI as Record<string, Record<string, string>>;
+  const keys = Object.keys(dictionary);
+  assert.ok(keys.length > 250, `словарь подозрительно мал: ${keys.length} ключей`);
+  const broken: string[] = [];
+  for (const key of keys) {
+    for (const lang of LANGS) {
+      if (!dictionary[key]?.[lang]?.trim()) broken.push(`${key}.${lang}`);
+    }
+  }
+  assert.deepEqual(broken, [], `ключи без перевода: ${broken.join(', ')}`);
+}
 
 // --- погода ---
 

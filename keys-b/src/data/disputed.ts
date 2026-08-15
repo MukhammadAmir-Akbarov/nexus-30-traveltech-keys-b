@@ -76,7 +76,7 @@ export const DISPUTED: DisputedTopic[] = [
   {
     id: 'd2',
     placeId: 'samanid-mausoleum',
-    must: ['саманид'],
+    must: ['самани'],
     question: {
       uz: 'Somoniylar maqbarasi qachon qurilgan?',
       ru: 'Когда построен мавзолей Саманидов?',
@@ -110,3 +110,151 @@ export const DISPUTED: DisputedTopic[] = [
 
 /** Слова, по которым тему ищем. Вынесено, чтобы не тянуть весь массив в поиск. */
 export const DISPUTED_KEYS = DISPUTED.map((topic) => ({ id: topic.id, must: topic.must }));
+
+const UNESCO_SAMARKAND: Source = {
+  title: {
+    uz: 'YuNESKO: Samarqand — madaniyatlar chorrahasi',
+    ru: 'ЮНЕСКО: Самарканд — перекрёсток культур',
+    en: 'UNESCO: Samarkand — Crossroads of Cultures',
+  },
+  url: 'https://whc.unesco.org/en/list/603',
+};
+
+const UNESCO_KHIVA: Source = {
+  title: { uz: 'YuNESKO: Ichan Qal’a', ru: 'ЮНЕСКО: Ичан-Кала', en: 'UNESCO: Itchan Kala' },
+  url: 'https://whc.unesco.org/en/list/543',
+};
+
+DISPUTED.push(
+  {
+    id: 'd3',
+    must: ['бухар', 'лет'],
+    question: {
+      uz: 'Buxoro necha yoshda?',
+      ru: 'Сколько лет Бухаре?',
+      en: 'How old is Bukhara?',
+    },
+    positions: [
+      {
+        claim: {
+          uz: '2500 yil — 1997 yilda nishonlangan yubiley sanasi.',
+          ru: '2500 лет — юбилейная дата, отмечавшаяся в 1997 году.',
+          en: '2,500 years — the anniversary date marked in 1997.',
+        },
+        source: UZ_TRAVEL,
+      },
+      {
+        claim: {
+          uz: 'Arxeologik qatlamlar aniq sanani bermaydi: baholar bir necha asrga farq qiladi.',
+          ru: 'Археологические слои точной даты не дают: оценки расходятся на несколько веков.',
+          en: 'The archaeological layers give no exact date: estimates differ by centuries.',
+        },
+        source: UNESCO_BUKHARA,
+      },
+    ],
+    note: {
+      uz: 'Yubiley sanasi — qaror, arxeologiya esa oraliq beradi.',
+      ru: 'Юбилейная дата — это решение, а археология даёт диапазон.',
+      en: 'An anniversary date is a decision; archaeology offers a range.',
+    },
+  },
+  {
+    id: 'd4',
+    placeId: 'registan',
+    must: ['регист', 'медрес'],
+    question: {
+      uz: 'Registonda nechta madrasa bor?',
+      ru: 'Сколько медресе на Регистане?',
+      en: 'How many madrasahs are there on the Registan?',
+    },
+    positions: [
+      {
+        claim: {
+          uz: 'Uchta: Ulug‘bek, Sherdor va Tillakori.',
+          ru: 'Три: Улугбека, Шердор и Тилля-Кари.',
+          en: 'Three: Ulugh Beg, Sher-Dor and Tilya-Kori.',
+        },
+        source: UNESCO_SAMARKAND,
+      },
+      {
+        claim: {
+          uz: 'Tillakori ko‘proq masjid vazifasini bajargan, shuning uchun uni madrasa deb sanamaydiganlar ham bor.',
+          ru: 'Тилля-Кари служила скорее мечетью, поэтому её не всегда считают медресе.',
+          en: 'Tilya-Kori functioned mainly as a mosque, so it is not always counted as a madrasah.',
+        },
+        source: UZ_TRAVEL,
+      },
+    ],
+    note: {
+      uz: 'Bahs bino sonida emas, «madrasa» ta’rifida.',
+      ru: 'Спор не о числе зданий, а об определении слова «медресе».',
+      en: 'The dispute is not about the buildings but about what counts as a madrasah.',
+    },
+  },
+  {
+    id: 'd5',
+    placeId: 'ichan-kala',
+    must: ['ичан', 'юнеско'],
+    question: {
+      uz: 'Ichan Qal’a qachon YuNESKO ro‘yxatiga kirgan?',
+      ru: 'В каком году Ичан-Кала вошла в список ЮНЕСКО?',
+      en: 'When did Itchan Kala enter the UNESCO list?',
+    },
+    positions: [
+      {
+        claim: {
+          uz: '1990 yil — ro‘yxatga kiritilgan sana.',
+          ru: '1990 год — дата включения в список.',
+          en: '1990 — the year of inscription.',
+        },
+        source: UNESCO_KHIVA,
+      },
+      {
+        claim: {
+          uz: 'Ba’zi nashrlarda 1991 yil ko‘rsatiladi — hujjat rasmiylashtirilgan yil bo‘yicha.',
+          ru: 'В части изданий указывают 1991 год — по году оформления документов.',
+          en: 'Some publications give 1991, going by the year the paperwork was completed.',
+        },
+        source: UZ_TRAVEL,
+      },
+    ],
+    note: {
+      uz: 'Sana bitta, farq — qaysi hujjatdan sanash.',
+      ru: 'Дата одна, расходится точка отсчёта: решение или оформление.',
+      en: 'One event, two starting points: the decision or the paperwork.',
+    },
+  },
+  {
+    id: 'd6',
+    placeId: 'bibi-khanym',
+    must: ['биби'],
+    question: {
+      uz: 'Bibixonim masjidini kim qurdirgan?',
+      ru: 'По чьему заказу построена мечеть Биби-Ханым?',
+      en: 'Who commissioned the Bibi-Khanym mosque?',
+    },
+    positions: [
+      {
+        claim: {
+          uz: 'Amir Temur — Hindiston yurishidan keyin.',
+          ru: 'Амир Темур — после похода в Индию.',
+          en: 'Amir Temur, after his Indian campaign.',
+        },
+        source: UNESCO_SAMARKAND,
+      },
+      {
+        claim: {
+          uz: 'Xalq rivoyatida qurilish Temurning xotiniga bog‘lanadi — bu afsona, hujjat emas.',
+          ru: 'Народное предание связывает постройку с женой Темура — это легенда, а не документ.',
+          en: 'Folk tradition credits Temur’s wife — that is legend, not record.',
+        },
+        source: UZ_TRAVEL,
+      },
+    ],
+    note: {
+      uz: 'Gidlar ko‘pincha rivoyatni fakt sifatida aytadi — shuning uchun bu alohida belgilangan.',
+      ru: 'Гиды часто пересказывают легенду как факт — поэтому тема помечена отдельно.',
+      en: 'Guides often retell the legend as fact — hence the separate flag.',
+    },
+  },
+);

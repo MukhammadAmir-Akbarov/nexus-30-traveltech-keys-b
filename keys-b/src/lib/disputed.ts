@@ -7,11 +7,13 @@ import type { Lang } from './types.ts';
 // на узбекском, русском и английском.
 
 export function findDisputed(claim: string): DisputedTopic | null {
-  const tokens = new Set(tokenize(claim));
+  const tokens = [...new Set(tokenize(claim))];
   const raw = claim.toLowerCase();
-  return (
-    DISPUTED.find((topic) => topic.must.every((m) => tokens.has(m) || raw.includes(m))) ?? null
-  );
+  // Сравниваем по началу слова, а не по точному совпадению: стеммер режет до
+  // шести символов, и «Бухаре», «Бухара», «Buxoro» дают разные основы.
+  const matches = (must: string) =>
+    raw.includes(must) || tokens.some((t) => t.startsWith(must) || must.startsWith(t));
+  return DISPUTED.find((topic) => topic.must.every(matches)) ?? null;
 }
 
 /** Готовый к отправке вид: тексты уже на языке интерфейса. */
