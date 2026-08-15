@@ -384,6 +384,27 @@ export const UI = {
   planMinutes: { uz: 'daq', ru: 'мин', en: 'min' },
   mapLoading: { uz: 'Xarita yuklanmoqda…', ru: 'Карта загружается…', en: 'Loading the map…' },
 
+  routeHow: { uz: 'Qanday yetib borish', ru: 'Как добраться', en: 'Getting around' },
+  legWalk: { uz: 'piyoda', ru: 'пешком', en: 'on foot' },
+  legTaxi: { uz: 'taksi', ru: 'такси', en: 'taxi' },
+  legKm: { uz: 'km', ru: 'км', en: 'km' },
+  legM: { uz: 'm', ru: 'м', en: 'm' },
+  routeNavigator: {
+    uz: 'Navigatorda ochish',
+    ru: 'Открыть в навигаторе',
+    en: 'Open in a navigator',
+  },
+  routeRoadsNote: {
+    uz: 'Yo‘nalish haqiqiy yo‘llar bo‘ylab chizilgan (OSRM, OpenStreetMap ma’lumotlari).',
+    ru: 'Линия проложена по настоящим дорогам (OSRM по данным OpenStreetMap).',
+    en: 'The line follows real roads (OSRM over OpenStreetMap data).',
+  },
+  routeDirectNote: {
+    uz: 'Punktir — to‘g‘ri yo‘nalish: marshrutlovchi javob bermadi, bu yo‘lning o‘zi emas.',
+    ru: 'Пунктир — прямое направление: маршрутизатор не ответил, это не сам путь.',
+    en: 'Dashed lines are straight bearings: the router did not answer, so this is not the path itself.',
+  },
+
   soloTitle: {
     uz: 'Yakka sayohatchi uchun',
     ru: 'Для одиночного путешественника',

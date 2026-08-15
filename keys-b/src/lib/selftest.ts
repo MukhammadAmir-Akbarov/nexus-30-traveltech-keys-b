@@ -16,6 +16,16 @@ import { adviceFor, climateNorm, tripDates } from './weather.ts';
 import { prayerTimes, prayersDuring } from './prayer.ts';
 import { parseTripPhrase } from './voice-trip.ts';
 import { seasonBudgetFactor, seasonFor, seasonNote, seasonsFor } from './calendar.ts';
+import {
+  directRoute,
+  distanceLabel,
+  haversineKm,
+  legFrom,
+  navigatorUrl,
+  parseOsrm,
+  routeTotals,
+  taxiFareUsd,
+} from './route.ts';
 import type { DayWeather } from './types.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, UI, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
@@ -888,4 +898,100 @@ assert.equal(yearsLabel(3, 'ru'), 'года опыта');
 assert.equal(yearsLabel(5, 'ru'), 'лет опыта');
 assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а не «года»');
 
-console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, переводы, авторизация');
+// Погода переставляет объекты — время и заголовок обязаны переставиться с ними.
+// Ловилось глазами на живом маршруте: день читался «10:30, 09:00, 12:15».
+{
+  const hot: DayWeather[] = [
+    { date: '2026-08-17', region: 'samarkand', tMaxC: 38, precipMm: 0, source: 'forecast' },
+    { date: '2026-08-18', region: 'samarkand', tMaxC: 38, precipMm: 0, source: 'forecast' },
+  ];
+  const heatPlan = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 2 }, hot);
+  for (const day of heatPlan.days) {
+    const times = day.items.map((i) => i.at ?? '');
+    assert.deepEqual(times, [...times].sort(), `день ${day.day}: время обязано идти по возрастанию`);
+    const first = PLACES.find((p) => p.id === day.items[0].placeId)!;
+    assert.ok(
+      day.title.includes(first.name.ru),
+      `заголовок дня ${day.day} должен называть первый объект, а не прежний`,
+    );
+  }
+  // и сама перестановка при этом никуда не делась
+  for (const day of heatPlan.days) {
+    const flags = day.items.map((i) => PLACES.find((p) => p.id === i.placeId)!.outdoor === true);
+    assert.deepEqual(
+      flags,
+      [...flags].sort((a, b) => Number(b) - Number(a)),
+      `день ${day.day}: в жару объекты под открытым небом идут раньше крытых`,
+    );
+  }
+}
+
+// --- маршрут по дорогам ---
+const registan = { lat: 39.6547, lng: 66.9749 };
+const bibiKhanym = { lat: 39.6606, lng: 66.9797 };
+const konigil = { lat: 39.6969, lng: 66.9235 };
+
+assert.ok(
+  Math.abs(haversineKm(registan, bibiKhanym) - 0.8) < 0.15,
+  'от Регистана до Биби-Ханым около 800 метров',
+);
+
+// способ выбирается по расстоянию, время — по способу
+const near = legFrom(0.8, 3);
+assert.equal(near.mode, 'walk', 'восемьсот метров — это пешком');
+assert.equal(near.minutes, 11, '0,8 км при 4,5 км/ч — одиннадцать минут');
+assert.equal(near.fareUsd, 0, 'пеший переход бесплатен');
+
+const far = legFrom(6, 12);
+assert.equal(far.mode, 'taxi', 'шесть километров пешком никто не пойдёт');
+assert.equal(far.minutes, 12, 'машинное время берём у маршрутизатора, а не считаем сами');
+assert.ok(far.fareUsd >= 1, 'дешевле доллара поездок не бывает');
+assert.ok(taxiFareUsd(0.1) === 1, 'минимальная цена держит нижнюю границу');
+assert.ok(taxiFareUsd(20) > taxiFareUsd(5), 'дальше — дороже');
+
+// ответ OSRM разбирается, а мусор — отвергается
+const answer = {
+  routes: [
+    {
+      geometry: { coordinates: [[66.97, 39.65], [66.98, 39.66]] },
+      legs: [{ distance: 820, duration: 190 }],
+    },
+  ],
+};
+const parsed = parseOsrm(answer, 1);
+assert.ok(parsed, 'нормальный ответ обязан разобраться');
+assert.equal(parsed?.legs[0].mode, 'walk', '820 метров — пешком');
+assert.equal(parseOsrm(answer, 2), null, 'переходов меньше, чем точек, — ответ не наш');
+assert.equal(parseOsrm({ routes: [] }, 1), null, 'пустой ответ не годится');
+assert.equal(parseOsrm('нет', 1), null, 'мусор не должен ронять карту');
+
+// запасной вариант работает без сети и не врёт в меньшую сторону
+const straightLine = directRoute([registan, bibiKhanym, konigil]);
+assert.equal(straightLine.legs.length, 2, 'у трёх точек два перехода');
+assert.equal(straightLine.line.length, 3, 'прямая линия идёт по самим точкам');
+assert.ok(
+  straightLine.legs[0].km > haversineKm(registan, bibiKhanym),
+  'дорога длиннее прямой — оценка обязана это учитывать',
+);
+assert.equal(straightLine.legs[1].mode, 'taxi', 'до Конигиля пешком не ходят');
+
+// «0 км» — не расстояние: сотня метров должна печататься метрами
+assert.deepEqual(distanceLabel(0.045), { value: 50, unit: 'm' }, 'сорок пять метров — это 50 м');
+assert.deepEqual(distanceLabel(0.8), { value: 800, unit: 'm' }, 'восемьсот метров — метрами');
+assert.deepEqual(distanceLabel(3.24), { value: 3.2, unit: 'km' }, 'от километра — километрами');
+assert.equal(distanceLabel(0.001).value, 10, 'ноль метров не показываем даже при совпадении точек');
+
+const legTotals = routeTotals(straightLine.legs);
+assert.ok(legTotals.walkKm > 0 && legTotals.taxiUsd > 0, 'в итоге дня есть и пешие, и машинные переходы');
+assert.equal(
+  routeTotals([]).walkMinutes,
+  0,
+  'день из одного объекта не должен показывать переходы',
+);
+
+assert.ok(
+  navigatorUrl([registan, bibiKhanym]).includes('39.65470,66.97490~39.66060,66.97970'),
+  'ссылка в навигатор ведёт по тем же точкам и в том же порядке',
+);
+
+console.log('OK: retrieval (uz/ru/en), demo-cache, planner, match, маршрут, переводы, авторизация');

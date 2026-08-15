@@ -14,9 +14,11 @@ import { PLACE_BY_ID } from '@/data/places';
 import { itineraryToIcs } from '@/lib/ics';
 import { prayerTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
+import { distanceLabel, navigatorUrl, routeTotals } from '@/lib/route';
+import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
 import type { RoutePoint } from '@/components/RouteMap';
-import type { Itinerary, Mode } from '@/lib/types';
+import type { Itinerary, ItineraryDay, Mode } from '@/lib/types';
 
 // MapLibre трогает window и WebGL — грузим только на клиенте.
 const RouteMap = dynamic(() => import('@/components/RouteMap'), {
@@ -93,14 +95,29 @@ export default function PlanPage() {
     URL.revokeObjectURL(url);
   };
 
+  // Объекты дня, у которых есть карточка. Одним списком на всё: и точки карты,
+  // и строки таймлайна, и переходы — иначе индексы разъезжаются, и «15 минут
+  // пешком» встают не к тому объекту.
+  const placesOf = (day: ItineraryDay) =>
+    day.items.flatMap((item) => {
+      const place = PLACE_BY_ID[item.placeId];
+      return place ? [{ item, place }] : [];
+    });
+
+  const days = itinerary?.days ?? [];
+
   // точки маршрута с номером дня: карта красит их по дням, легенда не нужна
-  const routePoints: RoutePoint[] =
-    itinerary?.days.flatMap((day) =>
-      day.items
-        .map((item) => PLACE_BY_ID[item.placeId])
-        .filter(Boolean)
-        .map((place) => ({ place, day: day.day })),
-    ) ?? [];
+  const routePoints: RoutePoint[] = days.flatMap((day) =>
+    placesOf(day).map(({ place }) => ({ place, day: day.day })),
+  );
+
+  // Настоящий маршрут по дорогам: как добраться от объекта к объекту.
+  const dayPoints: DayPoints[] = days.map((day) => ({
+    day: day.day,
+    points: placesOf(day).map(({ place }) => ({ lat: place.lat, lng: place.lng })),
+  }));
+  const routes = useDayRoutes(dayPoints);
+  const routeByDay = new Map(routes.map((route) => [route.day, route]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -162,7 +179,9 @@ export default function PlanPage() {
             )}
           </section>
 
-          {routePoints.length > 0 && <RouteMap points={routePoints} lang={lang} />}
+          {routePoints.length > 0 && (
+            <RouteMap points={routePoints} routes={routes} lang={lang} />
+          )}
 
           <section className="flex flex-col gap-3">
             {itinerary.days.map((day) => (
@@ -217,10 +236,55 @@ export default function PlanPage() {
                   </div>
                 )}
                 {day.transfer && <TransferCard transfer={day.transfer} />}
+
+                {/* Как добраться за день: сколько пешком, сколько на такси
+                    и ссылка в навигатор — картинка маршрута никого никуда
+                    не приведёт, а голосовая навигация приведёт. */}
+                {(() => {
+                  const route = routeByDay.get(day.day);
+                  if (!route || route.legs.length === 0) return null;
+                  const totals = routeTotals(route.legs);
+                  const stops = placesOf(day).map(({ place }) => ({
+                    lat: place.lat,
+                    lng: place.lng,
+                  }));
+                  return (
+                    <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]">
+                      <span className="muted inline-flex items-center gap-1.5">
+                        <Icon name="route" size={13} />
+                        {t('routeHow', lang)}
+                      </span>
+                      {totals.walkKm > 0 && (
+                        <span className="tag">
+                          <Icon name="walk" size={13} />
+                          {t('legWalk', lang)} {distanceLabel(totals.walkKm).value}{' '}
+                          {t(distanceLabel(totals.walkKm).unit === 'm' ? 'legM' : 'legKm', lang)} ·{' '}
+                          {totals.walkMinutes} {t('planMinutes', lang)}
+                        </span>
+                      )}
+                      {totals.taxiMinutes > 0 && (
+                        <span className="tag">
+                          <Icon name="car" size={13} />
+                          {t('legTaxi', lang)} {totals.taxiMinutes} {t('planMinutes', lang)} · ≈ $
+                          {totals.taxiUsd}
+                        </span>
+                      )}
+                      <a
+                        className="underline"
+                        style={{ color: 'var(--accent)' }}
+                        href={navigatorUrl(stops)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {t('routeNavigator', lang)}
+                      </a>
+                    </div>
+                  );
+                })()}
+
                 <ol className="timeline flex flex-col gap-4">
-                  {day.items.map((item, index) => {
-                    const place = PLACE_BY_ID[item.placeId];
-                    if (!place) return null;
+                  {placesOf(day).map(({ item, place }, index) => {
+                    const leg = routeByDay.get(day.day)?.legs[index];
                     return (
                       <li key={item.placeId} className="flex gap-3">
                         <span className="step-dot mt-0.5">{index + 1}</span>
@@ -278,6 +342,20 @@ export default function PlanPage() {
                               {t('planPin', lang)}
                             </button>
                           </div>
+
+                          {/* Переход к следующему объекту: расстояние по дорогам,
+                              время и цена. Раньше между точками была пустота,
+                              и турист не знал, идти ему пешком или брать такси. */}
+                          {leg && (
+                            <div className="leg-hop muted mt-2 flex items-center gap-1.5 text-[12.5px]">
+                              <Icon name={leg.mode === 'walk' ? 'walk' : 'car'} size={14} />
+                              {t(leg.mode === 'walk' ? 'legWalk' : 'legTaxi', lang)} ·{' '}
+                              {distanceLabel(leg.km).value}{' '}
+                              {t(distanceLabel(leg.km).unit === 'm' ? 'legM' : 'legKm', lang)} ·{' '}
+                              {leg.minutes} {t('planMinutes', lang)}
+                              {leg.fareUsd > 0 && ` · ≈ $${leg.fareUsd}`}
+                            </div>
+                          )}
                         </div>
                       </li>
                     );
