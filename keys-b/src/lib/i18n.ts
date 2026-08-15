@@ -359,9 +359,12 @@ export const UI = {
     en: 'You can select several regions',
   },
   fieldSummer: {
-    uz: 'Yozgi sayohat (+38 dan issiq)',
-    ru: 'Летняя поездка (жара выше +38)',
-    en: 'Summer trip (over +38 °C)',
+    // Без градусов: «+38» верно для Бухары и Хивы (факт c34), но не для всех
+    // регионов сразу, а чекбокс один на всю страну. Число живёт в заметке
+    // маршрута, где известен регион, — там оно из климатической нормы.
+    uz: 'Yozgi jazirama rejimi (ochiq obyektlar tongga)',
+    ru: 'Режим летней жары (открытые объекты — на утро)',
+    en: 'Summer heat mode (open-air sites in the morning)',
   },
   fieldDays: { uz: 'Kunlar', ru: 'Дней', en: 'Days' },
 

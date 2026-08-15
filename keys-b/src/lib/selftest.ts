@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CORPUS } from '../data/corpus.ts';
+import { CLIMATE_TMAX, summerPeakTmax } from '../data/climate.ts';
 import { VISION_DEMO } from '../data/vision-demo.ts';
 import { FEATURED_IDS, HOME_FEATURED_COUNT } from '../data/featured.ts';
 import { GUIDES } from '../data/guides.ts';
@@ -417,8 +418,10 @@ assert.ok(
   'летом день начинается с объекта под открытым небом — по утренней прохладе',
 );
 assert.ok(
-  firstDayItems.some((i) => i.note.includes('+38')),
-  'у открытого объекта летом должна быть пометка про жару',
+  // градусы в пометке — из климатической нормы региона, а не «+38» для всех:
+  // сам этот тест раньше хардкодил +38 и был бы вечным стражем лозунга
+  firstDayItems.some((i) => i.note.includes(`+${summerPeakTmax('bukhara')}`)),
+  'у открытого объекта летом должна быть пометка про жару с нормой региона',
 );
 assert.ok(
   !buildItinerary(PLACES, { ...family, travelType: 'solo', region: 'bukhara', regions: ['bukhara'] })
@@ -1322,6 +1325,59 @@ assert.ok(
   'в двух километрах от объекта брифинг не срабатывает',
 );
 assert.ok(AT_PLACE_LIMIT_M >= 200 && AT_PLACE_LIMIT_M <= 800, 'радиус объекта в разумных пределах');
+
+// --- летняя заметка берёт градусы из данных региона -----------------------------
+// Было «+38» для всех регионов разом, хотя опорный факт (c34) говорит про
+// Бухару и Хиву, а в Самарканде норма +35. Число в заметке обязано совпадать
+// с климатической нормой ИМЕННО этого региона — иначе лозунг вернётся.
+
+{
+  const summerCtx: TripContext = {
+    regions: ['samarkand'],
+    region: 'samarkand',
+    interests: ['history', 'architecture'],
+    travelType: 'solo',
+    days: 2,
+    lang: 'uz',
+    summer: true,
+  };
+  const summerPlan = buildItinerary(PLACES, summerCtx);
+  const outdoorNotes = summerPlan.days
+    .flatMap((day) => day.items)
+    .filter((item) => PLACES.find((p) => p.id === item.placeId)?.outdoor)
+    .map((item) => item.note);
+  assert.ok(outdoorNotes.length > 0, 'в летнем маршруте есть объекты под открытым небом');
+
+  const expected = summerPeakTmax('samarkand');
+  assert.equal(
+    Math.max(...CLIMATE_TMAX.samarkand.slice(5, 8)),
+    expected,
+    'summerPeakTmax считает максимум июня–августа',
+  );
+  for (const note of outdoorNotes) {
+    assert.ok(
+      note.includes(`+${expected}`),
+      `градусы в заметке из данных региона: ожидалось +${expected}, заметка: «${note}»`,
+    );
+    assert.ok(!note.includes('+38') || expected === 38, 'лозунг «+38» не вернулся');
+  }
+
+  // В Бухаре норма другая — и заметка обязана это показать
+  const bukharaPlan = buildItinerary(PLACES, {
+    ...summerCtx,
+    regions: ['bukhara'],
+    region: 'bukhara',
+  });
+  const bukharaNote = bukharaPlan.days
+    .flatMap((day) => day.items)
+    .find((item) => PLACES.find((p) => p.id === item.placeId)?.outdoor)?.note;
+  if (bukharaNote) {
+    assert.ok(
+      bukharaNote.includes(`+${summerPeakTmax('bukhara')}`),
+      'в Бухаре стоит бухарская норма, а не самаркандская',
+    );
+  }
+}
 
 // --- документация привязана к коду тестом --------------------------------------
 // Число абзацев корпуса в README разъезжалось с кодом ДВАЖДЫ за сутки

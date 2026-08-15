@@ -11,6 +11,7 @@ import type {
   TripContext,
   TripCost,
 } from './types.ts';
+import { summerPeakTmax } from '../data/climate.ts';
 import { buildTransfer, transferHours } from './transfer.ts';
 import { TRAVEL_TYPE_LABEL } from './i18n.ts';
 import { adviceFor } from './weather.ts';
@@ -77,10 +78,14 @@ const TEXT = {
     ru: 'Совпадает с вашими интересами.',
     en: 'Matches your interests.',
   },
+  // {t} подставляется из климатической нормы региона (summerPeakTmax).
+  // Раньше здесь стояло «+38» для всех: опорный факт корпуса (c34) говорит
+  // про Бухару и Хиву, а в Самарканде норма +35 — продукт «каждое число
+  // из источника» не может позволить себе лозунг вместо данных.
   summerOutdoor: {
-    uz: 'Yozda kunduzi +38 dan oshadi — bu obyektni tongda yoki kechqurun ko‘ring.',
-    ru: 'Летом днём выше +38 — этот объект лучше смотреть утром или вечером.',
-    en: 'Summer days exceed +38 °C — visit this open-air site in the morning or evening.',
+    uz: 'Yozda bu yerda kunduzi +{t} gacha bo‘ladi — obyektni tongda yoki kechqurun ko‘ring.',
+    ru: 'Летом здесь днём до +{t} — этот объект лучше смотреть утром или вечером.',
+    en: 'Summer afternoons here reach +{t} °C — visit this open-air site in the morning or evening.',
   },
   // Причина перестановки всегда называется вслух: без объяснения учёт погоды
   // не виден и не проверяем — выглядит как случайный порядок.
@@ -202,8 +207,12 @@ function noteFor(
   withInterestReason: boolean,
 ): string {
   const summary = place.summary[lang];
-  // летом жара делает дневной осмотр под открытым небом тяжёлым (см. корпус, c34)
-  if (ctx.summer && place.outdoor) return `${summary} ${TEXT.summerOutdoor[lang]}`;
+  // летом жара делает дневной осмотр под открытым небом тяжёлым (см. корпус, c34);
+  // число — летний пик нормы ИМЕННО этого региона, а не общий лозунг
+  if (ctx.summer && place.outdoor) {
+    const note = TEXT.summerOutdoor[lang].replace('{t}', String(summerPeakTmax(place.region)));
+    return `${summary} ${note}`;
+  }
   if (ctx.travelType === 'family' && place.familyFriendly) {
     return `${summary} ${TEXT.family[lang]}`;
   }
