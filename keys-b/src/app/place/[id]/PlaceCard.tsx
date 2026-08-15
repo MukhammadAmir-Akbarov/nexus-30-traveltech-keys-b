@@ -121,7 +121,9 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
                 <span
                   key={item.en}
                   className="rounded-[var(--radius-pill)] px-3 py-1 text-xs font-semibold"
-                  style={{ background: 'var(--accent-weak)', color: 'var(--accent)' }}
+                  // --accent-ink, а не --accent: на своей же светлой подложке
+                  // обычный акцент даёт 3.95:1 и не дотягивает до нормы
+                  style={{ background: 'var(--accent-weak)', color: 'var(--accent-ink)' }}
                 >
                   {tr(item, lang)}
                 </span>

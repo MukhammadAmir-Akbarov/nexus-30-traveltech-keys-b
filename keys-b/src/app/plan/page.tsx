@@ -229,7 +229,9 @@ export default function PlanPage() {
                 <div className="mb-2 flex flex-wrap items-baseline gap-2">
                   <span
                     className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold"
-                    style={{ background: 'var(--accent-weak)', color: 'var(--accent)' }}
+                    // --accent-ink, а не --accent: см. globals.css, на светлой
+                    // подложке обычный акцент даёт 3.95:1
+                    style={{ background: 'var(--accent-weak)', color: 'var(--accent-ink)' }}
                   >
                     <Icon name="calendar" size={14} />
                     {t('planDay', lang)} {day.day}
