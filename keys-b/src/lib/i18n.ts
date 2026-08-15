@@ -636,6 +636,50 @@ const UI = {
   reqMarkDone: { uz: 'Ko‘rib chiqildi', ru: 'Отметить обработанным', en: 'Mark handled' },
 
   // формы заявок
+  // Экстренные номера: одиночке в чужой стране нужнее любого совета
+  sosTitle: { uz: 'Favqulodda raqamlar', ru: 'Экстренные номера', en: 'Emergency numbers' },
+  sosUnified: { uz: 'Yagona', ru: 'Единый', en: 'Unified' },
+  sosPolice: { uz: 'Militsiya', ru: 'Милиция', en: 'Police' },
+  sosAmbulance: { uz: 'Tez yordam', ru: 'Скорая', en: 'Ambulance' },
+  sosTourism: { uz: 'Turizm qo‘llab-quvvatlash', ru: 'Поддержка туристов', en: 'Tourist support' },
+
+  planIcs: { uz: 'Kalendarga qo‘shish', ru: 'В календарь', en: 'Add to calendar' },
+
+  // Сравнение форматов: разницу проще показать, чем объяснить словами
+  tabCompare: { uz: 'Taqqoslash', ru: 'Сравнение', en: 'Compare' },
+  compareTitle: {
+    uz: 'Yakka, oila va guruh — yonma-yon',
+    ru: 'Соло, семья и группа — рядом',
+    en: 'Solo, family and group — side by side',
+  },
+  compareLead: {
+    uz: 'Bir xil hudud, qiziqish va kunlar. Farq faqat sayohat formatida.',
+    ru: 'Один и тот же регион, интересы и число дней. Отличается только формат поездки.',
+    en: 'Same region, interests and number of days. Only the travel format differs.',
+  },
+  compareCurrent: { uz: 'hozirgi', ru: 'сейчас', en: 'current' },
+  compareTake: { uz: 'Shu variantni olish', ru: 'Взять этот вариант', en: 'Take this one' },
+  compareWhySolo: {
+    uz: 'Yakka sayohatchiga foto nuqtalari qo‘shiladi va tasdiqlangan gidlar oldinga chiqadi.',
+    ru: 'Одиночке добавляются фототочки, а проверенные гиды поднимаются выше.',
+    en: 'Solo travellers get photo spots, and verified guides rank higher.',
+  },
+  compareWhyFamily: {
+    uz: 'Oila uchun bolalarga mos bo‘lmagan obyektlar umuman taklif qilinmaydi.',
+    ru: 'Для семьи объекты без условий для детей не предлагаются вовсе.',
+    en: 'For families, sites without child-friendly conditions are excluded entirely.',
+  },
+  compareWhyGroup: {
+    uz: 'Guruhda qisqa obyektlar ustun: yigirma kishi uzoqroq yig‘iladi.',
+    ru: 'В группе приоритет коротким объектам: двадцать человек дольше собираются.',
+    en: 'Groups favour shorter stops: twenty people take longer to gather.',
+  },
+  compareNote: {
+    uz: 'Nuqta bilan belgilanganlar — uchala variantda ham bor. To‘q rangdagilar — shu formatga xos.',
+    ru: 'Приглушённые есть во всех трёх вариантах. Яркие — то, что появилось именно в этом формате.',
+    en: 'Muted entries appear in all three. Highlighted ones are specific to this format.',
+  },
+
   reportProblem: { uz: 'Obyekt haqida xabar berish', ru: 'Сообщить о проблеме', en: 'Report a problem' },
   reportProblemHint: {
     uz: 'Yopiq, ta’mirda, narx aldovi — Qo‘mitaga yetkazamiz.',

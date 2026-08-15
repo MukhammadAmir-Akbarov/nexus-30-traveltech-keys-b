@@ -10,6 +10,7 @@ import { MIN_CHECKS, accuracyRate, hasEnoughChecks, matchGuides, wilsonLowerBoun
 import { buildItinerary } from './planner.ts';
 import { retrieve } from './retrieval.ts';
 import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
+import { itineraryToIcs } from './ics.ts';
 import { GUIDE_LANGS, REVIEW_TEMPLATE, TRAVEL_TYPE_LABEL, reviewsLabel, yearsLabel } from './i18n.ts';
 import {
   clearLoginAttempts,
@@ -555,6 +556,28 @@ const forged = Buffer.from(
   JSON.stringify({ email: 'user@example.com', role: 'admin', exp: Date.now() + 1000 }),
 ).toString('base64url');
 assert.equal(verifySession(`${forged}.${signature}`), null, 'подделка роли не проходит');
+
+// --- экспорт в календарь ---
+const ics = itineraryToIcs(
+  timed,
+  new Map(PLACES.map((p) => [p.id, p])),
+  'ru',
+  '2026-09-01',
+);
+assert.ok(ics.startsWith('BEGIN:VCALENDAR'), 'файл календаря начинается заголовком');
+assert.ok(ics.trimEnd().endsWith('END:VCALENDAR'), 'и заканчивается им же');
+assert.equal(
+  (ics.match(/BEGIN:VEVENT/g) ?? []).length,
+  timed.days.flatMap((d) => d.items).length,
+  'на каждый объект маршрута — одно событие',
+);
+assert.ok(ics.includes('DTSTART:20260901T0900'), 'первый день стартует в выбранную дату в 9:00');
+assert.ok(ics.includes('\r\n'), 'RFC 5545 требует CRLF, иначе часть календарей файл не примет');
+// запятые в названии обязаны экранироваться, иначе событие развалится на поля
+assert.ok(
+  !/SUMMARY:[^\r\n]*[^\\],/.test(ics),
+  'запятые внутри названий должны быть экранированы',
+);
 
 // --- защита входа от перебора ---
 const attackKey = loginKey('admin@nexus30.uz', '10.0.0.1');

@@ -10,6 +10,7 @@ import { ShareTrip } from '@/components/ShareTrip';
 import { SoloPanel } from '@/components/SoloPanel';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
+import { itineraryToIcs } from '@/lib/ics';
 import { t, tr } from '@/lib/i18n';
 import type { Itinerary, Mode, Place } from '@/lib/types';
 
@@ -67,6 +68,18 @@ export default function PlanPage() {
     builtFor.current = key;
     void build();
   }, [trip, build]);
+
+  // маршрут в календарь телефона: файл собирается на клиенте, сеть не нужна
+  const downloadIcs = () => {
+    if (!itinerary) return;
+    const ics = itineraryToIcs(itinerary, new Map(Object.entries(PLACE_BY_ID)), lang, trip.startDate);
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nexus30-trip.ics';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const orderedPlaces: Place[] =
     itinerary?.days
@@ -200,6 +213,14 @@ export default function PlanPage() {
 
           {/* и подсказки одиночке, и «поделиться» имеют смысл только когда маршрут есть */}
           <SoloPanel />
+
+          <section className="card flex flex-wrap items-center gap-2">
+            <button className="btn" onClick={downloadIcs}>
+              <Icon name="calendar" />
+              {t('planIcs', lang)}
+            </button>
+          </section>
+
           <ShareTrip />
         </>
       )}
