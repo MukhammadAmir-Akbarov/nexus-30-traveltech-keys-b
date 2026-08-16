@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Icon } from './Icon';
+import { TABS } from './Nav';
 import { PlacePhoto } from './PlacePhoto';
 import { useTrip } from './TripProvider';
 import { PLACES } from '@/data/places';
 import { REGION_LABEL, t, tr } from '@/lib/i18n';
 import { scorePlace } from '@/lib/planner';
 import { isWindy, todayWeather } from '@/lib/weather';
-import type { DayWeather, Region } from '@/lib/types';
+import type { DayWeather, Lang, Region } from '@/lib/types';
 
 /**
  * Витрина над формой контекста.
@@ -22,6 +23,24 @@ import type { DayWeather, Region } from '@/lib/types';
  * объекты — по той же функции очков, что и планировщик. Ничего не нарисовано
  * «для красоты».
  */
+/**
+ * Пять входов, а не восемь: полоса иконок должна читаться одним взглядом,
+ * а на 375px восемь подписей превращаются в кашу. «Я на месте» стоит
+ * первым — это то, ради чего приложение открывают, стоя у объекта.
+ */
+const QUICK = ['/nearby', '/check', '/guides', '/places', '/compare'];
+
+/*
+ * Подпись для скринридера живёт здесь, а не в общем словаре: i18n.ts прямо
+ * сейчас правит другой агент, и лезть туда — гарантированный конфликт.
+ * Тот же приём уже применён в ArrivalCard и planner.ts.
+ */
+const QUICK_NAV_LABEL = {
+  uz: 'Tezkor bo‘limlar',
+  ru: 'Быстрые разделы',
+  en: 'Quick sections',
+} satisfies Record<Lang, string>;
+
 export function HomeShowcase() {
   const { trip, lang, ready } = useTrip();
   const region: Region = trip.regions[0] ?? 'tashkent';
@@ -129,6 +148,32 @@ export function HomeShowcase() {
           aria-label={t('homeSearchLabel', lang)}
         />
       </form>
+
+      {/*
+        Ряд быстрых входов — та самая полоса иконок из макета.
+
+        Он отвечает на вопрос, который у первого экрана до сих пор не было
+        чем закрыть: «что это приложение вообще умеет». Нижние вкладки
+        показывают четыре раздела, но подписью в 10px и только на телефоне;
+        здесь пять разделов названы прямо и видны на любом экране.
+
+        Список и иконки берём из TABS, а не заводим свой: два списка
+        разъезжаются, и однажды здесь останется ссылка на переехавший раздел.
+      */}
+      <nav className="quick-row" aria-label={QUICK_NAV_LABEL[lang]}>
+        {QUICK.map((href) => {
+          const tab = TABS.find((item) => item.href === href);
+          if (!tab) return null;
+          return (
+            <Link key={href} href={href} className="quick">
+              <span className="quick-ico">
+                <Icon name={tab.icon} size={20} />
+              </span>
+              {t(tab.key, lang)}
+            </Link>
+          );
+        })}
+      </nav>
 
       {recommended.length > 0 && (
         <div>

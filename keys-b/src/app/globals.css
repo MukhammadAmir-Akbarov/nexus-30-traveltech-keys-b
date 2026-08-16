@@ -368,6 +368,56 @@ h2 {
   color: var(--text);
 }
 
+/* ── Ряд быстрых входов на главной ────────────────────────── */
+
+/*
+  Полоса иконок из макета. Пять колонок фиксированно, без переноса: если
+  ряд ломается на две строки, он перестаёт читаться как панель и начинает
+  выглядеть сломанным.
+
+  Цель касания — вся ячейка целиком (иконка + подпись = 40 + 4 + ~14),
+  а не квадратик 40px: промахнуться мимо подписи и не попасть никуда —
+  худшее, что может сделать такая полоса.
+*/
+.quick-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.quick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--muted);
+  border-radius: var(--radius-tile);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quick-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* --tile был объявлен ровно под эту плитку и до сих пор не использовался */
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: var(--radius-tile);
+  background: var(--accent-weak);
+  color: var(--accent-ink);
+}
+
+.quick:hover { color: var(--text); }
+.quick:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .quick:active { transform: none; background: var(--surface-2); }
+}
+
 /* ── Плитки фактов под заголовком объекта ─────────────────── */
 
 /*
