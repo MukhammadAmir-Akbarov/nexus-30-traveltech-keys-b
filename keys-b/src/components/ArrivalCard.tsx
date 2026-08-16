@@ -387,7 +387,11 @@ export function ArrivalCard() {
     <section className="card flex flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">{t('title', lang)}</h2>
+          <h2 className="text-lg font-bold">
+            {found
+              ? t('foundTitle', lang).replace('{name}', found.briefing.name)
+              : t('title', lang)}
+          </h2>
           <p className="muted prose-measure mt-1 text-[13px]">{t('lead', lang)}</p>
         </div>
         <button className="btn btn-primary" onClick={locate} disabled={phase.kind === 'locating'}>
