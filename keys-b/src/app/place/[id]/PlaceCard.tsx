@@ -46,41 +46,72 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
       </div>
 
       <section className="card -mt-8 rounded-t-[var(--radius-lg)] sm:mt-0">
-        <div className="muted text-[13px]">
-          {tr(REGION_LABEL[place.region], lang)} · {place.visitMinutes} {t('planMinutes', lang)}
-        </div>
+        <div className="muted text-[13px]">{tr(REGION_LABEL[place.region], lang)}</div>
         <h1 className="text-xl font-bold">{tr(place.name, lang)}</h1>
         <p className="muted mt-1 text-sm">{tr(place.summary, lang)}</p>
-        {/* Значок опирается на счёт, а не на желание показать галочку:
-            сколько фактов об этом объекте пришло из официальных источников. */}
+
+        {/*
+          Ряд из трёх плиток — как в макете: время осмотра, факты, билет.
+          Раньше эти три числа были размазаны по карточке разными способами
+          (минуты — в серой строке над заголовком, факты — плашкой, билет —
+          тегом), и ни одно не читалось с одного взгляда.
+
+          Счёт фактов опирается на данные, а не на желание показать галочку:
+          сколько утверждений об объекте пришло из официальных источников.
+        */}
         {(() => {
           const { official, total } = officialFactsFor(facts, place.id);
-          if (official === 0) return null;
           return (
-            <div className="mt-2">
-              <span className="tag tag-ok" title={t('officialHint', lang)}>
-                <Icon name="shield" size={13} />
-                {t('officialFacts', lang)}: {official} {t('officialOf', lang)} {total}
-              </span>
+            <div className="stat-row mt-3">
+              <div className="stat">
+                <Icon name="clock" size={16} />
+                <span className="stat-label">{t('placeStatTime', lang)}</span>
+                <b className="stat-value">
+                  {place.visitMinutes} {t('planMinutes', lang)}
+                </b>
+              </div>
+              <div className="stat" title={t('officialHint', lang)}>
+                <Icon name="shield" size={16} />
+                <span className="stat-label">{t('placeStatFacts', lang)}</span>
+                <b className="stat-value">
+                  {official} {t('officialOf', lang)} {total}
+                </b>
+              </div>
+              <div className="stat">
+                <Icon name="check" size={16} />
+                <span className="stat-label">{t('placeTicket', lang)}</span>
+                <b className="stat-value">
+                  {place.ticketUsd ? `$${place.ticketUsd}` : t('placeFree', lang)}
+                </b>
+                {place.ticketUsd ? (
+                  <span className="stat-label">{usdToUzsLabel(place.ticketUsd, lang)}</span>
+                ) : null}
+              </div>
             </div>
           );
         })()}
 
-        {/* Часы работы и цена билета лежали в данных и не показывались тут
-            вовсе: человек у входа видел всё, кроме того, что ему нужно
-            в эту минуту. */}
+        {/*
+          Главное действие объекта стоит здесь, а не в конце страницы.
+          До этой правки «проверить, что сказал гид» лежало под пятью
+          карточками: до него доходил только тот, кто дочитал до низа, —
+          то есть никто из тех, кто стоит в группе рядом с гидом.
+
+          Макет держит такую кнопку прикреплённой к низу экрана. Мы этот приём
+          не копируем: нижнюю полосу у нас уже занимают вкладки (`.tabbar`,
+          fixed, z-30), и вторая плавающая панель встала бы поверх первой.
+          Цель макета — «главное действие всегда видно» — достигается тем,
+          что кнопка стоит на первом экране.
+        */}
+        <Link href={`/check?place=${place.id}`} className="btn btn-primary mt-3 w-full sm:w-auto">
+          <Icon name="shield" size={16} />
+          {t('placeCheckHere', lang)}
+        </Link>
+
+        {/* Часы работы лежали в данных и не показывались тут вовсе:
+            человек у входа видел всё, кроме того, что ему нужно сейчас. */}
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
           <OpenNow place={place} />
-          <span className="tag">
-            {t('placeTicket', lang)}:{' '}
-            {place.ticketUsd ? (
-              <>
-                ${place.ticketUsd} <span className="muted">· {usdToUzsLabel(place.ticketUsd, lang)}</span>
-              </>
-            ) : (
-              t('placeFree', lang)
-            )}
-          </span>
           {place.accessible && <span className="tag tag-ok">{t('placesAccessible', lang)}</span>}
         </div>
 
@@ -144,10 +175,9 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
         <NearbyPois place={place} />
       </section>
 
+      {/* Проверка уехала наверх, к заголовку: здесь остались действия,
+          за которыми специально спускаются вниз. */}
       <section className="flex flex-wrap items-start gap-2">
-        <Link href={`/check?place=${place.id}`} className="btn btn-primary">
-          {t('placeCheckHere', lang)}
-        </Link>
         <Link href="/plan" className="btn">
           {t('tabPlan', lang)}
         </Link>

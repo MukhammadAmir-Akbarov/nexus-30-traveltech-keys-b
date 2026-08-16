@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Icon } from './Icon';
 import { PlacePhoto } from './PlacePhoto';
 import { useTrip } from './TripProvider';
@@ -54,6 +54,14 @@ const TEXT = {
     uz: 'Siz obyekt yonidasiz',
     ru: 'Вы рядом с объектом',
     en: 'You are at a site',
+  },
+  // Объект найден — заголовок называет его по имени. «Вы рядом с объектом»
+  // после определения места звучит как отписка: человек стоит у Регистана,
+  // и экран обязан сказать именно это.
+  foundTitle: {
+    uz: 'Siz {name} oldidasiz',
+    ru: 'Вы находитесь у объекта «{name}»',
+    en: 'You are standing at {name}',
   },
   lead: {
     uz: 'Gid so‘z boshlashidan oldin — bu yerda nima borligi va manbalar nima deyishi.',
@@ -162,6 +170,16 @@ const TEXT = {
     ru: 'Координата не уходит на сервер — расчёт выполняется в браузере.',
     en: 'Your coordinates never leave the browser — the maths runs locally.',
   },
+  watching: {
+    uz: 'Kuzatuv yoqilgan',
+    ru: 'Слежение включено',
+    en: 'Watching your position',
+  },
+  watchNote: {
+    uz: 'Obyektga yaqinlashsangiz, karta o‘zi ochiladi — tugma bosish shart emas.',
+    ru: 'Подойдёте к объекту — карточка откроется сама, нажимать ничего не нужно.',
+    en: 'Walk up to a site and the card opens by itself — no button needed.',
+  },
 } satisfies Record<string, I18nText>;
 
 /** Объекты для показа: координаты настоящие, из того же датасета. */
@@ -204,6 +222,8 @@ export function ArrivalCard() {
   // Уведомление на один и тот же объект показываем один раз: подряд две
   // одинаковые плашки читаются как сбой, а не как забота.
   const notified = useRef<string | null>(null);
+  const watchId = useRef<number | null>(null);
+  const [watching, setWatching] = useState(false);
 
   /** Общий путь для настоящего GPS и для показа: разница только в источнике координат. */
   const resolve = useCallback(
@@ -238,6 +258,38 @@ export function ArrivalCard() {
     [lang],
   );
 
+  /**
+   * Слежение. До этого брифинг открывался только по кнопке, а обещание
+   * продукта звучит иначе: «подошёл к объекту — узнал о нём ДО гида».
+   * Нажатие кнопки в этот момент уже проигрыш: человек стоит в группе,
+   * гид начал говорить, доставать телефон и что-то жать поздно.
+   *
+   * Точность нарочно НЕ высокая: радиус узнавания — 500 м (AT_PLACE_LIMIT_M),
+   * для такого попадания хватает сети и Wi-Fi, а enableHighAccuracy держит
+   * GPS-приёмник включённым и сажает батарею на весь день экскурсии.
+   *
+   * Само по себе слежение разрешения не просит: старт только там, где оно
+   * уже выдано. Спрашивать геопозицию на открытии страницы — приём, за
+   * который браузеры штрафуют, а человек закрывает вкладку.
+   */
+  const startWatch = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    if (watchId.current !== null) return;
+    watchId.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        // Пока рядом ничего нет — молчим. Иначе карточка, открытая минуту
+        // назад, схлопнулась бы в «рядом ничего» на первом шаге в сторону.
+        if (!nearestPlace(pos.coords.latitude, pos.coords.longitude)) return;
+        resolve(pos.coords.latitude, pos.coords.longitude, false);
+      },
+      // Ошибка одного замера — не повод гасить слежение: следующий может
+      // прийти через секунду. Экран при этом не трогаем.
+      () => {},
+      { enableHighAccuracy: false, timeout: 30_000, maximumAge: 30_000 },
+    );
+    setWatching(true);
+  }, [resolve]);
+
   const locate = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setPhase({ kind: 'unsupported' });
@@ -245,11 +297,40 @@ export function ArrivalCard() {
     }
     setPhase({ kind: 'locating' });
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve(pos.coords.latitude, pos.coords.longitude, false),
+      (pos) => {
+        resolve(pos.coords.latitude, pos.coords.longitude, false);
+        // Разрешение только что получено — с этой секунды следим сами.
+        startWatch();
+      },
       () => setPhase({ kind: 'denied' }),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
     );
-  }, [resolve]);
+  }, [resolve, startWatch]);
+
+  // Разрешение могли выдать в прошлый раз — тогда ничего спрашивать не нужно,
+  // просто продолжаем следить с момента открытия экрана.
+  useEffect(() => {
+    let cancelled = false;
+    navigator.permissions
+      ?.query({ name: 'geolocation' as PermissionName })
+      .then((status) => {
+        if (!cancelled && status.state === 'granted') startWatch();
+      })
+      .catch(() => {
+        /* Safari до 16 не умеет спрашивать про геопозицию — останется кнопка */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [startWatch]);
+
+  // Уходя с экрана, приёмник за собой выключаем.
+  useEffect(
+    () => () => {
+      if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+    },
+    [],
+  );
 
   const askNotify = useCallback(async () => {
     if (typeof Notification === 'undefined') return;
@@ -268,6 +349,40 @@ export function ArrivalCard() {
 
   const found = phase.kind === 'found' ? phase : null;
 
+  /*
+   * Демо-кнопки живут в переменной, потому что их место на экране зависит от
+   * того, есть ли уже брифинг.
+   *
+   * Пока брифинга нет, экран пустой, а GPS в зале Самарканд не покажет: если
+   * кнопки лежат внизу, под пустотой, судья видит неработающий экран и
+   * уходит. Поэтому без брифинга они идут сразу под кнопкой геопозиции.
+   * Когда брифинг открыт, они наоборот мешают — и уезжают под него.
+   */
+  const demoBlock = (
+    <footer className="flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+      <b className="text-sm">{t('demoTitle', lang)}</b>
+      <div className="flex flex-wrap gap-2">
+        {DEMO_PLACE_IDS.map((id) => {
+          const place = PLACE_BY_ID[id];
+          if (!place) return null;
+          return (
+            <button key={id} className="chip" onClick={() => simulate(id)}>
+              {tr(place.name, lang)}
+            </button>
+          );
+        })}
+      </div>
+      {/*
+        Честность формулировки важна не меньше самой кнопки: мы подставляем
+        ВХОД (координату из того же датасета), а не ВЫХОД. Радиус, поиск
+        ближайшего объекта и сборка брифинга отрабатывают по-настоящему.
+      */}
+      <p className="muted text-[12px]">
+        {t('demoNote', lang)} ({AT_PLACE_LIMIT_M} {t('meters', lang)})
+      </p>
+    </footer>
+  );
+
   return (
     <section className="card flex flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -282,6 +397,9 @@ export function ArrivalCard() {
       </header>
 
       <div className="flex flex-wrap items-center gap-2 text-[13px]">
+        {/* Слежение идёт — человек должен это видеть, а не догадываться:
+            иначе непонятно, ждать карточку или всё-таки жать кнопку. */}
+        {watching && <span className="tag tag-ok">{t('watching', lang)}</span>}
         {notify === 'granted' ? (
           <span className="tag tag-ok">{t('notifyReady', lang)}</span>
         ) : notify === 'denied' ? (
@@ -295,11 +413,14 @@ export function ArrivalCard() {
         <span className="muted">{t('privacy', lang)}</span>
       </div>
 
+      {watching && !found && <p className="muted text-[13px]">{t('watchNote', lang)}</p>}
       {phase.kind === 'denied' && <p className="muted text-[13px]">{t('denied', lang)}</p>}
       {phase.kind === 'unsupported' && (
         <p className="muted text-[13px]">{t('unsupported', lang)}</p>
       )}
       {phase.kind === 'empty' && <p className="muted text-[13px]">{t('empty', lang)}</p>}
+
+      {!found && demoBlock}
 
       {found && (
         <article className="flex flex-col gap-3">
@@ -369,28 +490,7 @@ export function ArrivalCard() {
         </article>
       )}
 
-      <footer className="flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-        <b className="text-sm">{t('demoTitle', lang)}</b>
-        <div className="flex flex-wrap gap-2">
-          {DEMO_PLACE_IDS.map((id) => {
-            const place = PLACE_BY_ID[id];
-            if (!place) return null;
-            return (
-              <button key={id} className="chip" onClick={() => simulate(id)}>
-                {tr(place.name, lang)}
-              </button>
-            );
-          })}
-        </div>
-        {/*
-          Честность формулировки важна не меньше самой кнопки: мы подставляем
-          ВХОД (координату из того же датасета), а не ВЫХОД. Радиус, поиск
-          ближайшего объекта и сборка брифинга отрабатывают по-настоящему.
-        */}
-        <p className="muted text-[12px]">
-          {t('demoNote', lang)} ({AT_PLACE_LIMIT_M} {t('meters', lang)})
-        </p>
-      </footer>
+      {found && demoBlock}
     </section>
   );
 }

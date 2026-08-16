@@ -336,6 +336,72 @@ h2 {
 .tag-danger { background: var(--danger-weak); border-color: transparent; color: var(--danger); }
 .tag-accent { background: var(--accent-weak); border-color: transparent; color: var(--accent-ink); }
 
+/* ── Поиск на главной ─────────────────────────────────────── */
+
+/*
+  Строка поиска из макета: скруглённая «таблетка» с лупой внутри.
+  Высота 48px — палец попадает; 16px у поля не случайность: на iOS шрифт
+  меньше шестнадцати заставляет Safari зумить страницу при фокусе, и с
+  этого зума пользователь сам уже не выйдет.
+*/
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.search-bar:focus-within { border-color: var(--accent); }
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: var(--text);
+}
+
+/* ── Плитки фактов под заголовком объекта ─────────────────── */
+
+/*
+  Три коротких числа об объекте — время осмотра, факты, билет. Раньше они
+  жили в трёх разных местах карточки и каждое читалось отдельно.
+
+  Ровно три колонки на любой ширине, без переноса: перенос ломает ритм, и
+  ряд перестаёт читаться одним взглядом — а весь смысл плиток в этом. На
+  320px они ужимаются, поэтому подпись 11px, а значение переносится по
+  словам, а не выезжает за край.
+*/
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid var(--border);
+  /* --radius-tile был объявлен под этот ряд и до сих пор не использовался */
+  border-radius: var(--radius-tile);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.stat-label { font-size: 11px; line-height: 1.3; }
+.stat-value { font-size: 13px; line-height: 1.3; color: var(--text); }
+
 /* ── Полоса точности ──────────────────────────────────────── */
 
 .meter {

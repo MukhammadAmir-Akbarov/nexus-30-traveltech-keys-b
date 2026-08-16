@@ -6,7 +6,8 @@ import { PlacePhoto } from '@/components/PlacePhoto';
 import { SaveButton } from '@/components/SaveButton';
 import { officialFactsFor } from '@/lib/sources';
 import { CORPUS } from '@/data/corpus';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/Icon';
 import { useTrip } from '@/components/TripProvider';
 import { PLACES } from '@/data/places';
@@ -21,9 +22,12 @@ import type { Interest, Region } from '@/lib/types';
 // посмотреть. Поиск использует ту же нормализацию, что и фактчек, поэтому
 // «Регистан», «registon» и «REGISTAN» находят одно и то же.
 
-export default function PlacesPage() {
+function PlacesPageInner() {
   const { lang } = useTrip();
-  const [query, setQuery] = useState('');
+  // Строка приходит из поиска на главной (`/places?q=…`). Начальное значение
+  // берём один раз: дальше полем владеет пользователь, и перезаписывать его
+  // из адреса на каждом рендере было бы враждебно.
+  const [query, setQuery] = useState(useSearchParams().get('q') ?? '');
   const [region, setRegion] = useState<Region | 'all'>('all');
   // Отбор сверх поиска и региона. Регион и строка отвечают на «где» и «как
   // называется», а человек чаще спрашивает другое: что бесплатно, что открыто
@@ -191,5 +195,17 @@ export default function PlacesPage() {
           подпись заслоняла бы сам объект, а не сказать нельзя. */}
       <p className="muted text-[12px]">{t('photoLicense', lang)}</p>
     </div>
+  );
+}
+
+/**
+ * useSearchParams требует границы Suspense: без неё страницу нельзя
+ * отрендерить заранее. Тот же приём уже стоит на /check.
+ */
+export default function PlacesPage() {
+  return (
+    <Suspense fallback={<div className="skeleton" style={{ height: 320 }} />}>
+      <PlacesPageInner />
+    </Suspense>
   );
 }

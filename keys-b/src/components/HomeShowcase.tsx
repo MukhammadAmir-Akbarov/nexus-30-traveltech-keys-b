@@ -66,7 +66,15 @@ export function HomeShowcase() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="muted text-[12px] uppercase tracking-wider">{t('homeOverline', lang)}</div>
-          <h1 className="mt-0.5">{t('homeGreeting', lang)}</h1>
+          {/*
+            Приветствие ушло из h1 в подпись, а заголовком стал вопрос.
+            «Здравствуйте, путешественник» — вежливость, а не смысл экрана;
+            первым, что человек читает, должен быть вопрос, на который экран
+            умеет отвечать. Формулировки лежали в словаре с самого начала
+            (homeHeroTitle, homeSearchLabel) и ни разу не выводились.
+          */}
+          <div className="muted mt-0.5 text-[13px]">{t('homeGreeting', lang)}</div>
+          <h1 className="mt-0.5">{t('homeHeroTitle', lang)}</h1>
           <p className="muted prose-measure mt-1 text-[15px]">{t('homeGreetingSub', lang)}</p>
         </div>
 
@@ -106,10 +114,28 @@ export function HomeShowcase() {
         )}
       </div>
 
+      {/*
+        Поиск обычной формой с method=GET, без onSubmit и без роутера: так он
+        работает и до гидратации, и с выключенным JS, а строка запроса видна
+        в адресе — её можно переслать. Каталог читает `q` при первом рендере.
+      */}
+      <form action="/places" className="search-bar" role="search">
+        <Icon name="search" size={18} />
+        <input
+          type="search"
+          name="q"
+          className="search-input"
+          placeholder={t('homeSearchLabel', lang)}
+          aria-label={t('homeSearchLabel', lang)}
+        />
+      </form>
+
       {recommended.length > 0 && (
         <div>
           <div className="mb-2 text-sm font-semibold">{t('homeRecommended', lang)}</div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          {/* Две колонки на телефоне, как в макете: одна колонка растягивала
+              три карточки на два экрана и витрина переставала быть витриной. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {recommended.map((place) => (
               <Link
                 key={place.id}
