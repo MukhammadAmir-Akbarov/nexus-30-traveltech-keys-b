@@ -126,7 +126,44 @@ export type Place = {
 };
 
 /** Инфраструктура по маршруту: заправки, туалеты, намазхона, медпункт, кафе. */
-export type PoiKind = 'gas' | 'toilet' | 'prayer' | 'clinic' | 'cafe';
+/**
+ * Инфраструктура по маршруту.
+ *
+ * Список расширен до того, без чего поездка реально ломается: банкомат
+ * (карта принимается не везде), аптека, больница, парковка. Турист ищет их
+ * не «когда-нибудь», а в тот момент, когда уже стоит на улице, — и уходит
+ * за этим в другое приложение, если здесь их нет.
+ */
+export type PoiKind =
+  | 'gas'
+  | 'toilet'
+  | 'prayer'
+  | 'clinic'
+  | 'hospital'
+  | 'pharmacy'
+  | 'atm'
+  | 'bank'
+  | 'parking'
+  | 'cafe'
+  | 'restaurant'
+  | 'shop'
+  | 'water';
+
+export type DayHours = { opens: number; closes: number };
+
+/**
+ * Часы работы по дням недели. Индекс 0 — воскресенье, 6 — суббота
+ * (как у Date.getDay, чтобы не переводить туда-обратно и не ошибиться).
+ * `null` — выходной: у музеев Узбекистана он обычно есть, и маршрут,
+ * который ставит объект на его выходной, — это не маршрут.
+ */
+export type OpeningHours = {
+  week: (DayHours | null)[];
+  /** Исключения словами: санитарный день, зимнее расписание, обед. */
+  note?: I18nText;
+};
+
+export type Wheelchair = 'yes' | 'limited' | 'no';
 
 export type Poi = {
   id: string;
@@ -137,6 +174,21 @@ export type Poi = {
   lat: number;
   lng: number;
   region: Region;
+  cityId?: import('../data/regions.ts').CityId;
+  /**
+   * Часы работы как их записал источник: OpenStreetMap хранит их строкой
+   * вида «Mo-Fr 09:00-18:00». Разбирать её целиком — отдельная задача,
+   * поэтому простые случаи раскладываются в `hours`, а исходная строка
+   * сохраняется всегда: показать её точнее, чем не показать ничего.
+   */
+  hoursRaw?: string;
+  hours?: OpeningHours;
+  wheelchair?: Wheelchair;
+  /** Телефон, если источник его знает: аптеке и больнице это важнее адреса. */
+  phone?: string;
+  /** Откуда запись и когда получена — то же правило, что и для объектов. */
+  src?: import('../data/sources.ts').SourceId;
+  at?: string;
 };
 
 export type Gender = 'female' | 'male';

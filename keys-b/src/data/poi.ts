@@ -1,3 +1,4 @@
+import { POIS_OSM } from './poi-osm.ts';
 import type { Poi } from '../lib/types.ts';
 
 /**
@@ -5,9 +6,13 @@ import type { Poi } from '../lib/types.ts';
  * своей машине, поэтому в дороге нужны заправки — отдельно метан и бензин,
  * а также туалет, намазхона, медпункт и кафе.
  *
- * ДЕМО-координаты рядом с объектами маршрута. В проде — слой карт партнёра.
+ * Эти двадцать две записи — демонстрационные координаты рядом с объектами
+ * маршрута. Настоящий слой приходит из OpenStreetMap (poi-osm.ts, обновляется
+ * скриптом scripts/osm-import.mjs) и помечен своим источником и датой.
+ * Демо-записи оставлены сознательно: они покрывают метан и намазхону там,
+ * где OSM их не размечает, — а выдавать их за проверенные мы не станем.
  */
-export const POIS: Poi[] = [
+const DEMO_RAW: Poi[] = [
   // Самарканд
   { id: 'p1', kind: 'gas', fuel: 'methane', name: { uz: 'Metan quyish shoxobchasi', ru: 'Метановая заправка', en: 'Methane station' }, lat: 39.6702, lng: 66.9401, region: 'samarkand' },
   { id: 'p2', kind: 'gas', fuel: 'petrol', name: { uz: 'Benzin zapravkasi', ru: 'АЗС (бензин)', en: 'Petrol station' }, lat: 39.6489, lng: 66.9612, region: 'samarkand' },
@@ -40,3 +45,13 @@ export const POIS: Poi[] = [
   { id: 'p21', kind: 'prayer', name: { uz: 'Namozxona', ru: 'Молельная комната', en: 'Prayer room' }, lat: 39.0612, lng: 66.8321, region: 'shakhrisabz' },
   { id: 'p22', kind: 'gas', fuel: 'petrol', name: { uz: 'Benzin zapravkasi', ru: 'АЗС (бензин)', en: 'Petrol station' }, lat: 39.0578, lng: 66.8402, region: 'shakhrisabz' },
 ];
+
+/** Источник проставляем разом: каждая из этих записей — демо, и это надо видеть. */
+const POIS_DEMO: Poi[] = DEMO_RAW.map((poi) => ({ ...poi, src: 'demo' }));
+
+/**
+ * Все точки инфраструктуры. Данные OSM идут первыми: они настоящие, а демо —
+ * подпорка на местах, где размётки нет. При равном расстоянии ближайшим
+ * окажется тот, что реально существует.
+ */
+export const POIS: Poi[] = [...POIS_OSM, ...POIS_DEMO];

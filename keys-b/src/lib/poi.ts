@@ -8,24 +8,73 @@ export const POI_LABEL: Record<PoiKind, I18nText> = {
   toilet: { uz: 'Hojatxona', ru: 'Туалет', en: 'Toilet' },
   prayer: { uz: 'Namozxona', ru: 'Молельная', en: 'Prayer room' },
   clinic: { uz: 'Tibbiy punkt', ru: 'Медпункт', en: 'Clinic' },
+  hospital: { uz: 'Shifoxona', ru: 'Больница', en: 'Hospital' },
+  pharmacy: { uz: 'Dorixona', ru: 'Аптека', en: 'Pharmacy' },
+  atm: { uz: 'Bankomat', ru: 'Банкомат', en: 'ATM' },
+  bank: { uz: 'Bank', ru: 'Банк', en: 'Bank' },
+  parking: { uz: 'Avtoturargoh', ru: 'Парковка', en: 'Parking' },
   cafe: { uz: 'Kafe', ru: 'Кафе', en: 'Cafe' },
+  restaurant: { uz: 'Restoran', ru: 'Ресторан', en: 'Restaurant' },
+  shop: { uz: 'Do‘kon', ru: 'Магазин', en: 'Shop' },
+  water: { uz: 'Ichimlik suvi', ru: 'Питьевая вода', en: 'Drinking water' },
 };
 
 /** Имена иконок из общего набора — эмодзи в интерфейсе не используем. */
-export const POI_ICON: Record<PoiKind, 'fuel' | 'toilet' | 'mosque' | 'clinic' | 'cafe'> = {
+export const POI_ICON: Record<PoiKind, IconName> = {
   gas: 'fuel',
   toilet: 'toilet',
   prayer: 'mosque',
   clinic: 'clinic',
+  hospital: 'hospital',
+  pharmacy: 'pharmacy',
+  atm: 'atm',
+  bank: 'bank',
+  parking: 'parking',
   cafe: 'cafe',
+  restaurant: 'restaurant',
+  shop: 'shop',
+  water: 'water',
 };
+
+type IconName =
+  | 'fuel'
+  | 'toilet'
+  | 'mosque'
+  | 'clinic'
+  | 'hospital'
+  | 'pharmacy'
+  | 'atm'
+  | 'bank'
+  | 'parking'
+  | 'cafe'
+  | 'restaurant'
+  | 'shop'
+  | 'water';
 
 export const FUEL_LABEL: Record<string, I18nText> = {
   methane: { uz: 'metan', ru: 'метан', en: 'methane' },
   petrol: { uz: 'benzin', ru: 'бензин', en: 'petrol' },
 };
 
-export const POI_KINDS: PoiKind[] = ['gas', 'toilet', 'prayer', 'clinic', 'cafe'];
+/**
+ * Порядок — это порядок в карточке. Сначала то, что ищут в беде
+ * (аптека, больница), потом бытовое, в конце — приятное.
+ */
+export const POI_KINDS: PoiKind[] = [
+  'toilet',
+  'pharmacy',
+  'hospital',
+  'clinic',
+  'atm',
+  'bank',
+  'water',
+  'prayer',
+  'parking',
+  'gas',
+  'cafe',
+  'restaurant',
+  'shop',
+];
 
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6371;

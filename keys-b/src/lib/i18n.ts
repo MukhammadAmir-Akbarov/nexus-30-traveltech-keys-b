@@ -981,6 +981,13 @@ export const UI = {
     ru: 'Заправки, туалеты, намазхона, медпункт и кафе',
     en: 'Fuel, toilets, prayer room, clinic and cafe',
   },
+  poiAlways: { uz: 'kechayu kunduz', ru: 'круглосуточно', en: 'open 24/7' },
+  poiDemo: { uz: 'demo nuqta', ru: 'демо-точка', en: 'demo point' },
+  poiSourceNote: {
+    uz: 'Ma’lumot OpenStreetMap’dan olingan va eskirgan bo‘lishi mumkin — borishdan oldin tekshiring.',
+    ru: 'Данные из OpenStreetMap, могут устареть — проверяйте перед выездом.',
+    en: 'Data from OpenStreetMap and may be out of date — check before you go.',
+  },
   guidesWhy: { uz: 'Nega u', ru: 'Почему он', en: 'Why this guide' },
   verifyTitle: {
     uz: 'Nima tekshirilgan',

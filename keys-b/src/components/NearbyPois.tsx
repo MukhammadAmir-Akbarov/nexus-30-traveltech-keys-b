@@ -5,7 +5,6 @@ import { Icon } from './Icon';
 import { useTrip } from './TripProvider';
 import { POIS } from '@/data/poi';
 import { FUEL_LABEL, POI_ICON, POI_KINDS, POI_LABEL, nearestPois } from '@/lib/poi';
-import { distanceLabel } from '@/lib/route';
 import { t, tr } from '@/lib/i18n';
 import type { Place, PoiKind } from '@/lib/types';
 
@@ -22,7 +21,7 @@ export function NearbyPois({ place }: { place: Place }) {
 
   return (
     <details className="text-[13px]">
-      <summary>
+      <summary className="muted cursor-pointer">
         {t('nearbyTitle', lang)} · {t('nearbyHint', lang)}
       </summary>
 
@@ -40,23 +39,47 @@ export function NearbyPois({ place }: { place: Place }) {
         ))}
       </div>
 
-      <ul className="mt-2 flex flex-col gap-1">
+      <ul className="mt-2 flex flex-col gap-1.5">
         {nearby.map(({ poi, km }) => (
-          <li key={poi.id} className="flex flex-wrap items-center gap-2">
+          <li key={poi.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <Icon name={POI_ICON[poi.kind]} size={15} />
             <span>{tr(poi.name, lang)}</span>
             {poi.fuel && <span className="tag">{tr(FUEL_LABEL[poi.fuel], lang)}</span>}
-            {/* единицы из словаря: «км» кириллицей стояло и в узбекском,
-                и в английском интерфейсе. Формат берём тот же, что в маршруте,
-                чтобы «800 м» на карточке и в плане дня выглядели одинаково. */}
             <span className="muted">
-              {distanceLabel(km).value}{' '}
-              {t(distanceLabel(km).unit === 'm' ? 'legM' : 'legKm', lang)}
+              {km < 1
+                ? `${Math.round(km * 1000)} ${t('legM', lang)}`
+                : `${km.toFixed(1)} ${t('legKm', lang)}`}
             </span>
+
+            {/* Часы работы: круглосуточную аптеку от дневной отличать важнее,
+                чем знать её название. Строку OSM показываем как есть, если
+                разобрать её уверенно не вышло. */}
+            {poi.hoursRaw && (
+              <span className="tag" title={poi.hoursRaw}>
+                <Icon name="clock" size={12} />
+                {poi.hoursRaw === '24/7' ? t('poiAlways', lang) : poi.hoursRaw.slice(0, 22)}
+              </span>
+            )}
+
+            {poi.wheelchair === 'yes' && (
+              <span className="tag tag-ok">{t('placesAccessible', lang)}</span>
+            )}
+
+            {/* Телефон ссылкой: аптеке и больнице звонят, а не идут наугад */}
+            {poi.phone && (
+              <a className="underline" style={{ color: 'var(--accent)' }} href={`tel:${poi.phone}`}>
+                {poi.phone}
+              </a>
+            )}
+
+            {/* Демо-точка не имеет права выглядеть так же, как размеченная людьми */}
+            {poi.src === 'demo' && <span className="tag tag-warn">{t('poiDemo', lang)}</span>}
           </li>
         ))}
         {nearby.length === 0 && <li className="muted">—</li>}
       </ul>
+
+      <p className="muted mt-2 text-[12px]">{t('poiSourceNote', lang)}</p>
     </details>
   );
 }
