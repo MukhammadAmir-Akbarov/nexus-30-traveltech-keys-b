@@ -45,7 +45,3 @@ next-env.d.ts
 *.db
 prisma/
 
-# Локальные файлы ассистентов редактора — не часть проекта
-AGENTS.md
-CLAUDE.md
-.claude/
