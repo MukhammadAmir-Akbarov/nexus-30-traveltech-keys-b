@@ -50,7 +50,7 @@ export default function ComparePage() {
         <h1>{t('compareTitle', lang)}</h1>
         <p className="muted prose-measure mt-2 text-[15px]">
           {t('compareLead', lang)}{' '}
-          <Link href="/" className="underline" style={{ color: 'var(--accent)' }}>
+          <Link href="/" className="underline" style={{ color: 'var(--accent-ink)' }}>
             {t('planChange', lang)}
           </Link>
         </p>

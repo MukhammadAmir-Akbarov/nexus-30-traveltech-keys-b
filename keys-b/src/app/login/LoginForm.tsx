@@ -75,7 +75,7 @@ export function LoginForm({ demo }: { demo: boolean }) {
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-full px-6 py-4 text-sm shadow-inner transition-shadow focus:outline-none"
+          className="w-full rounded-full px-6 py-4 shadow-inner transition-shadow focus:outline-none"
           style={{ background: 'var(--surface-2)', color: 'var(--text)' }}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -94,7 +94,7 @@ export function LoginForm({ demo }: { demo: boolean }) {
           required
           minLength={6}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          className="w-full rounded-full px-6 py-4 text-sm shadow-inner transition-shadow focus:outline-none"
+          className="w-full rounded-full px-6 py-4 shadow-inner transition-shadow focus:outline-none"
           style={{ background: 'var(--surface-2)', color: 'var(--text)' }}
           value={password}
           onChange={(e) => setPassword(e.target.value)}

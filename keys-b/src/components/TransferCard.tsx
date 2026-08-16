@@ -56,7 +56,7 @@ export function TransferCard({ transfer }: { transfer: Transfer }) {
       <div className="muted text-[12px]">
         {t('transferPriceNote', lang)}{' '}
         {chosen !== 'train' && (
-          <Link href="/guides" className="underline" style={{ color: 'var(--accent)' }}>
+          <Link href="/guides" className="underline" style={{ color: 'var(--accent-ink)' }}>
             {t('transferWithGuide', lang)}
           </Link>
         )}

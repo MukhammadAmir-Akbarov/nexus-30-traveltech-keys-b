@@ -65,7 +65,7 @@ export function PlacePhoto({
             target="_blank"
             rel="noreferrer"
             className="underline"
-            style={{ color: 'var(--accent)' }}
+            style={{ color: 'var(--accent-ink)' }}
           >
             {t('photoSource', lang)}
           </a>

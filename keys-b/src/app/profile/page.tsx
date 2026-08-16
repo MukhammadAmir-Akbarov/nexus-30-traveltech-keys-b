@@ -93,7 +93,7 @@ export default function ProfilePage() {
       <section className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <b className="text-sm">{t('savedTitle', lang)}</b>
-          <Link href="/places" className="text-[13px] underline" style={{ color: 'var(--accent)' }}>
+          <Link href="/places" className="text-[13px] underline" style={{ color: 'var(--accent-ink)' }}>
             {t('profileFindMore', lang)}
           </Link>
         </div>
@@ -144,7 +144,7 @@ export default function ProfilePage() {
             </span>
           ))}
         </div>
-        <Link href="/" className="text-[13px] underline" style={{ color: 'var(--accent)' }}>
+        <Link href="/" className="text-[13px] underline" style={{ color: 'var(--accent-ink)' }}>
           {t('planChange', lang)}
         </Link>
       </section>
@@ -200,7 +200,7 @@ export default function ProfilePage() {
             ))}
           </ul>
         )}
-        <Link href="/check" className="text-[13px] underline" style={{ color: 'var(--accent)' }}>
+        <Link href="/check" className="text-[13px] underline" style={{ color: 'var(--accent-ink)' }}>
           {t('profileCheckMore', lang)}
         </Link>
       </section>

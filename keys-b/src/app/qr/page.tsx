@@ -47,7 +47,7 @@ export default async function QrPage() {
             <img src={image} alt={place.name.uz} width={160} height={160} />
             <div className="text-sm font-semibold">{place.name.uz}</div>
             <div className="muted text-[12px]">{place.name.ru}</div>
-            <a href={url} className="no-print text-[12px] underline" style={{ color: 'var(--accent)' }}>
+            <a href={url} className="no-print text-[12px] underline" style={{ color: 'var(--accent-ink)' }}>
               /place/{place.id}
             </a>
           </article>

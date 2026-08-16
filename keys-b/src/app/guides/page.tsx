@@ -387,7 +387,7 @@ export default function GuidesPage() {
               const top = reasons.slice(0, 3);
               const rest = reasons.slice(3);
               return (
-                <div className="text-[13px]" style={{ color: 'var(--accent)' }}>
+                <div className="text-[13px]" style={{ color: 'var(--accent-ink)' }}>
                   {t('guidesWhy', lang)}: {top.join(' · ')}
                   {rest.length > 0 && (
                     <details className="mt-1">

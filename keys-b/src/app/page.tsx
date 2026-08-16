@@ -117,7 +117,7 @@ export default function Home() {
             <p className="muted mt-0.5 text-[13px]">{t('homeNearbyHint', lang)}</p>
           </div>
         </div>
-        <span className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--accent)' }}>
+        <span className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--accent-ink)' }}>
           {t('homeNearbyCta', lang)} →
         </span>
       </Link>

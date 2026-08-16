@@ -111,7 +111,7 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
           <ul className="flex flex-col gap-1 text-[13px]">
             {place.highlights.map((item) => (
               <li key={item.en} className="flex gap-2">
-                <span style={{ color: 'var(--accent)' }}>•</span>
+                <span style={{ color: 'var(--accent-ink)' }}>•</span>
                 <span>{tr(item, lang)}</span>
               </li>
             ))}
@@ -131,7 +131,7 @@ export function PlaceCard({ place, facts }: { place: Place; facts: CorpusItem[] 
                 target="_blank"
                 rel="noreferrer"
                 className="underline"
-                style={{ color: 'var(--accent)' }}
+                style={{ color: 'var(--accent-ink)' }}
               >
                 {tr(fact.source.title, lang)}
               </a>

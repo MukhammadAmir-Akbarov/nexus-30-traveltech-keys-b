@@ -71,7 +71,7 @@ export function Nav() {
           иначе она вылезает за край и появляется горизонтальный скролл */}
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <Link href="/" className="py-2 text-[17px] font-bold tracking-tight">
-          Turizm<span style={{ color: 'var(--accent)' }}>{t('brandSuffix', lang)}</span>
+          Turizm<span style={{ color: 'var(--accent-ink)' }}>{t('brandSuffix', lang)}</span>
         </Link>
 
         {/* на телефоне вкладки живут внизу, под пальцем */}

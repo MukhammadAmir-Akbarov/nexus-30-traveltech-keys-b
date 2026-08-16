@@ -246,7 +246,7 @@ function CheckPageInner() {
           <Link
             href={`/place/${place.id}`}
             className="ms-auto inline-flex items-center gap-1 text-[13px] underline"
-            style={{ color: 'var(--accent)' }}
+            style={{ color: 'var(--accent-ink)' }}
           >
             {t('placeFacts', lang)}
             <Icon name="external" size={14} />
@@ -442,7 +442,7 @@ function CheckPageInner() {
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 underline"
-                        style={{ color: 'var(--accent)' }}
+                        style={{ color: 'var(--accent-ink)' }}
                       >
                         {position.title}
                         <Icon name="external" size={13} />
@@ -513,7 +513,7 @@ function CheckPageInner() {
                   )}
                 </button>
                 {(trip.pinned ?? []).includes(place.id) && (
-                  <Link className="underline text-[13px]" style={{ color: 'var(--accent)' }} href="/plan">
+                  <Link className="underline text-[13px]" style={{ color: 'var(--accent-ink)' }} href="/plan">
                     {t('verdictOpenPlan', lang)}
                   </Link>
                 )}
@@ -540,7 +540,7 @@ function CheckPageInner() {
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 underline"
-                        style={{ color: 'var(--accent)' }}
+                        style={{ color: 'var(--accent-ink)' }}
                       >
                         {source.title}
                         <Icon name="external" size={14} />
@@ -571,7 +571,7 @@ function CheckPageInner() {
             <Link
               href="/nearby"
               className="text-[13px] underline"
-              style={{ color: 'var(--accent)' }}
+              style={{ color: 'var(--accent-ink)' }}
             >
               {t('checkNearbyLink', lang)} →
             </Link>

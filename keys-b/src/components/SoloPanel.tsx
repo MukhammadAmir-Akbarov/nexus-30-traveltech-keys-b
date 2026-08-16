@@ -34,7 +34,7 @@ export function SoloPanel() {
       <ul className="flex flex-col gap-1 text-[13px]">
         {TIPS.map((tip) => (
           <li key={tip} className="flex gap-2">
-            <span style={{ color: 'var(--accent)' }}>•</span>
+            <span style={{ color: 'var(--accent-ink)' }}>•</span>
             <span>{t(tip, lang)}</span>
           </li>
         ))}

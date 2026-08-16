@@ -481,7 +481,7 @@ export default function PlanPage() {
                       )}
                       <a
                         className="underline"
-                        style={{ color: 'var(--accent)' }}
+                        style={{ color: 'var(--accent-ink)' }}
                         href={navigatorUrl(stops)}
                         target="_blank"
                         rel="noreferrer"
@@ -643,7 +643,7 @@ export default function PlanPage() {
                 <ul className="mt-3 flex flex-col gap-1.5 text-[13px]">
                   {itinerary.rules.map((rule) => (
                     <li key={rule} className="flex gap-2">
-                      <span style={{ color: 'var(--accent)' }}>•</span>
+                      <span style={{ color: 'var(--accent-ink)' }}>•</span>
                       <span className="prose-measure">{rule}</span>
                     </li>
                   ))}
