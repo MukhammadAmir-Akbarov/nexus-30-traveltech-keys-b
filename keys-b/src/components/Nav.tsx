@@ -39,6 +39,19 @@ export const MOBILE_TABS = TABS.filter((tab) =>
   ['/nearby', '/check', '/plan', '/guides'].includes(tab.href),
 );
 
+/**
+ * Остальные разделы — те, что не поместились в нижнюю панель.
+ *
+ * В шапке они есть, но шапка на телефоне скрыта (`hidden sm:flex`), и до этой
+ * правки на 375px до /places, /compare и /profile нельзя было добраться
+ * вообще ничем: ни вкладкой, ни ссылкой. Три готовых экрана существовали
+ * только для тех, кто открыл приложение с ноутбука.
+ *
+ * Считаем разностью от TABS, а не отдельным списком: два списка разъезжаются,
+ * и новый раздел однажды снова окажется недостижимым.
+ */
+export const SECONDARY_TABS = TABS.filter((tab) => !MOBILE_TABS.includes(tab));
+
 const THEME_NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'light' };
 const THEME_ICON: Record<Theme, IconName> = { light: 'moon', dark: 'sun' };
 const THEME_LABEL: Record<Theme, UiKey> = { light: 'themeDark', dark: 'themeLight' };
