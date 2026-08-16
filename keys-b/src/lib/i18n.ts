@@ -173,6 +173,19 @@ export const UI = {
   themeLight: { uz: 'Yorug‘', ru: 'Светлая', en: 'Light' },
   themeDark: { uz: 'Qora', ru: 'Тёмная', en: 'Dark' },
 
+  // Установка приложения. Подпись обещает ровно то, что даёт установка:
+  // ярлык и работу без сети. «Скачать» не пишем — ничего не скачивается.
+  installApp: {
+    uz: 'Ilovani o‘rnatish',
+    ru: 'Установить приложение',
+    en: 'Install the app',
+  },
+  installHint: {
+    uz: 'Bosh ekranga yorliq qo‘shiladi. Internetsiz ham ochiladi.',
+    ru: 'Появится ярлык на домашнем экране. Открывается и без сети.',
+    en: 'Adds a home-screen shortcut. Opens without a connection too.',
+  },
+
   // язык — первый вопрос: модалка перекрывает шапку, и без этого шага
   // русскоязычный или иностранец заперт в узбекском интерфейсе
   onbLang: {

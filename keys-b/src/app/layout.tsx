@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
 import { Footer } from '@/components/Footer';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { Nav } from '@/components/Nav';
 import { OfflineReady } from '@/components/OfflineReady';
 import { SkipLink } from '@/components/SkipLink';
@@ -42,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="main" className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:pb-6">
             {children}
           </main>
+          {/* над Footer, а не поверх плавающей панели вкладок: она fixed */}
+          <InstallPrompt />
           <Footer />
           <TabBar />
         </TripProvider>
