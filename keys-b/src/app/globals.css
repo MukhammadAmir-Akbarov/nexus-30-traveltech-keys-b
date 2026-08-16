@@ -217,6 +217,39 @@ h2 {
 
 .btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--muted); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
+
+/*
+  Отклик на нажатие пальцем.
+
+  До этой правки он был только у `.btn`. Остальное — карточки объектов, чипы
+  фильтров, вкладки нижней панели — на телефоне нажималось молча: `:hover` на
+  тач-экране либо не наступает, либо «залипает» после тапа, то есть подсветка
+  остаётся на элементе, с которого человек уже ушёл.
+
+  Тот же приём, что у кнопки: смещение на пиксель. Не тень и не смена цвета —
+  сдвиг виден и на светлой, и на тёмной теме, и не спорит с состоянием
+  `data-active` у текущей вкладки.
+
+  `-webkit-tap-highlight-color: transparent` убирает серый прямоугольник
+  Safari, который иначе накладывается поверх собственного отклика и на
+  скруглённых карточках выглядит как прямоугольная заплатка.
+*/
+.card-link,
+.chip,
+.tabbar a {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease, background-color 0.18s ease;
+}
+
+.card-link:active,
+.chip:active,
+.tabbar a:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-link:active,
+  .chip:active,
+  .tabbar a:active { transform: none; background: var(--surface-2); }
+}
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-primary {
@@ -286,6 +319,17 @@ h2 {
   color: var(--muted);
   white-space: nowrap;
 }
+
+/*
+  Тег с длинным содержимым. `.tag` намеренно nowrap: короткий ярлык, разорванный
+  пополам, читается хуже целого. Но в полосе контекста внутрь одного тега кладут
+  СПИСОК — «Самарканд · Бухара · Хива · Ташкент · Шахрисабз · Нурата», — и на
+  375px такая строка не помещается: перенос между тегами есть, внутри тега нет,
+  и появляется горизонтальный скролл на каждой странице сразу под шапкой.
+
+  Здесь перенос разрешён, и это единственное отличие от `.tag`.
+*/
+.tag-flow { white-space: normal; }
 
 .tag-ok { background: var(--ok-weak); border-color: transparent; color: var(--ok); }
 .tag-warn { background: var(--warn-weak); border-color: transparent; color: var(--warn); }

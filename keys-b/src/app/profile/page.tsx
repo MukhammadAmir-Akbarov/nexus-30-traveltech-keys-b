@@ -123,7 +123,8 @@ export default function ProfilePage() {
       <section className="card flex flex-col gap-2">
         <b className="text-sm">{t('profilePrefs', lang)}</b>
         <div className="flex flex-wrap gap-2 text-[13px]">
-          <span className="tag">
+          {/* tag-flow: список городов внутри одного тега обязан переноситься */}
+          <span className="tag tag-flow">
             {trip.regions.length
               ? trip.regions.map((r) => tr(REGION_LABEL[r], lang)).join(', ')
               : t('allUzbekistan', lang)}

@@ -55,7 +55,8 @@ export function VoiceTrip() {
           {applied.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {applied.map((part) => (
-                <span key={part} className="tag tag-accent">
+                // tag-flow: сюда попадает распознанный список городов и интересов
+                <span key={part} className="tag tag-accent tag-flow">
                   {part}
                 </span>
               ))}

@@ -142,7 +142,10 @@ export function Nav() {
         <span className="muted">{t('contextPrefix', lang)}</span>
         {ready ? (
           context.map((part) => (
-            <span key={part} className="tag">
+            // tag-flow: внутрь одного тега кладётся список городов и интересов,
+            // и на узком экране он обязан переноситься — иначе строка уезжает
+            // за край и тянет за собой горизонтальный скролл всей страницы.
+            <span key={part} className="tag tag-flow">
               {part}
             </span>
           ))
