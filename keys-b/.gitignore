@@ -44,3 +44,8 @@ next-env.d.ts
 # Prisma qoldigi: ilova fayl/xotira malumotida ishlaydi, ORM ulanmagan
 *.db
 prisma/
+
+# Локальные файлы ассистентов редактора — не часть проекта
+AGENTS.md
+CLAUDE.md
+.claude/
