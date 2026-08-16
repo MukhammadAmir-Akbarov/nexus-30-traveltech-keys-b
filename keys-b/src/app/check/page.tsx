@@ -22,8 +22,13 @@ import type {
   SourceTier,
 } from '@/lib/types';
 import type { UiKey } from '@/lib/i18n';
+// Тип берётся у источника, а не переписывается здесь. Копия уже разошлась
+// однажды: в store.ts появился новый исход, а этот список о нём не узнал —
+// и `COUNTED_UI[result.counted]` вернул бы undefined прямо в разметке.
+// Импорт только типовой: в сборку клиента ничего из store.ts не попадает.
+import type { RecordOutcome } from '@/lib/store';
 
-type Counted = 'counted' | 'duplicate' | 'rate-limited';
+type Counted = RecordOutcome;
 type Disputed = {
   question: string;
   note: string;
@@ -52,6 +57,10 @@ const COUNTED_UI: Record<Counted, { key: UiKey; cls: string }> = {
   counted: { key: 'checkCounted', cls: 'tag tag-accent' },
   duplicate: { key: 'checkDuplicate', cls: 'tag tag-warn' },
   'rate-limited': { key: 'checkRateLimited', cls: 'tag tag-warn' },
+  // Из <select> такого не выйдет — список строится по реальным гидам.
+  // Но вердикт приходит из общего ответа, и молчать здесь нельзя: человек
+  // выбрал гида и вправе знать, что в репутацию ничего не легло.
+  'unknown-guide': { key: 'checkUnknownGuide', cls: 'tag tag-warn' },
 };
 
 const EXAMPLES: I18nText[] = [

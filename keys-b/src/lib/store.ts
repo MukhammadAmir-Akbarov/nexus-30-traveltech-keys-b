@@ -371,7 +371,7 @@ export function removeGuide(id: string): boolean {
 /** Не больше стольких проверок с одного устройства за час. */
 const CHECKS_PER_HOUR = 30;
 
-export type RecordOutcome = 'counted' | 'duplicate' | 'rate-limited';
+export type RecordOutcome = 'counted' | 'duplicate' | 'rate-limited' | 'unknown-guide';
 
 /**
  * Зачесть вердикт в репутацию гида — если это не повтор и не поток от бота.
@@ -386,6 +386,14 @@ export function recordFactCheck(
   claim: string,
   now = Date.now(),
 ): RecordOutcome {
+  // Гид обязан существовать. Из интерфейса иначе и не выйдет — там <select>
+  // по списку гидов, — но /api/check открыт, и запрос с чужим guideId заводил
+  // репутацию призраку: в /api/guides его не видно (там обход по реальным
+  // гидам), а в отчёте Комитета вердикт всплывал с идентификатором, за
+  // которым никого нет. Проверка стоит здесь, а не только на маршруте:
+  // следующий, кто позовёт эту функцию из кода, не обязан помнить о ней.
+  if (!store().guides.some((guide) => guide.id === guideId)) return 'unknown-guide';
+
   // частота: скользящий час
   const times = (store().checkTimes.get(clientId) ?? []).filter((t) => now - t < 3_600_000);
   if (times.length >= CHECKS_PER_HOUR) {

@@ -172,6 +172,32 @@ await check('первая проверка засчитывается, повт�
   assert.equal(second.data.counted, 'duplicate');
 });
 
+// Из интерфейса такого запроса не получится — там <select> по списку гидов.
+// Но /api/check открыт, и раньше чужой guideId заводил репутацию призраку:
+// в /api/guides его не видно (обход идёт по реальным гидам), а в отчёте
+// Комитета вердикт всплывал с идентификатором, за которым никого нет.
+await check('вердикт про несуществующего гида не идёт в репутацию', async () => {
+  const { data } = await json('/api/check', {
+    claim: 'Регистан построен в XIII веке',
+    lang: 'ru',
+    guideId: 'g-которого-нет',
+    placeId: 'registan',
+  });
+  assert.equal(data.verdict.status, 'refuted', 'сам вердикт выносится как обычно');
+  assert.equal(data.counted, 'unknown-guide', 'в репутацию писать было некуда');
+
+  const guides = await json('/api/guides', {
+    ...trip,
+    languages: ['ru'],
+    gender: 'any',
+    needTransport: false,
+  });
+  assert.ok(
+    guides.data.guides.every((g) => g.guide.id !== 'g-которого-нет'),
+    'призрак не должен появиться в выдаче',
+  );
+});
+
 await check('до порога процент точности не показывается', async () => {
   const { data } = await json('/api/guides', {
     ...trip,

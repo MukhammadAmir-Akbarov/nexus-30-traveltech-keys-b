@@ -1035,6 +1035,11 @@ export const UI = {
     ru: 'Слишком много проверок подряд — рейтинг временно не обновляется',
     en: 'Too many checks in a row — the rating is paused for now',
   },
+  checkUnknownGuide: {
+    uz: 'Bunday gid ro‘yxatda yo‘q — reytingga yozilmadi',
+    ru: 'Такого гида нет в списке — в рейтинг не записано',
+    en: 'No such guide on the list — nothing was written to the rating',
+  },
   checkWhoSaid: {
     uz: 'Kimning gapi tekshirilyapti?',
     ru: 'Чьё утверждение проверяем?',
