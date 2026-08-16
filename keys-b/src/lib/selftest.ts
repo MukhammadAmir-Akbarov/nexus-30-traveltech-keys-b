@@ -25,7 +25,8 @@ import { buildTransfer, planeLeg, trainLeg } from './transfer.ts';
 import { itineraryToIcs } from './ics.ts';
 import { disputedForLang, findDisputed } from './disputed.ts';
 import { adviceFor, climateNorm, tripDates } from './weather.ts';
-import { prayerTimes, prayersDuring } from './prayer.ts';
+import { prayerTimes, prayersDuring, sunTimes } from './prayer.ts';
+import { clockLabel, closingSoon, hoursLine, isOpenAt, tashkentMinutes } from './hours.ts';
 import { parseTripPhrase } from './voice-trip.ts';
 import { seasonBudgetFactor, seasonFor, seasonNote, seasonsFor } from './calendar.ts';
 import {
@@ -35,11 +36,15 @@ import {
   usdToUzsLabel,
 } from './budget.ts';
 import { officialFactsFor } from './sources.ts';
+import { danglingRefs, factsFor, photo as dbPhoto, place as dbPlace, places as dbPlaces } from './db.ts';
 import { WINDY_KMH, isWindy } from './weather.ts';
 import {
+  LONG_DAY_MINUTES,
+  dayDuration,
   directRoute,
   distanceLabel,
   haversineKm,
+  isLongDay,
   legFrom,
   navigatorUrl,
   parseOsrm,
@@ -970,6 +975,87 @@ assert.equal(yearsLabel(15, 'ru'), 'лет опыта', '15 — «лет», а �
   }
 }
 
+// --- целостность базы ---
+// Одна связная база, а не восемь файлов рядом: ни одной висячей ссылки.
+assert.deepEqual(danglingRefs(), [], 'в базе не должно быть ссылок в никуда');
+assert.equal(dbPlaces().length, PLACES.length, 'единая точка входа отдаёт те же объекты');
+assert.ok(dbPlace('registan'), 'объект достаётся по идентификатору');
+assert.equal(dbPlace('нет-такого'), undefined, 'неизвестный объект — undefined, а не падение');
+assert.ok(factsFor('registan').length > 0, 'факты объекта достаются через базу');
+assert.ok(dbPhoto('registan'), 'снимок объекта достаётся через базу');
+assert.ok(
+  factsFor('registan').every((f) => f.placeId === 'registan'),
+  'выборка фактов не подмешивает чужие объекты',
+);
+
+// Накопленное проверяется тоже: удалили гида — его вердикты и счётчики
+// повиснут, и раньше это было слепым пятном.
+assert.deepEqual(
+  danglingRefs({
+    guideIds: GUIDES.map((g) => g.id),
+    verdicts: [{ id: 'v1', guideId: GUIDES[0].id, placeId: 'registan' }],
+    requests: [{ id: 'r1', kind: 'guide-booking', targetId: GUIDES[0].id }],
+    users: [{ email: 'a@b.uz', guideId: GUIDES[0].id }],
+    accuracyKeys: [GUIDES[0].id, `${GUIDES[0].id}|registan`],
+  }),
+  [],
+  'связные накопленные данные проблем не дают',
+);
+const broken = danglingRefs({
+  guideIds: ['g1'],
+  verdicts: [{ id: 'v9', guideId: 'удалённый', placeId: 'нет-объекта' }],
+  requests: [{ id: 'r9', kind: 'place-problem', targetId: 'нет-объекта' }],
+  users: [{ email: 'x@y.uz', guideId: 'удалённый' }],
+  accuracyKeys: ['удалённый|registan'],
+});
+assert.ok(broken.length >= 5, 'каждая висячая ссылка обязана быть названа отдельно');
+assert.ok(
+  broken.some((p) => p.includes('вердикт v9')) &&
+    broken.some((p) => p.includes('заявка r9')) &&
+    broken.some((p) => p.includes('аккаунт x@y.uz')) &&
+    broken.some((p) => p.includes('счётчик')),
+  'проверка обязана ловить все четыре вида ссылок, а не только вердикты',
+);
+
+// --- доступность влияет на маршрут, а не только на значок ---
+const accessiblePlan = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  days: 3,
+  accessibleOnly: true,
+});
+assert.ok(
+  accessiblePlan.days
+    .flatMap((d) => d.items)
+    .every((i) => PLACES.find((p) => p.id === i.placeId)?.accessible === true),
+  'при выборе «только доступные» в маршрут не попадают недоступные объекты',
+);
+const pinnedInaccessible = PLACES.find((p) => !p.accessible && p.region === 'samarkand')!;
+const withPinned = buildItinerary(PLACES, {
+  ...family,
+  travelType: 'solo',
+  days: 3,
+  accessibleOnly: true,
+  pinned: [pinnedInaccessible.id],
+});
+assert.ok(
+  withPinned.days.flatMap((d) => d.items).some((i) => i.placeId === pinnedInaccessible.id),
+  'закреплённый вручную объект остаётся: это осознанный выбор человека',
+);
+
+// --- правила маршрута называются вслух ---
+assert.ok((accessiblePlan.rules ?? []).length > 0, 'маршрут обязан объяснить, как он собран');
+assert.ok(
+  (accessiblePlan.rules ?? []).some((r) => /коляск|aravacha|wheelchair/i.test(r)),
+  'выбранный фильтр доступности должен быть назван в правилах',
+);
+assert.ok(
+  (buildItinerary(PLACES, { ...family, travelType: 'solo', days: 2 }).rules ?? []).every(
+    (r) => !/коляск/i.test(r),
+  ),
+  'невыбранное правило не называется — иначе список превращается в шум',
+);
+
 // --- ветер ---
 // Порядок объектов ветер не меняет: это сведение, а не правило.
 const windy: DayWeather = { date: '2026-04-10', region: 'bukhara', tMaxC: 24, precipMm: 0, windKmh: 34, source: 'forecast' };
@@ -1658,6 +1744,178 @@ for (let i = 2; i < featuredRegions.length; i++) {
   assert.ok(!sameRun, `на витрине три ${featuredRegions[i]} подряд — перемешайте регионы`);
 }
 
+// --- сколько человек едет ---
+//
+// Билеты и переезды продаются на человека, а считались на одного при любом
+// формате: семья из четверых видела сумму вчетверо меньше настоящей.
+
+const alone = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3 });
+const four = buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3, travelers: 4 });
+assert.equal(
+  four.cost!.totalUsd,
+  alone.cost!.totalUsd * 4,
+  'четверым та же поездка обходится вчетверо дороже',
+);
+assert.equal(four.cost!.travelers, 4, 'в оценке подписано, на скольких человек она посчитана');
+assert.equal(
+  four.cost!.perPersonUsd,
+  alone.cost!.totalUsd,
+  'на человека выходит ровно столько же, сколько одиночке',
+);
+assert.deepEqual(
+  four.days.map((d) => d.items.length),
+  alone.days.map((d) => d.items.length),
+  'число путешественников меняет только деньги, но не состав маршрута',
+);
+assert.ok(
+  four.rules?.some((r) => r.includes('4')),
+  'расчёт на нескольких человек назван в правилах маршрута',
+);
+assert.equal(
+  buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3, travelers: 0 }).cost!.totalUsd,
+  alone.cost!.totalUsd,
+  'ноль путешественников — это всё равно один человек, а не бесплатная поездка',
+);
+
+// потолок бюджета назван на одного, а траты дня считаются на всех
+assert.ok(overBudget(30, 'low'), 'одному $30 в день — выше экономного потолка');
+assert.ok(!overBudget(30, 'low', 4), 'четверым те же $30 в день — по $7,5 на человека, это в потолке');
+
+// --- часы работы важнее близости ---
+//
+// Объект, который закрывается раньше, обязан идти раньше. Раньше маршрут
+// просто ставил рядом метку «закрыт» — это диагноз, а не помощь.
+
+const text = (value: string) => ({ uz: value, ru: value, en: value });
+const stub = {
+  region: 'samarkand' as const,
+  interests: ['history' as const],
+  familyFriendly: true,
+  outdoor: false,
+  ticketUsd: 0,
+};
+const earlyClosing = [
+  { ...stub, id: 'late-a', name: text('Late A'), summary: text('a'), lat: 39.65, lng: 66.97, visitMinutes: 60, opens: 480, closes: 1200 },
+  { ...stub, id: 'late-b', name: text('Late B'), summary: text('b'), lat: 39.655, lng: 66.975, visitMinutes: 60, opens: 480, closes: 1200 },
+  // осмотр длиннее, поэтому в общем списке он идёт последним — и без поправки
+  // на часы работы попадает на 12:00, когда объект уже час как закрыт
+  { ...stub, id: 'early-c', name: text('Early C'), summary: text('c'), lat: 39.66, lng: 66.98, visitMinutes: 90, opens: 480, closes: 660 },
+];
+const hoursDay = buildItinerary(earlyClosing, {
+  ...family,
+  travelType: 'solo',
+  regions: ['samarkand'],
+  region: 'samarkand',
+  days: 1,
+}).days[0];
+assert.equal(hoursDay.items.length, 3, 'все три объекта влезают в один день');
+assert.equal(
+  hoursDay.items[0].placeId,
+  'early-c',
+  'объект, закрывающийся в 11:00, обязан стоять первым',
+);
+assert.ok(
+  hoursDay.items.every((item) => !item.closed),
+  'после перестановки закрытых объектов остаться не должно',
+);
+assert.ok(hoursDay.hoursNote?.includes('11:00'), 'причина перестановки названа вслух, со временем');
+assert.equal(
+  hoursDay.title.includes('Early C'),
+  true,
+  'заголовок дня собран по итоговому порядку, а не по прежнему',
+);
+
+// день без конфликта расписания перестановкой не трогаем
+assert.equal(
+  buildItinerary(PLACES, { ...family, travelType: 'solo', days: 3 }).days[0].hoursNote,
+  undefined,
+  'обычный день не должен получать пояснение про часы работы',
+);
+
+// --- открыт ли объект прямо сейчас ---
+
+const registanHours = { opens: 480, closes: 1140 };
+assert.equal(isOpenAt(registanHours, 600), true, 'в 10:00 Регистан открыт');
+assert.equal(isOpenAt(registanHours, 1200), false, 'в 20:00 уже закрыт');
+assert.equal(isOpenAt(registanHours, 480), true, 'ровно в момент открытия объект открыт');
+assert.equal(isOpenAt(registanHours, 1140), false, 'ровно в момент закрытия внутрь уже не пускают');
+assert.equal(isOpenAt({}, 600), null, 'у площади часов работы нет — это не «закрыто»');
+assert.equal(hoursLine(registanHours), '08:00 – 19:00', 'часы печатаются человеческой строкой');
+assert.equal(hoursLine({}), null, 'нечего печатать — ничего и не печатаем');
+assert.equal(clockLabel(1140), '19:00', 'минуты от полуночи превращаются в часы');
+assert.ok(
+  closingSoon({ ...registanHours, visitMinutes: 120 }, 1080),
+  'за час до закрытия двухчасовой осмотр не влезает — предупреждаем',
+);
+assert.ok(
+  !closingSoon({ ...registanHours, visitMinutes: 120 }, 600),
+  'в 10:00 до закрытия ещё девять часов — тревожить незачем',
+);
+assert.ok(
+  !closingSoon(registanHours, 1200),
+  'уже закрыто — это другое сообщение, а не «скоро закроется»',
+);
+// время берём по Ташкенту, а не по часам телефона приехавшего
+assert.equal(
+  tashkentMinutes(new Date('2026-08-16T04:30:00Z')),
+  9 * 60 + 30,
+  'в 04:30 UTC в Ташкенте половина десятого',
+);
+assert.equal(
+  tashkentMinutes(new Date('2026-08-16T20:00:00Z')),
+  60,
+  'после полуночи по Ташкенту счёт начинается заново',
+);
+
+// --- длинный день ---
+
+assert.ok(!isLongDay(LONG_DAY_MINUTES), 'ровно на границе день ещё нормальный');
+assert.ok(isLongDay(LONG_DAY_MINUTES + 1), 'за границей — предупреждаем');
+// четыре объекта по три часа с дорогой между ними — это одиннадцать часов на ногах
+assert.ok(
+  isLongDay(
+    dayDuration([180, 180, 180, 120], [
+      { km: 3, minutes: 20, mode: 'taxi', fareUsd: 2 },
+      { km: 1, minutes: 13, mode: 'walk', fareUsd: 0 },
+      { km: 4, minutes: 15, mode: 'taxi', fareUsd: 2 },
+    ]).total,
+  ),
+  'перегруженный день обязан быть помечен',
+);
+assert.ok(
+  !isLongDay(dayDuration([120, 60, 75], [{ km: 1, minutes: 13, mode: 'walk', fareUsd: 0 }]).total),
+  'обычный день из трёх объектов предупреждения не заслуживает',
+);
+
+// --- восход, закат и золотой час ---
+
+const summerSun = sunTimes('samarkand', '2026-06-21');
+const winterSun = sunTimes('samarkand', '2026-12-21');
+const minutesOf = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
+assert.ok(minutesOf(summerSun.sunrise) < minutesOf(summerSun.sunset), 'солнце восходит раньше, чем заходит');
+assert.ok(
+  minutesOf(summerSun.sunset) - minutesOf(summerSun.sunrise) >
+    minutesOf(winterSun.sunset) - minutesOf(winterSun.sunrise),
+  'июньский день в Самарканде длиннее декабрьского',
+);
+assert.ok(
+  minutesOf(summerSun.sunrise) > 4 * 60 && minutesOf(summerSun.sunrise) < 7 * 60,
+  `восход в июне около пяти утра, а получили ${summerSun.sunrise}`,
+);
+assert.equal(
+  minutesOf(summerSun.goldenEvening),
+  minutesOf(summerSun.sunset) - 60,
+  'вечерний золотой час — последний час перед закатом',
+);
+assert.equal(
+  minutesOf(summerSun.goldenMorning),
+  minutesOf(summerSun.sunrise) + 60,
+  'утренний золотой час — первый час после восхода',
+);
+
+// Итог один на весь файл: после слияния двух наборов проверок здесь оказалось
+// две строки «OK», и это читалось как след merge, а не как результат прогона.
 console.log(
-  'OK: retrieval (uz/ru/en), demo-cache, planner, match, маршрут, переводы, авторизация, витрина',
+  'OK: retrieval (uz/ru/en), demo-cache, planner, match, маршрут, переводы, ' +
+    'авторизация, витрина, стоимость на несколько человек',
 );

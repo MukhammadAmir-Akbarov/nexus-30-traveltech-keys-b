@@ -1,17 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Icon, type IconName } from '@/components/Icon';
 import { QrScanner } from '@/components/QrScanner';
+import { RequestForm } from '@/components/RequestForm';
 import { useTrip } from '@/components/TripProvider';
 import { VoiceInput } from '@/components/VoiceInput';
 import { PhotoCheck } from '@/components/PhotoCheck';
 import { GUIDES } from '@/data/guides';
 import { PLACE_BY_ID } from '@/data/places';
 import { t, tr } from '@/lib/i18n';
-import type { CheckStatus, CheckVerdict, I18nText, Lang, Mode, SourceTier } from '@/lib/types';
+import type {
+  CheckStatus,
+  CheckVerdict,
+  ClaimSource,
+  I18nText,
+  Lang,
+  Mode,
+  SourceTier,
+} from '@/lib/types';
 import type { UiKey } from '@/lib/i18n';
 
 type Counted = 'counted' | 'duplicate' | 'rate-limited';
@@ -79,6 +88,14 @@ const STATUS_UI: Record<CheckStatus, { key: UiKey; color: string; weak: string; 
 
 const SPEECH_LOCALE: Record<Lang, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
 
+/** Откуда человек услышал утверждение: гид — лишь один из источников. */
+const CLAIM_SOURCES: { value: ClaimSource; key: UiKey }[] = [
+  { value: 'guide', key: 'srcGuide' },
+  { value: 'sign', key: 'srcSign' },
+  { value: 'internet', key: 'srcInternet' },
+  { value: 'other', key: 'srcOther' },
+];
+
 /** История проверок живёт на устройстве: открывается без сети и никуда не уходит. */
 const HISTORY_KEY = 'nexus30.checks';
 type HistoryItem = { claim: string; status: CheckStatus; at: string };
@@ -129,14 +146,19 @@ export default function CheckPage() {
 function CheckPageInner() {
   const { lang, trip, update } = useTrip();
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [claim, setClaim] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
   const [guideId, setGuideId] = useState('');
+  const [source, setSource] = useState<ClaimSource | ''>('');
+  const [copied, setCopied] = useState(false);
 
   // Объект из QR-ссылки известен уже на первом рендере — эффект не нужен.
-  const placeId = useSearchParams().get('place');
+  const params = useSearchParams();
+  const placeId = params.get('place');
+  // Проверка была одноразовой: её нельзя было ни отправить гиду, ни открыть
+  // повторно. Вопрос живёт в адресе — ссылка воспроизводит ровно её.
+  const [claim, setClaim] = useState(() => params.get('q') ?? '');
 
   // А вот localStorage прочитать в рендере нельзя: на сервере его нет,
   // и разметка разошлась бы с клиентской. Эффект здесь — правильный способ.
@@ -154,7 +176,7 @@ function CheckPageInner() {
 
   const place = placeId ? (PLACE_BY_ID[placeId] ?? null) : null;
 
-  const check = async (text: string) => {
+  const check = useCallback(async (text: string) => {
     const value = text.trim();
     if (!value) return;
     setClaim(value);
@@ -169,6 +191,7 @@ function CheckPageInner() {
           lang,
           guideId: guideId || undefined,
           placeId: placeId ?? undefined,
+          source: source || undefined,
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
@@ -189,7 +212,17 @@ function CheckPageInner() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lang, guideId, placeId, source]);
+
+  // Пришли по ссылке с вопросом — показываем вердикт, а не пустую форму.
+  // Один раз: иначе смена языка или источника перезапускала бы проверку.
+  const asked = useRef(false);
+  useEffect(() => {
+    const q = params.get('q');
+    if (!q || asked.current) return;
+    asked.current = true;
+    void check(q);
+  }, [params, check]);
 
   // При споре источников статус «нет данных» врёт: система знает больше обычного —
   // она знает, что источники не сошлись, и показывает обе версии.
@@ -261,6 +294,26 @@ function CheckPageInner() {
               а не трёх продуктов */}
           <PhotoCheck />
           <QrScanner />
+        </div>
+
+        {/* Откуда услышано. Раньше приложение спрашивало только про гида —
+            и получалось, что ошибается всегда он. На деле чаще всего человек
+            читает табличку у входа или первую ссылку в поиске. */}
+        <div className="flex flex-col gap-1">
+          <span className="muted text-[13px]">{t('checkSourceLabel', lang)}</span>
+          <div className="flex flex-wrap gap-2">
+            {CLAIM_SOURCES.map(({ value, key }) => (
+              <button
+                key={value}
+                className="chip"
+                data-active={source === value}
+                onClick={() => setSource(source === value ? '' : value)}
+              >
+                {t(key, lang)}
+              </button>
+            ))}
+          </div>
+          <p className="muted prose-measure text-[12px]">{t('checkSourceHint', lang)}</p>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -346,6 +399,28 @@ function CheckPageInner() {
               {result.verdict.claim}
             </blockquote>
 
+            {/* Вердикт был одноразовым: показать его гиду или спутнику можно
+                было только с экрана. Ссылка воспроизводит ту же проверку. */}
+            <button
+              className="chip self-start"
+              onClick={async () => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('q', result.verdict.claim);
+                if (placeId) url.searchParams.set('place', placeId);
+                try {
+                  await navigator.clipboard.writeText(url.toString());
+                  setCopied(true);
+                } catch {
+                  // буфер недоступен (нет https или отказ) — показываем адрес,
+                  // чтобы его можно было скопировать руками
+                  window.prompt(t('verdictShare', lang), url.toString());
+                }
+              }}
+            >
+              <Icon name="share" size={14} />
+              {t(copied ? 'verdictShareDone' : 'verdictShare', lang)}
+            </button>
+
             {/* Источники расходятся — показываем обе стороны, а не выбираем удобную */}
             {result.disputed && (
               <div
@@ -386,6 +461,33 @@ function CheckPageInner() {
             {/* Проверка была тупиком: турист получал вердикт и упирался.
                 Отсюда есть два хода — посмотреть объект на карте маршрута
                 и закрепить его в поездке. Проверил — добавил к себе. */}
+            {/* «Нет данных» — момент, когда человеку нужнее всего подсказка,
+                что делать дальше. Раньше здесь была точка. */}
+            {result.verdict.status === 'unclear' && (
+              <div
+                className="flex flex-col gap-2 rounded-xl p-3 text-[13px]"
+                style={{ background: 'var(--warn-weak)' }}
+              >
+                <b>{t('unclearWhatNow', lang)}</b>
+                <p className="prose-measure" style={{ color: 'var(--warn)' }}>
+                  {t('unclearNote', lang)}
+                </p>
+                <div className="flex flex-wrap items-start gap-2">
+                  <Link className="chip" href="/guides">
+                    <Icon name="user" size={14} />
+                    {t('unclearAskGuide', lang)}
+                  </Link>
+                  {place && (
+                    <Link className="chip" href={`/place/${place.id}`}>
+                      <Icon name="pin" size={14} />
+                      {t('unclearWhatKnown', lang)}
+                    </Link>
+                  )}
+                  <RequestForm kind="place-problem" targetId={place?.id ?? 'general'} />
+                </div>
+              </div>
+            )}
+
             {place && (
               <div className="flex flex-wrap items-center gap-2">
                 <Link className="btn" href={`/place/${place.id}`}>
@@ -452,7 +554,7 @@ function CheckPageInner() {
 
             {result.passages.length > 0 && (
               <details className="text-[13px]">
-                <summary className="muted cursor-pointer">{t('passagesLabel', lang)}</summary>
+                <summary>{t('passagesLabel', lang)}</summary>
                 <ul className="mt-2 flex flex-col gap-2">
                   {result.passages.map((passage) => (
                     <li key={passage} className="muted prose-measure">

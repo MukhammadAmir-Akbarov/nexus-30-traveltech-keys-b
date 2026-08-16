@@ -5,6 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   LngLatBounds,
   Map as MapLibreMap,
+  GeolocateControl,
   Marker,
   NavigationControl,
   Popup,
@@ -69,6 +70,21 @@ const RASTER_STYLE: StyleSpecification = {
  */
 export type RoutePoint = { place: Place; day: number; label: number };
 
+/** Инфраструктура вдоль маршрута: намазхона, туалет, заправка, кафе, медпункт. */
+export type MapPoi = { id: string; lat: number; lng: number; label: string; icon: string };
+
+/**
+ * Значки инфраструктуры. Рисуем символами, а не иконками: маркер на карте
+ * размером в двадцать пикселей, и SVG в нём всё равно не разобрать.
+ */
+const POI_GLYPH: Record<string, string> = {
+  fuel: '⛽',
+  toilet: '🚻',
+  mosque: '🕌',
+  clinic: '✚',
+  cafe: '☕',
+};
+
 /** Каждый день — отдельная линия своего цвета: маршрут читается без легенды. */
 function toFeatures(routes: DayRoute[]): GeoJSON.FeatureCollection<GeoJSON.LineString> {
   return {
@@ -84,10 +100,13 @@ function toFeatures(routes: DayRoute[]): GeoJSON.FeatureCollection<GeoJSON.LineS
 export default function RouteMap({
   points,
   routes,
+  pois = [],
   lang,
 }: {
   points: RoutePoint[];
   routes: DayRoute[];
+  /** Показывается по нажатию: постоянно на карте это шум. */
+  pois?: MapPoi[];
   lang: Lang;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -96,15 +115,16 @@ export default function RouteMap({
   // Данные читаем через ref, а эффект держим на строковом ключе.
   // Иначе массив точек — новый объект на каждый рендер, эффект перезапускается,
   // карта успевает только создаться и тут же уничтожиться: маркеры не появляются.
-  const data = useRef({ points, routes, lang });
+  const data = useRef({ points, routes, pois, lang });
   const key = `${points.map((p) => `${p.place.id}:${p.day}`).join(',')}|${lang}`;
   // геометрия приходит позже точек: сначала прямые, потом дороги
   const shapeKey = routes.map((r) => `${r.day}:${r.source}:${r.line.length}`).join(',');
+  const poiKey = pois.map((p) => p.id).join(',');
   const redraw = useRef<() => void>(() => {});
 
   // ref обновляем в эффекте, а не во время рендера: рендер должен быть чистым
   useEffect(() => {
-    data.current = { points, routes, lang };
+    data.current = { points, routes, pois, lang };
   });
 
   useEffect(() => {
@@ -135,6 +155,16 @@ export default function RouteMap({
     });
 
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-left');
+    // «Где я»: в поездке карта без своей точки почти бесполезна — человек
+    // не понимает, в какую сторону идти от выхода из метро.
+    instance.addControl(
+      new GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserLocation: true,
+      }),
+      'top-left',
+    );
 
     const draw = () => {
       const shape = toFeatures(data.current.routes);
@@ -246,6 +276,30 @@ export default function RouteMap({
   useEffect(() => {
     redraw.current();
   }, [shapeKey]);
+
+  // Инфраструктура включается кнопкой. Держим свои маркеры отдельным списком,
+  // чтобы снимать ровно их, а не трогать точки маршрута.
+  const poiMarkers = useRef<Marker[]>([]);
+  useEffect(() => {
+    const instance = map.current;
+    poiMarkers.current.forEach((marker) => marker.remove());
+    poiMarkers.current = [];
+    if (!instance) return;
+    poiMarkers.current = data.current.pois.map((poi) => {
+      const el = document.createElement('div');
+      el.className = 'map-poi';
+      el.title = poi.label;
+      el.textContent = POI_GLYPH[poi.icon] ?? '•';
+      return new Marker({ element: el })
+        .setLngLat([poi.lng, poi.lat])
+        .setPopup(new Popup({ offset: 14, closeButton: false }).setText(poi.label))
+        .addTo(instance);
+    });
+    return () => {
+      poiMarkers.current.forEach((marker) => marker.remove());
+      poiMarkers.current = [];
+    };
+  }, [poiKey, key]);
 
   if (points.length === 0) return null;
 

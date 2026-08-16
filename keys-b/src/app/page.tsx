@@ -57,6 +57,9 @@ const PACES: { pace: Pace; key: 'paceRelaxed' | 'paceNormal' | 'pacePacked' }[] 
 /** Верхняя граница поездки: одна и та же для дат и для ползунка, иначе они спорят. */
 const MAX_DAYS = 14;
 
+/** Больше — это уже автобусный тур, а не персональный маршрут. */
+const MAX_TRAVELERS = 12;
+
 /** Число дней поездки из выбранных дат: обе даты включительно. */
 function daysBetween(from?: string, to?: string): number | null {
   if (!from || !to) return null;
@@ -258,6 +261,19 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Доступность: поле у объектов было и не использовалось нигде,
+              кроме значка. Для Комитета инклюзивный туризм — приоритет. */}
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={trip.accessibleOnly ?? false}
+              onChange={(e) => update({ accessibleOnly: e.target.checked })}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {t('fieldAccessible', lang)}
+            <span className="muted">· {t('accessibleHint', lang)}</span>
+          </label>
+
           {/* Бюджет: тот же вопрос, что задаёт мобильное приложение. Он не
               косметический — меняет очки объектов, порядок вариантов переезда
               и предупреждение о превышении дневного потолка. */}
@@ -279,6 +295,41 @@ export default function Home() {
                   <span className="muted">· {tr(BUDGET_PRICE[level], lang)}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Сколько человек едет. Билет и место в поезде продаются на человека,
+              а расходы считались на одного при любом формате: семья видела
+              сумму вчетверо меньше настоящей. */}
+          <div>
+            <div className="mb-2 text-sm font-semibold">
+              {t('fieldTravelers', lang)}{' '}
+              <span className="muted font-normal">· {t('travelersHint', lang)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn"
+                style={{ minWidth: 44, padding: 10 }}
+                aria-label="−"
+                disabled={(trip.travelers ?? 1) <= 1}
+                onClick={() => update({ travelers: Math.max(1, (trip.travelers ?? 1) - 1) })}
+              >
+                −
+              </button>
+              <b className="min-w-16 text-center text-[15px]">
+                {trip.travelers ?? 1} {t('travelersUnit', lang)}
+              </b>
+              <button
+                className="btn"
+                style={{ minWidth: 44, padding: 10 }}
+                aria-label="+"
+                disabled={(trip.travelers ?? 1) >= MAX_TRAVELERS}
+                onClick={() =>
+                  update({ travelers: Math.min(MAX_TRAVELERS, (trip.travelers ?? 1) + 1) })
+                }
+              >
+                +
+              </button>
             </div>
           </div>
 

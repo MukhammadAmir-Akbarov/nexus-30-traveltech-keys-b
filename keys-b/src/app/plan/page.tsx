@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TransferCard } from '@/components/TransferCard';
 import { Icon } from '@/components/Icon';
 import { NearbyPois } from '@/components/NearbyPois';
+import { EmergencyCard } from '@/components/EmergencyCard';
 import { OfflinePack } from '@/components/OfflinePack';
 import { PlacePhoto } from '@/components/PlacePhoto';
 import { ShareTrip } from '@/components/ShareTrip';
@@ -14,15 +15,24 @@ import { StayPanel } from '@/components/StayPanel';
 import { TripSetup } from '@/components/TripSetup';
 import { useTrip } from '@/components/TripProvider';
 import { PLACE_BY_ID } from '@/data/places';
+import { POIS } from '@/data/poi';
+import { POI_ICON, POI_LABEL, nearestPois } from '@/lib/poi';
 import { itineraryToIcs } from '@/lib/ics';
-import { prayerTimes, type Prayer } from '@/lib/prayer';
+import { prayerTimes, sunTimes, type Prayer } from '@/lib/prayer';
 import { t, tr } from '@/lib/i18n';
 import { overBudget, usdToUzsLabel } from '@/lib/budget';
 import { isWindy } from '@/lib/weather';
-import { distanceLabel, navigatorUrl, routeTotals } from '@/lib/route';
+import {
+  dayDuration,
+  distanceLabel,
+  hoursLabel,
+  isLongDay,
+  navigatorUrl,
+  routeTotals,
+} from '@/lib/route';
 import { useDayRoutes, type DayPoints } from '@/lib/use-route';
 import type { UiKey } from '@/lib/i18n';
-import type { RoutePoint } from '@/components/RouteMap';
+import type { MapPoi, RoutePoint } from '@/components/RouteMap';
 import type { Itinerary, ItineraryDay, Mode } from '@/lib/types';
 
 // MapLibre трогает window и WebGL — грузим только на клиенте.
@@ -64,7 +74,13 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
+  // Номер последнего запроса: ответы на маршрут приходят по сети и вполне
+  // могут вернуться не в том порядке, в каком уходили. Показываем только
+  // ответ на самый свежий запрос — иначе на экране оседает старый маршрут.
+  const latest = useRef(0);
+
   const build = useCallback(async () => {
+    const ticket = ++latest.current;
     setLoading(true);
     setError(false);
     try {
@@ -75,25 +91,32 @@ export default function PlanPage() {
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { itinerary: Itinerary; mode: Mode };
+      if (ticket !== latest.current) return;
       setItinerary(data.itinerary);
       setMode(data.mode);
     } catch {
-      setError(true);
+      if (ticket === latest.current) setError(true);
     } finally {
-      setLoading(false);
+      if (ticket === latest.current) setLoading(false);
     }
   }, [trip]);
 
   // Контекст уже собран на главной — ждать нажатия незачем. Заодно это чинит
   // и смену языка: текст дней и заметок приходит с сервера уже переведённым,
   // иначе половина карточки остаётся на прежнем языке.
+  //
+  // Ждём `ready`: до чтения localStorage контекст — это значения по умолчанию,
+  // и маршрут строился дважды. Два запроса возвращались в произвольном порядке,
+  // и на русском интерфейсе оставались узбекские заголовки дней — от первого,
+  // «дефолтного» ответа, пришедшего вторым. Поймано глазами на демо.
   const builtFor = useRef<string>('');
   useEffect(() => {
+    if (!ready) return;
     const key = JSON.stringify(trip);
     if (builtFor.current === key) return;
     builtFor.current = key;
     void build();
-  }, [trip, build]);
+  }, [ready, trip, build]);
 
   // маршрут в календарь телефона: файл собирается на клиенте, сеть не нужна
   const downloadIcs = () => {
@@ -133,6 +156,28 @@ export default function PlanPage() {
   }));
   const routes = useDayRoutes(dayPoints);
   const routeByDay = new Map(routes.map((route) => [route.day, route]));
+
+  // Инфраструктура вдоль маршрута — по кнопке. Постоянно на карте это шум,
+  // но в поездке намазхона и туалет нужнее ещё одного медресе.
+  const [showPois, setShowPois] = useState(false);
+  const mapPois: MapPoi[] = showPois
+    ? [
+        ...new Map(
+          routePoints
+            .flatMap(({ place }) => nearestPois(POIS, place))
+            .map(({ poi }) => [
+              poi.id,
+              {
+                id: poi.id,
+                lat: poi.lat,
+                lng: poi.lng,
+                label: `${tr(POI_LABEL[poi.kind], lang)}: ${tr(poi.name, lang)}`,
+                icon: POI_ICON[poi.kind],
+              },
+            ]),
+        ).values(),
+      ]
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -214,6 +259,15 @@ export default function PlanPage() {
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px]">
                 <span className="muted">{t('planCost', lang)}</span>
                 <b className="text-[15px]">≈ ${itinerary.cost.totalUsd}</b>
+                <span className="muted">· {usdToUzsLabel(itinerary.cost.totalUsd, lang)}</span>
+                {/* Едут вдвоём и больше — сразу говорим, где сумма на всех,
+                    а где на одного: иначе цифру сравнивают не с тем. */}
+                {(itinerary.cost.travelers ?? 1) > 1 && (
+                  <span className="tag">
+                    {t('planCostFor', lang)} {itinerary.cost.travelers} ·{' '}
+                    {t('planCostPerPerson', lang)} ≈ ${itinerary.cost.perPersonUsd}
+                  </span>
+                )}
                 <span className="muted">
                   ({t('planCostTickets', lang)} ${itinerary.cost.ticketsUsd} ·{' '}
                   {t('planCostTransfer', lang)} ${itinerary.cost.transferUsd})
@@ -224,7 +278,21 @@ export default function PlanPage() {
           </section>
 
           {routePoints.length > 0 && (
-            <RouteMap points={routePoints} routes={routes} lang={lang} />
+            <>
+              <RouteMap points={routePoints} routes={routes} pois={mapPois} lang={lang} />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="chip"
+                  data-active={showPois}
+                  onClick={() => setShowPois(!showPois)}
+                >
+                  <Icon name="fuel" size={14} />
+                  {t('mapPois', lang)}
+                  {showPois && <span className="muted">· {mapPois.length}</span>}
+                </button>
+                <span className="muted text-[12px]">{t('mapPoisHint', lang)}</span>
+              </div>
+            </>
           )}
 
           <section className="flex flex-col gap-3">
@@ -269,12 +337,21 @@ export default function PlanPage() {
                   <p className="muted mb-2 prose-measure text-[13px]">{day.weatherNote}</p>
                 )}
 
+                {/* Порядок изменён под часы работы: причина названа вслух,
+                    как и у погоды. Раньше объект просто помечался «закрыт». */}
+                {day.hoursNote && (
+                  <p className="muted mb-2 prose-measure text-[13px]">
+                    <Icon name="clock" size={13} /> {day.hoursNote}
+                  </p>
+                )}
+
                 {/* Траты дня против дневного потолка: бюджет спросили —
                     значит обязаны сказать, когда день из него вышел. */}
                 {(() => {
                   const spend = itinerary.cost?.perDayUsd?.[day.day - 1];
                   if (spend === undefined || spend === 0) return null;
-                  const over = overBudget(spend, trip.budget);
+                  // потолок назван на одного, а траты дня — уже на всех
+                  const over = overBudget(spend, trip.budget, trip.travelers);
                   return (
                     <div className="mb-2 flex flex-wrap items-center gap-2 text-[12.5px]">
                       <span className={over ? 'tag tag-warn' : 'tag'}>
@@ -315,6 +392,32 @@ export default function PlanPage() {
                     <span className="muted">· {t('prayerNote', lang)}</span>
                   </div>
                 )}
+                {/* Свет дня — тем, кто выбрал «фото». Регистан в полдень и
+                    Регистан перед закатом — это два разных снимка, и узнать
+                    об этом надо до поездки, а не после. */}
+                {trip.interests.includes('photo') && day.weather && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="muted">{t('sunTitle', lang)}</span>
+                    {(() => {
+                      const sun = sunTimes(day.weather.region, day.weather.date);
+                      return (
+                        <>
+                          <span className="tag">
+                            {t('sunSunrise', lang)} {sun.sunrise}
+                          </span>
+                          <span className="tag tag-accent" title={t('sunNote', lang)}>
+                            {t('sunGolden', lang)} {sun.sunrise}–{sun.goldenMorning} ·{' '}
+                            {sun.goldenEvening}–{sun.sunset}
+                          </span>
+                          <span className="tag">
+                            {t('sunSunset', lang)} {sun.sunset}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {day.transfer && <TransferCard transfer={day.transfer} />}
 
                 {/* Как добраться за день: сколько пешком, сколько на такси
@@ -334,6 +437,33 @@ export default function PlanPage() {
                         <Icon name="route" size={13} />
                         {t('routeHow', lang)}
                       </span>
+                      {/* Сколько займёт день целиком: «влезет ли это до вечера» —
+                          первый вопрос, а складывать в уме приходилось самому. */}
+                      {(() => {
+                        const d = dayDuration(
+                          placesOf(day).map(({ place }) => place.visitMinutes),
+                          route.legs,
+                        );
+                        // одиннадцать часов на ногах — это не насыщенная
+                        // программа, а брошенный к обеду маршрут
+                        const long = isLongDay(d.total);
+                        return (
+                          <>
+                            <span
+                              className={long ? 'tag tag-warn' : 'tag'}
+                              title={t(long ? 'dayLongHint' : 'dayDurationHint', lang)}
+                            >
+                              <Icon name={long ? 'alert' : 'clock'} size={13} />
+                              {t('dayDuration', lang)} ≈ {hoursLabel(d.total, lang)}
+                            </span>
+                            {long && (
+                              <span className="muted" style={{ color: 'var(--warn)' }}>
+                                {t('dayLong', lang)}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                       {totals.walkKm > 0 && (
                         <span className="tag">
                           <Icon name="walk" size={13} />
@@ -503,6 +633,27 @@ export default function PlanPage() {
               {t('planPrint', lang)}
             </button>
           </section>
+
+          {/* Как собран маршрут: правила, сработавшие именно здесь. Тезис
+              «не чёрный ящик» должен доказывать сам маршрут, а не презентация. */}
+          {itinerary.rules && itinerary.rules.length > 0 && (
+            <section className="card flex flex-col gap-2">
+              <details>
+                <summary>{t('planRules', lang)}</summary>
+                <ul className="mt-3 flex flex-col gap-1.5 text-[13px]">
+                  {itinerary.rules.map((rule) => (
+                    <li key={rule} className="flex gap-2">
+                      <span style={{ color: 'var(--accent)' }}>•</span>
+                      <span className="prose-measure">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="muted mt-2 prose-measure text-[12px]">{t('planRulesNote', lang)}</p>
+              </details>
+            </section>
+          )}
+
+          <EmergencyCard />
 
           <OfflinePack />
 

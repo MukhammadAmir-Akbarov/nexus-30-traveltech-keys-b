@@ -4,14 +4,21 @@ import { z } from 'zod';
 import { imageCheckSchema, readJson } from '../_schema';
 import { identifyImage } from '@/lib/vision';
 import { briefingFor } from '@/lib/briefing';
-import { getCorpus, recordFactCheck } from '@/lib/store';
+import {
+  allowRequest,
+  getCorpus,
+  ipOf,
+  noteClaimSource,
+  noteGap,
+  recordFactCheck,
+} from '@/lib/store';
 import { lookupDemoVerdict } from '@/data/demo-cache';
 import { disputedForLang, findDisputed } from '@/lib/disputed';
 import { hasAI, isMockAI, MODEL } from '@/lib/model';
 import { LANG_LABEL, t, tr } from '@/lib/i18n';
 import { retrieve } from '@/lib/retrieval';
 import { ruleVerdict, toRoman, type RuleVerdict } from '@/lib/verdict';
-import type { CheckVerdict, I18nText, Lang, Mode } from '@/lib/types';
+import type { CheckVerdict, ClaimSource, I18nText, Lang, Mode } from '@/lib/types';
 
 const verdictSchema = z.object({
   status: z
@@ -79,6 +86,9 @@ function clientIdFrom(req: Request): { id: string; isNew: boolean } {
   return match ? { id: match[1], isNew: false } : { id: randomUUID(), isNew: true };
 }
 
+/** Проверок с одного адреса в минуту. Человек столько не набирает, скрипт — легко. */
+const CHECKS_PER_MINUTE = 40;
+
 export async function POST(req: Request) {
   // Разбор отдельно от проверки полей: проверка ниже написана и работает,
   // переписывать её накануне защиты — лишний риск. Битое тело до неё
@@ -132,14 +142,20 @@ export async function POST(req: Request) {
    * весь продукт и строится. Схему для этой ручки писать не стали именно
    * поэтому: любой недосмотр в списке полей тихо разорвал бы эту цепочку.
    */
-  const { claim, lang = 'ru', guideId, placeId } = body.data as {
+  const { claim, lang = 'ru', guideId, placeId, source } = body.data as {
     claim: string;
     lang?: Lang;
     guideId?: string;
     placeId?: string;
+    source?: ClaimSource;
   };
   if (!claim?.trim()) {
     return Response.json({ error: 'Пустое утверждение' }, { status: 400 });
+  }
+  // Репутация гида защищена лимитом по устройству, а сам запрос к модели — нет:
+  // ключ платный, и цикл из чужого скрипта тратит деньги заказчика.
+  if (!allowRequest('check', ipOf(req), CHECKS_PER_MINUTE, 60_000)) {
+    return Response.json({ error: 'too_many_requests' }, { status: 429 });
   }
   const client = clientIdFrom(req);
 
@@ -168,6 +184,22 @@ export async function POST(req: Request) {
 
   const cached = lookupDemoVerdict(claim, lang);
   const respond = (verdict: CheckVerdict, mode: Mode) => {
+    /*
+     * «Нет ответа в источниках» — не пустой результат, а сигнал заказчику:
+     * по этой теме у государства нет опубликованного ответа. Складываем такие
+     * вопросы в журнал, а отчёт Комитету сортирует их по частоте. Спорные темы
+     * сюда не идут: там ответ есть, просто источники не сошлись.
+     */
+    if (verdict.status === 'unclear' && !disputed) noteGap(claim, placeId);
+
+    /*
+     * Откуда человек это услышал. Гид — не единственный источник ошибок и чаще
+     * всего не главный: люди читают табличку у входа и первую ссылку в поиске.
+     * Разделив источники, Комитет получает не «кто-то ошибается», а «на этом
+     * объекте табличка вводит в заблуждение» — то есть поручение подрядчику.
+     */
+    if (source) noteClaimSource(source, verdict.status);
+
     // если турист указал, чьи слова проверяет, вердикт идёт в репутацию гида —
     // но только если это не повтор того же утверждения и не поток от скрипта
     // спорную тему в репутацию не пишем: гид не виноват, что источники не сошлись

@@ -1,4 +1,4 @@
-import { addRequest, requestsAllowed } from '@/lib/store';
+import { addRequest, findRequestByCode, requestsAllowed } from '@/lib/store';
 import type { RequestKind } from '@/lib/types';
 import { readJson } from '../_schema';
 
@@ -32,5 +32,24 @@ export async function POST(req: Request) {
   }
 
   const item = addRequest(kind, targetId, message, contact);
-  return Response.json({ id: item.id });
+  // Код возвращаем туристу: по нему он потом узнает, что с заявкой стало.
+  return Response.json({ id: item.id, code: item.code });
+}
+
+/**
+ * Статус заявки по коду. Без аккаунта и без персональных данных в ответе:
+ * турист видит только то, что и так знает, плюс ответ гида.
+ */
+export async function GET(req: Request) {
+  const code = new URL(req.url).searchParams.get('code') ?? '';
+  const item = code.length >= 4 ? findRequestByCode(code) : undefined;
+  if (!item) return Response.json({ error: 'not_found' }, { status: 404 });
+  return Response.json({
+    code: item.code,
+    kind: item.kind,
+    targetId: item.targetId,
+    at: item.at,
+    status: item.status ?? 'new',
+    reply: item.reply ?? null,
+  });
 }

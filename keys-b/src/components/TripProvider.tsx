@@ -77,6 +77,18 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
   }, []);
 
+  /**
+   * Атрибут языка у документа обязан следовать выбору интерфейса.
+   *
+   * В разметке стоял жёсткий `lang="uz"`: скринридер читал русскую и английскую
+   * страницу с узбекским произношением, а браузер предлагал перевести то, что
+   * и так на языке читателя. Правится одной строкой, а стоило это внятности
+   * речи для всех, кто пользуется голосом.
+   */
+  useEffect(() => {
+    document.documentElement.lang = trip.lang;
+  }, [trip.lang]);
+
   const finishOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDED_KEY, '1');
     // фиксируем контекст, даже если в опросе ничего не меняли

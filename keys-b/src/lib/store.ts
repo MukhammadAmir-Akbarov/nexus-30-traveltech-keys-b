@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword, type Role } from './auth';
 import { mergeCorpus, mergeGuides } from './snapshot-merge';
 import type {
   CheckStatus,
+  ClaimSource,
   CorpusItem,
   FactRecord,
   Guide,
@@ -63,6 +64,33 @@ type Store = {
   verdicts: FactRecord[];
   /** Входящие от туристов: проблема на объекте и запрос гида. */
   requests: TouristRequest[];
+  /**
+   * Вопросы, на которые в источниках ответа не нашлось.
+   *
+   * Самый ценный побочный продукт: список тем, по которым у государства нет
+   * опубликованного ответа, отсортированный по частоте вопроса. Маленький
+   * корпус перестаёт быть слабостью и становится поручением — «вот что
+   * опубликовать в первую очередь».
+   */
+  gaps: { claim: string; placeId?: string; at: string }[];
+  /**
+   * Откуда турист услышал утверждение: гид, табличка у входа, интернет.
+   *
+   * Гид — не единственный источник ошибок, а чаще всего и не главный: человек
+   * читает табличку или первую ссылку в поиске. Разделив источники, Комитет
+   * узнаёт не «кто-то ошибается», а «на этом объекте табличка вводит
+   * в заблуждение» — и это уже поручение подрядчику, а не наблюдение.
+   */
+  claimSources: Map<ClaimSource, { total: number; refuted: number }>;
+  /**
+   * Журнал действий администратора.
+   *
+   * Панель Комитета снимает подтверждение с гида, удаляет факты и закрывает
+   * возражения — и до сих пор нигде не оставалось следа, кто это сделал.
+   * Для государственного заказчика это не украшение: без журнала любое
+   * действие в панели неоспоримо и безответно одновременно.
+   */
+  audit: { at: string; actor: string; action: string; target?: string }[];
 };
 
 const DATA_FILE = process.env.DATA_FILE ?? '.data/store.json';
@@ -73,10 +101,13 @@ type Snapshot = {
   guides: Guide[];
   corpus: CorpusItem[];
   countedChecks: string[];
+  gaps: { claim: string; placeId?: string; at: string }[];
   accuracy: [string, GuideAccuracy][];
   accuracyByPlace: [string, GuideAccuracy][];
   verdicts: FactRecord[];
   requests: TouristRequest[];
+  claimSources: [ClaimSource, { total: number; refuted: number }][];
+  audit: { at: string; actor: string; action: string; target?: string }[];
 };
 
 function readSnapshot(): Snapshot | null {
@@ -109,6 +140,9 @@ function persist(): void {
       accuracyByPlace: [...s.accuracyByPlace],
       verdicts: s.verdicts,
       requests: s.requests,
+      gaps: s.gaps,
+      claimSources: [...s.claimSources],
+      audit: s.audit,
     };
     try {
       mkdirSync(dirname(DATA_FILE), { recursive: true });
@@ -196,6 +230,15 @@ function seed(): Store {
         at: '2026-08-14 16:44',
       },
     ],
+    gaps: [],
+    // демо-история источников: без неё отчёт Комитету пуст на первом показе,
+    // а сама мысль «ошибается не только гид» доказывается именно этим блоком
+    claimSources: new Map<ClaimSource, { total: number; refuted: number }>([
+      ['guide', { total: 14, refuted: 4 }],
+      ['sign', { total: 9, refuted: 5 }],
+      ['internet', { total: 21, refuted: 8 }],
+    ]),
+    audit: [],
     requests: [
       {
         id: 'r1',
@@ -245,6 +288,13 @@ function store(): Store {
       fresh.accuracyByPlace = new Map(saved.accuracyByPlace ?? []);
       fresh.verdicts = saved.verdicts ?? [];
       fresh.requests = saved.requests ?? [];
+      fresh.gaps = saved.gaps ?? [];
+      // Счётчики источников кладём поверх посева по ключу, а не вместо него:
+      // накопленное по «табличке» не должно стирать демо-строки про гида и
+      // интернет — иначе после одной живой проверки отчёт показывает одну
+      // строку из четырёх и выглядит сломанным.
+      fresh.claimSources = new Map([...fresh.claimSources, ...(saved.claimSources ?? [])]);
+      fresh.audit = saved.audit ?? [];
     }
     globalStore.__nexus30 = fresh;
   }
@@ -488,23 +538,174 @@ export function addRequest(
     message: message.trim().slice(0, 500),
     contact: contact.trim().slice(0, 120),
     at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    // Код вместо регистрации: у туриста нет аккаунта, а узнать судьбу
+    // заявки он должен. Шесть знаков без похожих букв и цифр.
+    code: requestCode(),
+    status: 'new',
   };
   store().requests.push(item);
   persist();
   return item;
 }
 
-/** Не больше пяти заявок с одного адреса за десять минут. */
-const requestTimes = new Map<string, number[]>();
+/**
+ * Скользящее окно запросов по адресу.
+ *
+ * Заявки были защищены, а проверка фактов и построение маршрута — нет: оба
+ * ходят в модель, и один скрипт в цикле тратит деньги заказчика и место
+ * в очереди у настоящих туристов. Окно грубое и живёт в памяти процесса —
+ * этого достаточно, чтобы абуз перестал быть бесплатным.
+ *
+ * `bucket` разделяет счётчики: проверок в час человек делает больше, чем заявок.
+ */
+const rateWindows = new Map<string, number[]>();
 
-export function requestsAllowed(ip: string, now = Date.now()): boolean {
-  const recent = (requestTimes.get(ip) ?? []).filter((t) => now - t < 600_000);
-  if (recent.length >= 5) {
-    requestTimes.set(ip, recent);
+export function allowRequest(
+  bucket: string,
+  ip: string,
+  limit: number,
+  windowMs: number,
+  now = Date.now(),
+): boolean {
+  const key = `${bucket}|${ip}`;
+  const recent = (rateWindows.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (recent.length >= limit) {
+    rateWindows.set(key, recent);
     return false;
   }
-  requestTimes.set(ip, [...recent, now]);
+  rateWindows.set(key, [...recent, now]);
   return true;
+}
+
+/** Адрес запроса. За туннелем и на Render настоящий адрес приходит заголовком. */
+export function ipOf(req: Request): string {
+  return (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'local';
+}
+
+/** Не больше пяти заявок с одного адреса за десять минут. */
+export function requestsAllowed(ip: string, now = Date.now()): boolean {
+  return allowRequest('requests', ip, 5, 600_000, now);
+}
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/** Код заявки: без нуля, единицы, I и O — их путают при диктовке по телефону. */
+function requestCode(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return store().requests.some((r) => r.code === code) ? requestCode() : code;
+}
+
+/** Заявка по коду — так турист без аккаунта видит, что с ней стало. */
+export function findRequestByCode(code: string): TouristRequest | undefined {
+  const needle = code.trim().toUpperCase();
+  return store().requests.find((r) => r.code === needle);
+}
+
+/** Заявки конкретного гида: его входящие, а не общий ящик Комитета. */
+export function listRequestsForGuide(guideId: string): TouristRequest[] {
+  return store()
+    .requests.filter((r) => r.kind === 'guide-booking' && r.targetId === guideId)
+    .slice()
+    .reverse();
+}
+
+/**
+ * Ответ гида на заявку. Отказ — тоже ответ: молчание хуже отказа,
+ * турист остаётся без плана и не знает, ждать ли.
+ */
+export function answerRequest(
+  requestId: string,
+  guideId: string,
+  status: 'taken' | 'busy',
+  note?: string,
+): boolean {
+  const item = store().requests.find(
+    (r) => r.id === requestId && r.kind === 'guide-booking' && r.targetId === guideId,
+  );
+  if (!item) return false;
+  item.status = status;
+  item.reply = {
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    note: note?.trim().slice(0, 300) || undefined,
+  };
+  persist();
+  return true;
+}
+
+/** Вопрос без ответа в источниках — в журнал пробелов для Комитета. */
+export function noteGap(claim: string, placeId?: string): void {
+  const text = claim.trim().slice(0, 200);
+  if (text.length < 8) return;
+  store().gaps.push({
+    claim: text,
+    placeId,
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+  });
+  // журнал не должен расти бесконечно на демо
+  if (store().gaps.length > 500) store().gaps.splice(0, store().gaps.length - 500);
+  persist();
+}
+
+/** Пробелы по частоте: о чём спрашивают чаще всего, а ответа нет. */
+export function listGaps(): { claim: string; count: number; placeId?: string; at: string }[] {
+  const byClaim = new Map<string, { claim: string; count: number; placeId?: string; at: string }>();
+  for (const gap of store().gaps) {
+    const key = gap.claim.toLowerCase();
+    const seen = byClaim.get(key);
+    if (seen) {
+      seen.count += 1;
+      if (gap.at > seen.at) seen.at = gap.at;
+    } else {
+      byClaim.set(key, { claim: gap.claim, count: 1, placeId: gap.placeId, at: gap.at });
+    }
+  }
+  return [...byClaim.values()].sort((a, b) => b.count - a.count || b.at.localeCompare(a.at));
+}
+
+// --- откуда услышано ---
+
+/**
+ * Запомнить, откуда прозвучало проверенное утверждение.
+ *
+ * Считаем и всего, и опровергнутых: доля важнее числа. «Табличка: 9 проверок,
+ * 5 опровергнуто» — это конкретное поручение подрядчику, а «гид ошибается»
+ * без такого сравнения выглядит как обвинение гидов вообще.
+ */
+export function noteClaimSource(source: ClaimSource, status: CheckStatus): void {
+  const current = store().claimSources.get(source) ?? { total: 0, refuted: 0 };
+  current.total += 1;
+  if (status === 'refuted') current.refuted += 1;
+  store().claimSources.set(source, current);
+  persist();
+}
+
+export function listClaimSources(): { source: ClaimSource; total: number; refuted: number }[] {
+  return [...store().claimSources.entries()]
+    .map(([source, stats]) => ({ source, ...stats }))
+    .filter((row) => row.total > 0)
+    .sort((a, b) => b.refuted / b.total - a.refuted / a.total || b.total - a.total);
+}
+
+// --- журнал действий администратора ---
+
+/** Каждое действие в панели Комитета оставляет след: кто, что и когда. */
+export function noteAdminAction(actor: string, action: string, target?: string): void {
+  store().audit.unshift({
+    at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    actor,
+    action,
+    target,
+  });
+  // журнал не должен расти бесконечно на демо
+  if (store().audit.length > 300) store().audit.length = 300;
+  persist();
+}
+
+export function listAudit(): { at: string; actor: string; action: string; target?: string }[] {
+  return store().audit;
 }
 
 export function listRequests(): TouristRequest[] {
