@@ -385,7 +385,12 @@ h2 {
   inset: auto 16px calc(12px + env(safe-area-inset-bottom)) 16px;
   z-index: 30;
   display: flex;
-  gap: 4px;
+  /*
+    8px, а не 4: между соседними целями касания должно оставаться не меньше
+    восьми точек, иначе палец промахивается на соседнюю вкладку. Измерено на
+    375px: при 4px соседние пункты стояли в четырёх точках друг от друга.
+  */
+  gap: 8px;
   padding: 6px;
   background: var(--navy);
   border-radius: var(--radius-pill);
@@ -416,11 +421,25 @@ h2 {
   text-decoration: none;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
+/*
+  Подпись активной вкладки ограничена по ширине. Измерено на 375px: «Faktlarni
+  tekshirish» занимала 172 точки из 331, и три соседние вкладки сжимались до 49.
+  Длина подписи зависит от языка, то есть на одном языке панель выглядит ровно,
+  а на другом — нет. Предел снимает эту зависимость: длинное название
+  подрезается, а соседние вкладки сохраняют свой размер.
+*/
 .tabbar a[data-active='true'] {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 48%;
   padding-inline: 14px;
   background: var(--surface);
   color: var(--accent-ink);
+}
+.tabbar a[data-active='true'] span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Карта (MapLibre GL) ──────────────────────────────────── */
