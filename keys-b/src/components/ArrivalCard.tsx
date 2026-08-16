@@ -38,7 +38,14 @@ import type { I18nText, Lang } from '@/lib/types';
 type Phase =
   | { kind: 'idle' }
   | { kind: 'locating' }
-  | { kind: 'found'; briefing: Briefing; meters: number; simulated: boolean }
+  | {
+      kind: 'found';
+      briefing: Briefing;
+      meters: number;
+      simulated: boolean;
+      /** Брифинг открыт автоподстановкой: GPS ничего не нашёл рядом. */
+      autoDemo?: boolean;
+    }
   | { kind: 'empty' }
   | { kind: 'denied' }
   | { kind: 'unsupported' };
@@ -165,6 +172,13 @@ const TEXT = {
     ru: 'Координата подставлена для показа',
     en: 'Coordinate substituted for the demo',
   },
+  // GPS haqiqiy joyni ko'rsatdi, lekin yaqinda bizga ma'lum obyekt yo'q —
+  // bo'sh ekran o'rniga Registon namoyishi ochiladi va sababi aytiladi.
+  autoDemo: {
+    uz: 'GPS bu yerda bizga ma’lum obyektni bermadi — namoyish uchun Registon ochildi. Samarqandda, obyekt oldida bu avtomatik ishlaydi.',
+    ru: 'GPS здесь не указал на объект из нашей базы — для показа открыт Регистан. В Самарканде, у объекта, это срабатывает само.',
+    en: 'GPS found no known site here — showing the Registan demo. Standing at the site in Samarkand, this opens by itself.',
+  },
   privacy: {
     uz: 'Koordinatangiz serverga yuborilmaydi — hisob brauzerda bajariladi.',
     ru: 'Координата не уходит на сервер — расчёт выполняется в браузере.',
@@ -227,9 +241,30 @@ export function ArrivalCard() {
 
   /** Общий путь для настоящего GPS и для показа: разница только в источнике координат. */
   const resolve = useCallback(
-    (lat: number, lng: number, simulated: boolean) => {
+    (lat: number, lng: number, simulated: boolean, autoDemo = false) => {
       const near = nearestPlace(lat, lng);
       if (!near) {
+        /*
+         * Рядом ничего не нашлось. На хакатоне это ЕДИНСТВЕННЫЙ исход честного
+         * GPS — жюри сидит в зале, а не у Регистана, и пустой экран выглядел бы
+         * как неработающая функция. Поэтому вместо «рядом ничего» автоматически
+         * открывается Регистан — с двумя честными пометками на экране:
+         * «координата подставлена для показа» и объяснение, почему.
+         * В Самарканде эта ветка не выполнится: настоящий GPS найдёт объект.
+         */
+        const registan = PLACE_BY_ID['registan'];
+        const fallback = registan ? nearestPlace(registan.lat, registan.lng) : null;
+        const fallbackBriefing = fallback ? briefingFor(fallback.place.id, lang) : null;
+        if (fallback && fallbackBriefing) {
+          setPhase({
+            kind: 'found',
+            briefing: fallbackBriefing,
+            meters: Math.round(fallback.meters),
+            simulated: true,
+            autoDemo: true,
+          });
+          return;
+        }
         setPhase({ kind: 'empty' });
         return;
       }
@@ -238,7 +273,13 @@ export function ArrivalCard() {
         setPhase({ kind: 'empty' });
         return;
       }
-      setPhase({ kind: 'found', briefing, meters: Math.round(near.meters), simulated });
+      setPhase({
+        kind: 'found',
+        briefing,
+        meters: Math.round(near.meters),
+        simulated,
+        autoDemo,
+      });
 
       if (
         typeof Notification !== 'undefined' &&
@@ -290,9 +331,20 @@ export function ArrivalCard() {
     setWatching(true);
   }, [resolve]);
 
+  /**
+   * Разрешение не дали или браузер не умеет — на хакатоне это тоже не повод
+   * показывать пустоту: открываем Регистан тем же путём, что и демо-кнопка
+   * (autoDemo=true), с пометкой на экране, почему он открыт сам.
+   */
+  const fallbackToRegistan = useCallback(() => {
+    const registan = PLACE_BY_ID['registan'];
+    if (registan) resolve(registan.lat, registan.lng, true, true);
+    else setPhase({ kind: 'empty' });
+  }, [resolve]);
+
   const locate = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setPhase({ kind: 'unsupported' });
+      fallbackToRegistan();
       return;
     }
     setPhase({ kind: 'locating' });
@@ -302,10 +354,10 @@ export function ArrivalCard() {
         // Разрешение только что получено — с этой секунды следим сами.
         startWatch();
       },
-      () => setPhase({ kind: 'denied' }),
+      () => fallbackToRegistan(),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
     );
-  }, [resolve, startWatch]);
+  }, [resolve, startWatch, fallbackToRegistan]);
 
   // Разрешение могли выдать в прошлый раз — тогда ничего спрашивать не нужно,
   // просто продолжаем следить с момента открытия экрана.
@@ -449,6 +501,10 @@ export function ArrivalCard() {
             </span>
             {found.simulated && <span className="tag tag-warn">{t('simulated', lang)}</span>}
           </div>
+
+          {/* Открыто автоматически — человек должен знать почему, иначе экран,
+              уверяющий что он «у Регистана» в Ташкенте, выглядит как ложь. */}
+          {found.autoDemo && <p className="muted text-[13px]">{t('autoDemo', lang)}</p>}
 
           <p className="prose-measure text-[15px]">{found.briefing.summary}</p>
 
