@@ -2,9 +2,10 @@
 // планировщик, подбор гида и трёхъязычность. Запуск: npm run check
 // (Node 22 сам снимает типы, поэтому импорты — с расширением .ts.)
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CORPUS } from '../data/corpus.ts';
+import { LANDMARKS } from '../data/landmarks.ts';
 import { CLIMATE_TMAX, summerPeakTmax } from '../data/climate.ts';
 import { VISION_DEMO } from '../data/vision-demo.ts';
 import { FEATURED_IDS, HOME_FEATURED_COUNT } from '../data/featured.ts';
@@ -1536,6 +1537,31 @@ assert.ok(AT_PLACE_LIMIT_M >= 200 && AT_PLACE_LIMIT_M <= 800, 'радиус об
   // врал бы. Правильное место — сам e2e.mjs: он знает своё число во время
   // прогона и сверяет его с README в конце (см. scripts/e2e.mjs).
 }
+
+// --- внутренние памятники: карточка с фото и фактом ----------------------------
+// «Что вы здесь увидите» из чипов стало карточками: фото + факт, который
+// заводит туриста внутрь. Проверяем целостность: объект существует, файл
+// фотографии лежит в репозитории, тексты на трёх языках, у факта есть источник.
+
+const landmarkPlaceIds = new Set(PLACES.map((place) => place.id));
+for (const [placeId, marks] of Object.entries(LANDMARKS)) {
+  assert.ok(landmarkPlaceIds.has(placeId), `landmarks: obyekt ${placeId} PLACES da bor`);
+  assert.ok(marks.length > 0, `landmarks: ${placeId} bo'sh emas`);
+  for (const mark of marks) {
+    assert.ok(
+      existsSync(resolve(import.meta.dirname, '../../public', mark.photo.url.slice(1))),
+      `landmarks: rasm fayli repoda bor: ${mark.photo.url}`,
+    );
+    assert.ok(mark.photo.author.trim() && mark.photo.license.trim(), `landmarks: ${mark.id} atributi to'liq`);
+    assert.ok(mark.source.url.startsWith('https://'), `landmarks: ${mark.id} manbasi https`);
+    for (const lang of LANGS) {
+      assert.ok(mark.name[lang]?.trim(), `landmarks: ${mark.id} nomi ${lang} da bor`);
+      assert.ok(mark.blurb[lang]?.trim(), `landmarks: ${mark.id} izohi ${lang} da bor`);
+    }
+  }
+}
+// Registon — demo tayanchi: uch madrasa ham kartada bo'lishi shart
+assert.equal(LANDMARKS.registan?.length, 3, 'Registonda uchta obida kartasi bor');
 
 // --- узнавание по фотографии ---------------------------------------------------
 // Ключа зрения сегодня нет, но ветка написана целиком, а демо-набор — честный

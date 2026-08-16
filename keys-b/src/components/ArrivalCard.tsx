@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { Icon } from './Icon';
 import { PlacePhoto } from './PlacePhoto';
 import { useTrip } from './TripProvider';
+import { landmarksFor } from '@/data/landmarks';
 import { photoFor } from '@/data/photos';
 import { briefingFor, type Briefing } from '@/lib/briefing';
 import { AT_PLACE_LIMIT_M, nearestPlace } from '@/lib/geo';
@@ -122,6 +123,15 @@ const TEXT = {
     ru: 'Из источников',
     en: 'From the sources',
   },
+  // Xom parchalar manba tilida (ruscha) — ular endi yig'ilgan blokda:
+  // tushunarli matn obida kartalarida, asl matn bir bosishda.
+  factsRaw: {
+    uz: 'Manba parchalari (asl tilda)',
+    ru: 'Отрывки источников (язык оригинала)',
+    en: 'Source passages (original language)',
+  },
+  sourceLabel: { uz: 'Manba:', ru: 'Источник:', en: 'Source:' },
+  photoBy: { uz: 'foto:', ru: 'фото:', en: 'photo:' },
   contested: {
     uz: 'Manbalar kelishmaydi',
     ru: 'Источники расходятся',
@@ -508,24 +518,80 @@ export function ArrivalCard() {
 
           <p className="prose-measure text-[15px]">{found.briefing.summary}</p>
 
-          {found.briefing.highlights.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <b className="text-sm">{t('willSee', lang)}</b>
-              <div className="flex flex-wrap gap-2">
-                {found.briefing.highlights.map((item) => (
-                  <span key={item} className="tag tag-accent">
-                    {item}
-                  </span>
-                ))}
+          {(() => {
+            const landmarks = landmarksFor(found.briefing.place.id);
+            // Ichki obidalar bor — har biri o'z rasmi va «ichkariga kiritadigan»
+            // fakti bilan alohida karta. Nomlar chipi «Tillakori» deb aytardi,
+            // lekin NEGA kirish kerakligini aytmasdi.
+            if (landmarks.length > 0) {
+              return (
+                <div className="flex flex-col gap-2">
+                  <b className="text-sm">{t('willSee', lang)}</b>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {landmarks.map((mark) => (
+                      <figure
+                        key={mark.id}
+                        className="m-0 flex flex-col overflow-hidden rounded-[var(--radius-sm)]"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                      >
+                        <div className="relative aspect-[4/3] w-full">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- kadr repodan, o'lchami ma'lum */}
+                          <img
+                            src={mark.photo.url}
+                            alt={tr(mark.name, lang)}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        </div>
+                        <figcaption className="flex flex-col gap-1.5 p-3">
+                          <b className="text-[13.5px] leading-snug">{tr(mark.name, lang)}</b>
+                          <span className="prose-measure text-[12.5px]">{tr(mark.blurb, lang)}</span>
+                          <span className="muted text-[11px]">
+                            {t('sourceLabel', lang)}{' '}
+                            <a href={mark.source.url} target="_blank" rel="noreferrer" className="underline">
+                              {tr(mark.source.title, lang)}
+                            </a>
+                            {' · '}
+                            {t('photoBy', lang)}{' '}
+                            <a href={mark.photo.page} target="_blank" rel="noreferrer" className="underline">
+                              {mark.photo.author}
+                            </a>{' '}
+                            ({mark.photo.license})
+                          </span>
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                  {/* Ради этой строки экран и сделан: турист узнаёт, что спросить. */}
+                  <p className="text-[13px] font-medium">{t('askGuide', lang)}</p>
+                </div>
+              );
+            }
+            // obida qatlami yo'q joylarda eski chiplar qoladi
+            if (found.briefing.highlights.length === 0) return null;
+            return (
+              <div className="flex flex-col gap-2">
+                <b className="text-sm">{t('willSee', lang)}</b>
+                <div className="flex flex-wrap gap-2">
+                  {found.briefing.highlights.map((item) => (
+                    <span key={item} className="tag tag-accent">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <p className="muted text-[13px]">{t('askGuide', lang)}</p>
               </div>
-              {/* Ради этой строки экран и сделан: турист узнаёт, что спросить. */}
-              <p className="muted text-[13px]">{t('askGuide', lang)}</p>
-            </div>
-          )}
+            );
+          })()}
 
-          <div className="flex flex-col gap-2">
-            <b className="text-sm">{t('facts', lang)}</b>
-            <ul className="flex flex-col gap-2">
+          {/* Tushunarli matn yuqorida, obida kartalarida. Xom parchalar manba
+              tilida (ruscha kanon) — ochib ko'rish mumkin, lekin ekranning
+              asosiy oqimini band qilmaydi: Elbekning «tartiblang» talabi. */}
+          <details className="flex flex-col gap-2">
+            <summary className="muted cursor-pointer text-sm font-semibold">
+              {t('factsRaw', lang)} ({found.briefing.facts.length})
+            </summary>
+            <ul className="mt-2 flex flex-col gap-2">
               {found.briefing.facts.map((fact) => (
                 <li key={fact.id} className="flex flex-col gap-1 border-s-2 ps-3" style={{ borderColor: 'var(--border-strong)' }}>
                   <span className="prose-measure text-[14px]">{fact.text}</span>
@@ -537,7 +603,7 @@ export function ArrivalCard() {
               ))}
             </ul>
             {found.briefing.thin && <p className="muted text-[13px]">{t('thin', lang)}</p>}
-          </div>
+          </details>
 
           <div className="flex flex-wrap gap-2">
             <Link className="btn btn-primary" href={`/check?place=${found.briefing.place.id}`}>
